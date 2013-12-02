@@ -12,6 +12,7 @@ struct TcpConnection
   struct ELoop *eloop;
   TcpConnectionReadCallback read_callback;
   TcpConnectionWriteCallback write_callback;
+  TcpConnectionCloseCallback close_callback;
   const void *data;
 };
 
@@ -84,13 +85,29 @@ on_ready_write(int fd, const void *data)
   return 0;
 }
 
+static int
+on_close(int fd, const void *data)
+{
+  struct TcpConnection *connection = NULL;
+
+  assert(data != NULL);
+
+  connection = (struct TcpConnection *)data;
+
+  if (connection->close_callback)
+    connection->close_callback(connection, connection->data);
+
+  return 0;
+}
+
 int
 tcp_connection_set_callbacks(struct TcpConnection      *connection,
                              TcpConnectionReadCallback  read_callback,
                              TcpConnectionWriteCallback write_callback,
+                             TcpConnectionCloseCallback close_callback,
                              const void                *data)
 {
-  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX] = {0, 0};
+  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX] = {0, 0, 0};
 
   assert(connection != NULL);
 
@@ -102,6 +119,11 @@ tcp_connection_set_callbacks(struct TcpConnection      *connection,
   if (write_callback != NULL) {
     connection->write_callback = write_callback;
     callbacks[ELOOP_CALLBACK_WRITE] = on_ready_write;
+  }
+
+  if (close_callback != NULL) {
+    connection->close_callback = close_callback;
+    callbacks[ELOOP_CALLBACK_CLOSE] = on_close;
   }
 
   connection->data = data;

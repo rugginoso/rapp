@@ -146,6 +146,18 @@ on_read(struct TcpConnection *tcp_connection, const void *data)
     http_connection->finish_callback(http_connection, http_connection->data);
 }
 
+static void
+on_close(struct TcpConnection *tcp_connection, const void *data)
+{
+  struct HTTPConnection *http_connection = NULL;
+
+  assert(data != NULL);
+
+  http_connection = (struct HTTPConnection *)data;
+
+  http_connection->finish_callback(http_connection, http_connection->data);
+}
+
 struct HTTPConnection *
 http_connection_new(struct TcpConnection *tcp_connection)
 {
@@ -174,7 +186,7 @@ http_connection_new(struct TcpConnection *tcp_connection)
   http_connection->parser_settings.on_message_complete = on_message_complete;
 
   http_connection->tcp_connection = tcp_connection;
-  tcp_connection_set_callbacks(http_connection->tcp_connection, on_read, NULL, http_connection);
+  tcp_connection_set_callbacks(http_connection->tcp_connection, on_read, NULL, on_close, http_connection);
 
   return http_connection;
 }

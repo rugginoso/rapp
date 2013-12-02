@@ -47,6 +47,7 @@ main(int argc, char *argv[])
 
   callbacks[ELOOP_CALLBACK_READ] = on_signal;
   callbacks[ELOOP_CALLBACK_WRITE] = NULL;
+  callbacks[ELOOP_CALLBACK_CLOSE] = NULL;
   event_loop_add_fd_watch(eloop, signal_fd, callbacks, eloop);
 
   http_server = http_server_new(eloop);

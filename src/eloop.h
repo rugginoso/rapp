@@ -10,6 +10,7 @@ typedef int (*ELoopWatchFdCallback)(int fd, const void *data);
 enum {
   ELOOP_CALLBACK_READ = 0,
   ELOOP_CALLBACK_WRITE,
+  ELOOP_CALLBACK_CLOSE,
   ELOOP_CALLBACK_MAX,
 };
 

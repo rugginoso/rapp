@@ -134,6 +134,7 @@ tcp_server_start_listen(struct TcpServer *server,
 
   callbacks[ELOOP_CALLBACK_READ] = on_incoming_connection;
   callbacks[ELOOP_CALLBACK_WRITE] = NULL;
+  callbacks[ELOOP_CALLBACK_CLOSE] = NULL;
 
   return event_loop_add_fd_watch(server->eloop, server->listen_fd, callbacks, server);
 }

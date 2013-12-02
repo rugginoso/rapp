@@ -81,6 +81,10 @@ event_loop_run(struct ELoop *eloop)
       if (events[i].events & EPOLLOUT && eloop_callback->callbacks[ELOOP_CALLBACK_WRITE]) {
         eloop_callback->callbacks[ELOOP_CALLBACK_WRITE](eloop_callback->fd, eloop_callback->data);
       }
+
+      if (events[i].events & EPOLLRDHUP && eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE]) {
+        eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE](eloop_callback->fd, eloop_callback->data);
+      }
     }
     collector_collect(eloop->collector);
   }
@@ -116,6 +120,9 @@ event_loop_add_fd_watch(struct ELoop         *eloop,
         break;
       case ELOOP_CALLBACK_WRITE:
         ev.events |= EPOLLOUT;
+        break;
+      case ELOOP_CALLBACK_CLOSE:
+        ev.events |= EPOLLRDHUP;
         break;
       }
     }
