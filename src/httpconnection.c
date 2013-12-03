@@ -235,3 +235,4 @@ http_connection_set_finish_callback(struct HTTPConnection        *http_connectio
   http_connection->finish_callback = finish_callback;
   http_connection->data = data;
 }
+

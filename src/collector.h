@@ -12,4 +12,5 @@ void collector_schedule_free(struct Collector *collector, CollectorFreeFunc, voi
 
 void collector_collect(struct Collector *collector);
 
-#endif
+#endif /* COLLECTOR_H */
+

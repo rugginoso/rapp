@@ -79,3 +79,4 @@ collector_collect(struct Collector *collector)
     collector->collect_entries_list = next;
   }
 }
+

@@ -25,4 +25,5 @@ int event_loop_remove_fd_watch(struct ELoop *loop, int fd);
 
 void event_loop_schedule_free(struct ELoop *eloop, CollectorFreeFunc free_func, void *data);
 
-#endif
+#endif /* ELOOP_H */
+

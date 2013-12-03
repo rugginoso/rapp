@@ -11,4 +11,5 @@ void http_connection_destroy(struct HTTPConnection *http_connection);
 
 void http_connection_set_finish_callback(struct HTTPConnection *connection, HTTPConnectionFinishCallback finish_callback, void *data);
 
-#endif
+#endif /* HTTPCONNECTION_H */
+

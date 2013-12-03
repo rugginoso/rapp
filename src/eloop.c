@@ -187,3 +187,4 @@ event_loop_schedule_free(struct ELoop     *eloop,
 
   collector_schedule_free(eloop->collector, free_func, data);
 }
+

@@ -11,4 +11,5 @@ void http_server_destroy(struct HTTPServer *http_server);
 
 int http_server_start(struct HTTPServer *http_server, const char *host, uint16_t port);
 
-#endif
+#endif /* HTTPSERVER_H */
+

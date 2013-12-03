@@ -141,3 +141,4 @@ signal_handler_remove_signal_callback(struct SignalHandler *signal_handler,
 
   return 0;
 }
+
