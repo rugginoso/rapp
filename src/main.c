@@ -5,9 +5,10 @@
 
 #include "eloop.h"
 #include "httpserver.h"
+#include "signalhandler.h"
 
-static int
-on_signal(int fd, const void *data)
+static void
+on_signal(struct SignalHandler *signal_handler, void *data)
 {
   struct ELoop *eloop = NULL;
 
@@ -16,8 +17,6 @@ on_signal(int fd, const void *data)
   eloop = (struct ELoop *)data;
 
   event_loop_stop(eloop);
-
-  return 0;
 }
 
 int
@@ -25,30 +24,13 @@ main(int argc, char *argv[])
 {
   struct ELoop *eloop = NULL;
   struct HTTPServer *http_server = NULL;
-  int signal_fd = -1;
-  sigset_t sig_mask;
-  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
-
-  sigemptyset(&sig_mask);
-  sigaddset(&sig_mask, SIGINT);
-  sigaddset(&sig_mask, SIGTERM);
-
-  if (sigprocmask(SIG_SETMASK, &sig_mask, NULL) != 0) {
-    perror("sigprocmask");
-    return -1;
-  }
-
-  if ((signal_fd = signalfd(-1, &sig_mask, 0)) < 0) {
-    perror("signalfd");
-    return -1;
-  }
+  struct SignalHandler *signal_handler = NULL;
 
   eloop = event_loop_new();
 
-  callbacks[ELOOP_CALLBACK_READ] = on_signal;
-  callbacks[ELOOP_CALLBACK_WRITE] = NULL;
-  callbacks[ELOOP_CALLBACK_CLOSE] = NULL;
-  event_loop_add_fd_watch(eloop, signal_fd, callbacks, eloop);
+  signal_handler = signal_handler_new(eloop);
+  signal_handler_add_signal_callback(signal_handler, SIGINT, on_signal, eloop);
+  signal_handler_add_signal_callback(signal_handler, SIGTERM, on_signal, eloop);
 
   http_server = http_server_new(eloop);
 
@@ -56,10 +38,8 @@ main(int argc, char *argv[])
 
   event_loop_run(eloop);
 
-  event_loop_remove_fd_watch(eloop, signal_fd);
-  close(signal_fd);
-
   http_server_destroy(http_server);
+  signal_handler_destroy(signal_handler);
   event_loop_destroy(eloop);
 
   return 0;
