@@ -10,7 +10,7 @@
 
 Overview
 ========
-RApp is an application container, wrote in C.
+RApp is an application container, written in C.
 It is focused on performances, targets GNU/Linux only and uses most of its own
 features like epoll and signalfd.
 
