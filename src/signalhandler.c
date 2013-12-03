@@ -27,7 +27,6 @@ on_signal(int         fd,
 {
   struct SignalHandler *signal_handler = NULL;
   struct signalfd_siginfo siginfo;
-  ssize_t got = -1;
 
   assert(data != NULL);
 

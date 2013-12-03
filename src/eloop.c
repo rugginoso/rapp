@@ -104,7 +104,7 @@ event_loop_add_fd_watch(struct ELoop         *eloop,
                         ELoopWatchFdCallback  callbacks[ELOOP_CALLBACK_MAX],
                         const void           *data)
 {
-  struct epoll_event ev = {0, 0};
+  struct epoll_event ev = {0,};
   struct ELoopCallback *eloop_callback;
   int i = 0;
 

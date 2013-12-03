@@ -210,8 +210,6 @@ http_connection_new(struct TcpConnection *tcp_connection)
 void
 http_connection_destroy(struct HTTPConnection *http_connection)
 {
-  struct HTTPHeader *hp = NULL;
-
   assert(http_connection != NULL);
 
   if (http_connection->parser)
