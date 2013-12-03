@@ -9,25 +9,34 @@
 #include "httpconnection.h"
 
 #define RECV_BUFSIZE 80 * 1024
+#define MAX_HEADERS 1024 // FIXME: choose an appropriate size
 
 
-struct HTTPHeader {
-  char *key;
-  char *value;
+struct MemoryRange {
+  size_t offset;
+  size_t length;
+};
 
-  struct HTTPHeader *next;
+struct HeaderMemoryRange {
+  struct MemoryRange key;
+  struct MemoryRange value;
 };
 
 struct HTTPConnection {
   struct TcpConnection *tcp_connection;
+
   http_parser *parser;
   http_parser_settings parser_settings;
+  unsigned current_header;
 
   HTTPConnectionFinishCallback finish_callback;
   void *data;
 
-  char *url;
-  struct HTTPHeader *headers_list;
+  struct MemoryRange url_range;
+  struct HeaderMemoryRange headers_ranges[MAX_HEADERS];
+
+  char *buffer;
+  size_t buffer_length;
 };
 
 static int
@@ -37,13 +46,8 @@ on_url(http_parser *parser, const char *at, size_t length)
 
   http_connection = (struct HTTPConnection *)parser->data;
 
-  if ((http_connection->url = calloc(sizeof(char), length + 1)) == NULL) {
-    perror("calloc");
-    return -1;
-  }
-
-  memcpy(http_connection->url, at, length);
-  http_connection->url[length] = 0;
+  http_connection->url_range.offset = at - http_connection->buffer;
+  http_connection->url_range.length = length;
 
   return 0;
 }
@@ -52,24 +56,11 @@ static int
 on_header_field(http_parser *parser, const char *at, size_t length)
 {
   struct HTTPConnection *http_connection = NULL;
-  struct HTTPHeader *header = NULL;
-
-  if ((header = calloc(sizeof(struct HTTPHeader), 1)) == NULL) {
-    perror("calloc");
-    return -1;
-  }
-
-  if ((header->key = calloc(sizeof(char), length + 1)) == NULL) {
-    perror("calloc");
-    return -1;
-  }
-  memcpy(header->key, at, length);
-  header->key[length] = 0;
 
   http_connection = (struct HTTPConnection *)parser->data;
 
-  header->next = http_connection->headers_list;
-  http_connection->headers_list = header;
+  http_connection->headers_ranges[http_connection->current_header].key.offset = at - http_connection->buffer;
+  http_connection->headers_ranges[http_connection->current_header].key.length = length;
 
   return 0;
 }
@@ -78,17 +69,13 @@ static int
 on_header_value(http_parser *parser, const char *at, size_t length)
 {
   struct HTTPConnection *http_connection = NULL;
-  struct HTTPHeader *header = NULL;
 
   http_connection = (struct HTTPConnection *)parser->data;
-  header = http_connection->headers_list;
 
-  if ((header->value = calloc(sizeof(char), length + 1)) == NULL) {
-    perror("calloc");
-    return -1;
-  }
-  memcpy(header->value, at, length);
-  header->value[length] = 0;
+  http_connection->headers_ranges[http_connection->current_header].value.offset = at - http_connection->buffer;
+  http_connection->headers_ranges[http_connection->current_header].value.length = length;
+
+  http_connection->current_header++;
 
   return 0;
 }
@@ -97,15 +84,30 @@ static int
 on_headers_complete(http_parser *parser)
 {
   struct HTTPConnection *http_connection = NULL;
-  struct HTTPHeader *hp = NULL;
+  char *buf = NULL;
+  int i = 0;
 
   http_connection = (struct HTTPConnection *)parser->data;
 
-  printf("REQUEST: %s\n", http_connection->url);
+  buf = alloca(http_connection->url_range.length + 1);
+  memcpy(buf, &(http_connection->buffer[http_connection->url_range.offset]), http_connection->url_range.length);
+  buf[http_connection->url_range.length] = 0;
+
+  printf("REQUEST: %s\n", buf);
   printf("HEADERS:\n");
 
-  for (hp = http_connection->headers_list; hp != NULL; hp = hp->next) {
-    printf("KEY: %s\tVALUE: %s\n", hp->key, hp->value);
+  while (i < http_connection->current_header) {
+    buf = alloca(http_connection->headers_ranges[i].key.length+1);
+    memcpy(buf, &(http_connection->buffer[http_connection->headers_ranges[i].key.offset]), http_connection->headers_ranges[i].key.length);
+    buf[http_connection->headers_ranges[i].key.length] = 0;
+    printf("KEY: %s\t", buf);
+
+    buf = alloca(http_connection->headers_ranges[i].value.length+1);
+    memcpy(buf, &(http_connection->buffer[http_connection->headers_ranges[i].value.offset]), http_connection->headers_ranges[i].value.length);
+    buf[http_connection->headers_ranges[i].value.length] = 0;
+    printf("VALUE: %s\n", buf);
+
+    i++;
   }
 
   printf("\n\n");
@@ -137,11 +139,24 @@ on_read(struct TcpConnection *tcp_connection, const void *data)
 
   http_connection = (struct HTTPConnection *)data;
 
-  memset(buffer, 0, RECV_BUFSIZE);
+  if ((got = tcp_connection_read_data(tcp_connection, buffer, RECV_BUFSIZE)) < 0) {
+    perror("read");
+    http_connection->finish_callback(http_connection, http_connection->data);
+    return;
+  }
 
-  got = tcp_connection_read_data(tcp_connection, buffer, RECV_BUFSIZE);
+  if ((http_connection->buffer = realloc(http_connection->buffer, http_connection->buffer_length + got)) == NULL) {
+    perror("realloc");
+    http_connection->finish_callback(http_connection, http_connection->data);
+  }
+  memcpy(&(http_connection->buffer[http_connection->buffer_length]), buffer, got);
 
-  parsed = http_parser_execute(http_connection->parser, &(http_connection->parser_settings), buffer, got);
+  parsed = http_parser_execute(http_connection->parser,
+                               &(http_connection->parser_settings),
+                               &(http_connection->buffer[http_connection->buffer_length]),
+                               got);
+
+  http_connection->buffer_length += got;
 
   if (parsed != got)
     http_connection->finish_callback(http_connection, http_connection->data);
@@ -202,18 +217,8 @@ http_connection_destroy(struct HTTPConnection *http_connection)
   if (http_connection->parser)
     free(http_connection->parser);
 
-  if (http_connection->url)
-    free(http_connection->url);
-
-  while (http_connection->headers_list != NULL) {
-    hp = http_connection->headers_list->next;
-
-    free(http_connection->headers_list->key);
-    free(http_connection->headers_list->value);
-    free(http_connection->headers_list);
-
-    http_connection->headers_list = hp;
-  }
+  if (http_connection->buffer)
+    free(http_connection->buffer);
 
   if (http_connection->tcp_connection)
     tcp_connection_destroy(http_connection->tcp_connection);
