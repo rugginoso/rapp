@@ -40,7 +40,8 @@ tcp_connection_destroy(struct TcpConnection *connection)
 {
   assert(connection != NULL);
 
-  tcp_connection_close(connection);
+  if (connection->fd != -1)
+    tcp_connection_close(connection);
   free(connection);
 }
 
@@ -52,6 +53,7 @@ tcp_connection_close(struct TcpConnection *connection)
   if (connection->fd >= 0) {
     event_loop_remove_fd_watch(connection->eloop, connection->fd);
     close(connection->fd);
+    connection->fd = -1;
   }
 }
 
