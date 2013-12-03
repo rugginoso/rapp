@@ -119,6 +119,7 @@ on_message_complete(http_parser *parser)
   struct HTTPConnection *http_connection = NULL;
   http_connection = (struct HTTPConnection *)parser->data;
 
+  tcp_connection_close(http_connection->tcp_connection);
   http_connection->finish_callback(http_connection, http_connection->data);
 
   return 0;
