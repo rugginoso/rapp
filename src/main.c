@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <assert.h>
 
+#include "logger.h"
 #include "eloop.h"
 #include "httpserver.h"
 #include "signalhandler.h"
@@ -22,10 +23,20 @@ on_signal(struct SignalHandler *signal_handler, void *data)
 int
 main(int argc, char *argv[])
 {
+  struct Logger *logger = NULL;
   struct ELoop *eloop = NULL;
   struct HTTPServer *http_server = NULL;
   struct SignalHandler *signal_handler = NULL;
 
+  logger = logger_open_console(LOG_LAST, stderr);
+  if (logger == NULL) {
+    logger_panic("failed to initialize the logger!");
+    exit(1);
+  }
+
+  logger_trace(logger, LOG_INFO, "rapp",
+               "%s", "rapp starting...");
+  
   eloop = event_loop_new();
 
   signal_handler = signal_handler_new(eloop);
@@ -41,6 +52,11 @@ main(int argc, char *argv[])
   http_server_destroy(http_server);
   signal_handler_destroy(signal_handler);
   event_loop_destroy(eloop);
+
+  logger_trace(logger, LOG_INFO, "rapp",
+               "%s", "rapp finished!");
+  
+  logger_close(logger);
 
   return 0;
 }
