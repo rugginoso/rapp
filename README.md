@@ -1,5 +1,5 @@
 
-    
+
          (
      )\ )   (
     (()/(   )\
@@ -9,7 +9,7 @@
     |   /  / _ \ | '_ \) '_ \)
     |_|_\ /_/ \_\| .__/| .__/
                  |_|   |_|
-    
+
 
 Overview
 ========
@@ -19,9 +19,9 @@ features like epoll and signalfd.
 
 Status
 ======
-RApps is still not complete, currently it accepts connections, parses http
-requests (by http_parser https://github.com/joyent/http-parser) and closes
-connection.
+RApp is still not complete, currently it accepts connections, parses http
+requests (using joyent's [http_parser](https://github.com/joyent/http-parser))
+and closes connection.
 
 Architecture
 ============
@@ -50,6 +50,22 @@ strctures.
 
 For now, for every connection the headers are only printed on stdout and the
 connection is closed.
+
+Compile
+=======
+RApp uses [cmake](http://www.cmake.org/). Once you have cloned this repository
+and installed cmake run:
+    $ git submodule init
+    $ git submodule update
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
+
+Then you can start RApp using:
+    $ cd build
+    $ LD_LIBRARY_PATH="../contrib/http-parser/" ./src/rapp
+
 
 License
 =======
