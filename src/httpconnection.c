@@ -59,6 +59,12 @@ on_header_field(http_parser *parser, const char *at, size_t length)
 
   http_connection = (struct HTTPConnection *)parser->data;
 
+  if (http_connection->current_header >= MAX_HEADERS) {
+    tcp_connection_close(http_connection->tcp_connection);
+    http_connection->finish_callback(http_connection, http_connection->data);
+    return -1;
+  }
+
   http_connection->headers_ranges[http_connection->current_header].key.offset = at - http_connection->buffer;
   http_connection->headers_ranges[http_connection->current_header].key.length = length;
 
