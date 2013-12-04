@@ -70,7 +70,7 @@ event_loop_run(struct ELoop *eloop)
 
   eloop->running = 1;
 
-  while(eloop->running && ((nfds = epoll_wait(eloop->epollfd, events, MAX_EVENTS, -1)) > -1)) {
+  while(eloop->running && ((nfds = epoll_wait(eloop->epollfd, events, MAX_EVENTS, 100)) > -1)) {
     for (i = 0; i < nfds; i++) {
       eloop_callback = events[i].data.ptr;
 
