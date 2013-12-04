@@ -1,19 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <assert.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <arpa/inet.h>
+#include <netdb.h>
 
 #include "tcpserver.h"
 #include "tcpconnection.h"
 #include "eloop.h"
 
 #define BACKLOG 1024
+#define PORT_S_LEN strlen("65535") + 1
 
 
 struct TcpServer {
@@ -99,43 +99,51 @@ tcp_server_start_listen(struct TcpServer *server,
                         const char       *host,
                         uint16_t          port)
 {
-  /*
-   * TODO support inet6
-   */
-  struct sockaddr_in addr;
+  struct addrinfo *addrinfos, hints = {0, };
+  char *port_s = NULL;
+  int addrinfo_ret = 0;
   ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
   int on = 1;
 
   assert(server != NULL);
   assert(host != NULL);
 
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(port);
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE;
 
-  if (inet_pton(AF_INET, host, &(addr.sin_addr)) != 1) {
-    perror("inet_pton");
+  port_s = alloca(PORT_S_LEN);
+  snprintf(port_s, PORT_S_LEN, "%d", port);
+
+  if ((addrinfo_ret = getaddrinfo(host, port_s, &hints, &addrinfos)) != 0) {
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(addrinfo_ret));
     return -1;
   }
 
-  if ((server->listen_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+  if ((server->listen_fd = socket(addrinfos->ai_family, addrinfos->ai_socktype, 0)) < 0) {
     perror("socket");
+    freeaddrinfo(addrinfos);
     return -1;
   }
 
   if (setsockopt(server->listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int)) < 0) {
     perror("setsockopt");
+    freeaddrinfo(addrinfos);
     return -1;
   }
 
   if (setsockopt(server->listen_fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(int)) < 0) {
     perror("setsockopt");
+    freeaddrinfo(addrinfos);
     return -1;
   }
 
-  if (bind(server->listen_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0) {
+  if (bind(server->listen_fd, addrinfos->ai_addr, addrinfos->ai_addrlen) < 0) {
     perror("bind");
+    freeaddrinfo(addrinfos);
     return -1;
   }
+  freeaddrinfo(addrinfos);
 
   if (listen(server->listen_fd, BACKLOG) < 0) {
     perror("listen");
