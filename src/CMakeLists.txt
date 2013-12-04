@@ -1,3 +1,7 @@
+
+set(HTTP_PARSER_DIR ${PROJECT_SOURCE_DIR}/contrib/http-parser)
+set(HTTP_PARSER_SOURCES ${HTTP_PARSER_DIR}/http_parser.c)
+
 add_executable(rapp
        		collector.c
 	       	eloop.c
@@ -8,17 +12,9 @@ add_executable(rapp
 		signalhandler.c
 		tcpconnection.c
 		tcpserver.c
-		logger.c)
+		logger.c
+		${HTTP_PARSER_SOURCES})
 
-add_custom_target(
-   http_parser
-   COMMAND make library
-   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/contrib/http-parser"
-)
-
-target_link_libraries(rapp "${PROJECT_SOURCE_DIR}/contrib/http-parser/libhttp_parser.so.2.1")
-include_directories("${PROJECT_SOURCE_DIR}/contrib/http-parser")
-add_dependencies(rapp http_parser)
+include_directories(${HTTP_PARSER_DIR})
 
 install (TARGETS rapp DESTINATION bin)
-install (FILES "${PROJECT_SOURCE_DIR}/contrib/http-parser/libhttp_parser.so.2.1" DESTINATION lib)
