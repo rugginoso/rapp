@@ -1,5 +1,4 @@
 
-
          (
      )\ )   (
     (()/(   )\
@@ -55,17 +54,19 @@ Compile
 =======
 RApp uses [cmake](http://www.cmake.org/). Once you have cloned this repository
 and installed cmake run:
+```bash
     $ git submodule init
     $ git submodule update
     $ mkdir build
     $ cd build
     $ cmake ..
     $ make
-
+```
 Then you can start RApp using:
+```bash
     $ cd build
     $ LD_LIBRARY_PATH="../contrib/http-parser/" ./src/rapp
-
+```
 
 License
 =======
