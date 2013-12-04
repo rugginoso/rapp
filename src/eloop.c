@@ -128,11 +128,6 @@ event_loop_add_fd_watch(struct ELoop         *eloop,
     }
   }
 
-  /*
-   * FIXME: verify it is the desired behaviour
-   */
-  ev.events |= EPOLLET;
-
   if ((eloop_callback = calloc(sizeof(struct ELoopCallback), 1)) == NULL) {
     perror("calloc");
     return -1;
