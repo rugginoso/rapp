@@ -69,7 +69,7 @@ collector_collect(struct Collector *collector)
 
   assert(collector != NULL);
 
-  while(collector->collect_entries_list) {
+  while(collector->collect_entries_list != NULL) {
     next = collector->collect_entries_list->next;
 
     collector->collect_entries_list->free_func(collector->collect_entries_list->data);

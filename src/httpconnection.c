@@ -98,10 +98,10 @@ http_connection_destroy(struct HTTPConnection *http_connection)
 {
   assert(http_connection != NULL);
 
-  if (http_connection->tcp_connection)
+  if (http_connection->tcp_connection != NULL)
     tcp_connection_destroy(http_connection->tcp_connection);
 
-  if (http_connection->request)
+  if (http_connection->request != NULL)
     http_request_destroy(http_connection->request);
 
   free(http_connection);
