@@ -3,6 +3,9 @@
 #include <signal.h>
 #include <assert.h>
 
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "logger.h"
 #include "eloop.h"
 #include "httpserver.h"
@@ -35,7 +38,8 @@ main(int argc, char *argv[])
   }
 
   logger_trace(logger, LOG_INFO, "rapp",
-               "%s", "rapp starting...");
+               "rapp starting... (PID=%li)",
+               getpid());
   
   eloop = event_loop_new();
 
