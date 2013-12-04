@@ -49,6 +49,10 @@ on_read(struct TcpConnection *tcp_connection, const void *data)
     return;
   }
 
+  if (got == 0) {
+    return;
+  }
+
   if (http_request_append_data(http_connection->request, buffer, got) < 0)
     http_connection->finish_callback(http_connection, http_connection->data);
 }
