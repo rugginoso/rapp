@@ -81,7 +81,10 @@ on_incoming_connection(int server_fd, const void *data)
     return -1;
   }
 
-  connection = tcp_connection_with_fd(client_fd, server->eloop);
+  if ((connection = tcp_connection_with_fd(client_fd, server->eloop)) == NULL) {
+    close(client_fd);
+    return -1;
+  }
 
   if (server->accept_callback)
     server->accept_callback(connection, server->data);
