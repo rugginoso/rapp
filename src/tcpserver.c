@@ -13,6 +13,8 @@
 #include "tcpconnection.h"
 #include "eloop.h"
 
+#define BACKLOG 1024
+
 
 struct TcpServer {
   struct ELoop *eloop;
@@ -130,7 +132,7 @@ tcp_server_start_listen(struct TcpServer *server,
     return -1;
   }
 
-  if (listen(server->listen_fd, 10) < 0) {
+  if (listen(server->listen_fd, BACKLOG) < 0) {
     perror("listen");
     return -1;
   }
