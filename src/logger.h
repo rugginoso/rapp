@@ -4,7 +4,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-struct Logger; 
+struct Logger;
 
 typedef enum {
     LOG_CRITICAL = 0, /* this MUST be the first and it is
@@ -14,7 +14,7 @@ typedef enum {
     LOG_INFO,         /* informative messages (for tuning)   */
     LOG_DEBUG,        /* debug messages (for devs)           */
     LOG_MARK,         /* verbatim, don't add anything, ever. */
-    LOG_LAST          /* this MUST be the last -- 
+    LOG_LAST          /* this MUST be the last --
                          and should'nt be used               */
 } LogLevel;
 

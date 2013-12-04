@@ -73,11 +73,11 @@ static int logger_trace_console(void *user_data, LogLevel level,
   tag = (level != LOG_MARK) ?tag :"";
   fmt = (fmt != NULL) ?fmt :"";
   template = logger_template(level);
-    
+
   size = LOG_TEMPLATE_LEN + strlen(tag) + strlen(fmt) + 1;
 
   if (size > sizeof(buf)) {
-    /* 
+    /*
      * we use malloc/fprintf instead of malloc because
      * we want custom error messages
      */
