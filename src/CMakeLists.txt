@@ -1,4 +1,4 @@
-add_executable(rapp collector.c eloop.c httpconnection.c httpserver.c main.c signalhandler.c tcpconnection.c tcpserver.c)
+add_executable(rapp collector.c eloop.c httpconnection.c httprequest.c httpserver.c main.c signalhandler.c tcpconnection.c tcpserver.c)
 
 add_custom_target(
    http_parser
