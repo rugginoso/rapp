@@ -3,17 +3,17 @@ set(HTTP_PARSER_DIR ${PROJECT_SOURCE_DIR}/contrib/http-parser)
 set(HTTP_PARSER_SOURCES ${HTTP_PARSER_DIR}/http_parser.c)
 
 add_executable(rapp
-       		collector.c
-	       	eloop.c
-		httpconnection.c
-		httprequest.c
-		httpserver.c
-		main.c
-		signalhandler.c
-		tcpconnection.c
-		tcpserver.c
-		logger.c
-		${HTTP_PARSER_SOURCES})
+    collector.c
+    eloop.c
+    httpconnection.c
+    httprequest.c
+    httpserver.c
+    main.c
+    signalhandler.c
+    tcpconnection.c
+    tcpserver.c
+    logger.c
+    ${HTTP_PARSER_SOURCES})
 
 include_directories(${HTTP_PARSER_DIR})
 
