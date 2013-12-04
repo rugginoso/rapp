@@ -127,6 +127,11 @@ tcp_server_start_listen(struct TcpServer *server,
     return -1;
   }
 
+  if (setsockopt(server->listen_fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(int)) < 0) {
+    perror("setsockopt");
+    return -1;
+  }
+
   if (bind(server->listen_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0) {
     perror("bind");
     return -1;
