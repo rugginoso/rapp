@@ -27,7 +27,9 @@ on_parse_finish(struct HTTPRequest *request, void *data)
 
   http_connection = (struct HTTPConnection *)data;
 
-  printf("Parsing finished\n");
+  char *response = "HTTP/1.1 200 OK\nContent-Type: text/plain; charset=utf-8\nContent-Length: 12\r\n\r\nHello world!\r\n\r\n";
+
+  tcp_connection_write_data(http_connection->tcp_connection, response, strlen(response));
 
   http_connection->finish_callback(http_connection, http_connection->data);
 }
