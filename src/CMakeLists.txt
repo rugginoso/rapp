@@ -17,6 +17,11 @@ add_executable(rapp
 				logger.c
 				${HTTP_PARSER_SOURCES})
 
+set_target_properties(rapp
+				PROPERTIES COMPILE_FLAGS "-export-dynamic")
+
+target_link_libraries(rapp dl)
+
 include_directories(${HTTP_PARSER_DIR})
 
 install (TARGETS rapp DESTINATION bin)

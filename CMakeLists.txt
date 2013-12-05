@@ -40,3 +40,4 @@ check_c_source_compiles(
 endif (NOT HAVE_SO_REUSEPORT)
 
 add_subdirectory(src)
+add_subdirectory(containers/hello)
