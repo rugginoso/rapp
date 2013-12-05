@@ -119,7 +119,8 @@ container_destroy(struct Container *container)
   assert(container != NULL);
 
   logger_trace(container->logger, LOG_INFO, "loader",
-               "unloading plugin[%s]", container->name);
+               "unloading plugin[%s] id=%p (%p)",
+               container->name, container, container->plugin);
 
   err = container->destroy(container->handle);
   if (!err) {
