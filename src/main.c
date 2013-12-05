@@ -32,7 +32,6 @@ main(int argc, char *argv[])
   struct HTTPServer *http_server = NULL;
   struct SignalHandler *signal_handler = NULL;
   struct Container *container = NULL;
-  struct Container *container2 = NULL;
 
   logger = logger_open_console(LOG_LAST, stderr);
   if (logger == NULL) {
@@ -42,10 +41,6 @@ main(int argc, char *argv[])
 
   container = container_new(logger, argv[1], 0, NULL); // FIXME
   if (!container) {
-    exit(1);
-  }
-  container2 = container_new(logger, argv[1], 0, NULL); // FIXME
-  if (!container2) {
     exit(1);
   }
  
@@ -70,7 +65,6 @@ main(int argc, char *argv[])
   event_loop_destroy(eloop);
 
   container_destroy(container);
-  container_destroy(container2);
 
   logger_trace(logger, LOG_INFO, "rapp",
                "%s", "rapp finished!");

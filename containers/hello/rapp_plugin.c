@@ -5,7 +5,7 @@
 #include <rapp/rapp.h>
 
 
-struct HelloContainer {
+struct RappContainer {
   char *message;
 };
 
@@ -17,15 +17,14 @@ rapp_get_abi_version()
 
 
 int
-rapp_serve(void *handle,
-           struct HTTPRequest *http_request,
+rapp_serve(struct RappContainer      *handle,
+           struct HTTPRequest        *http_request,
            struct HTTPResponseWriter *response_writer)
 {
   int err = -1;
-  struct HelloContainer *hello = handle;
   if (handle) {
     char *content_length = alloca(1024 + 1);
-    size_t len = strlen(hello->message);
+    size_t len = strlen(handle->message);
 
     snprintf(content_length, 1024, "Content-Length: %d\r\n", len);
 
@@ -35,7 +34,7 @@ rapp_serve(void *handle,
 
     http_response_writer_notify_headers_sent(response_writer);
 
-    http_response_writer_write_data(response_writer, hello->message, len);
+    http_response_writer_write_data(response_writer, handle->message, len);
     http_response_writer_notify_body_sent(response_writer);
     err = 0;
   }
@@ -43,15 +42,15 @@ rapp_serve(void *handle,
 }
 
 int
-rapp_destroy(void *handle)
+rapp_destroy(struct RappContainer *handle)
 {
   free(handle);
 }
 
-void *
+struct RappContainer *
 rapp_create(void *cookie, int argc, char **argv, int *err)
 {
-  struct HelloContainer *handle = calloc(1, sizeof(struct HelloContainer));
+  struct RappContainer *handle = calloc(1, sizeof(struct RappContainer));
   if (handle) {
     handle->message = "Hello world!";
     *err = 0;

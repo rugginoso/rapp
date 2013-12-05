@@ -8,14 +8,16 @@
 // Increment this on introdution of ABI incompatibilities.
 #define ABI_VERSION 1
 
+struct RappContainer;
+
 int rapp_get_abi_version(void);
 
 // FIXME until we settle on the configuration handling
-void *rapp_create(void *cookie, int ac, char **av, int *err);
+struct RappContainer *rapp_create(void *cookie, int ac, char **av, int *err);
 
-int rapp_destroy(void *handle);
+int rapp_destroy(struct RappContainer *handle);
 
-int rapp_serve(void *handle,
+int rapp_serve(struct RappContainer *handle,
                struct HTTPRequest *http_request,
                struct HTTPResponseWriter *response_writer);
 

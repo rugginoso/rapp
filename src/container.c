@@ -10,7 +10,7 @@
 
 struct Container {
   void *plugin;
-  void *handle;
+  struct RappContainer *handle;
 
   struct Logger *logger;
   const char *name;
@@ -49,7 +49,7 @@ container_make(void *plugin, struct Logger *logger, const char *name,
   if (plugin_create) {
     container = calloc(1, sizeof(struct Container));
     if (container) {
-      void *handle = plugin_create(container, ac, av, &err);
+      struct RappContainer *handle = plugin_create(container, ac, av, &err);
       if (handle) {
         container->name = strdup(name);
         container->logger = logger;
