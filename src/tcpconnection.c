@@ -3,6 +3,10 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/sendfile.h>
+
 #include "tcpconnection.h"
 #include "eloop.h"
 
@@ -153,3 +157,24 @@ tcp_connection_write_data(struct TcpConnection *connection,
   return write(connection->fd, data, length);
 }
 
+ssize_t
+tcp_connection_sendfile(struct TcpConnection *connection, const char *path)
+{
+  int file_fd = -1;
+  struct stat file_stat = {0,};
+
+  assert(connection != NULL);
+  assert(path != NULL);
+
+  if (lstat(path, &file_stat) < 0) {
+    perror("lstat");
+    return -1;
+  }
+
+  if ((file_fd = open(path, O_RDONLY)) < 0) {
+    perror("open");
+    return -1;
+  }
+
+  return sendfile(connection->fd, file_fd, NULL, file_stat.st_size);
+}
