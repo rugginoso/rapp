@@ -6,6 +6,7 @@ add_executable(rapp
 				collector.c
 				eloop.c
 				httpconnection.c
+				httpresponsewriter.c
 				httprequest.c
 				httpserver.c
 				main.c
