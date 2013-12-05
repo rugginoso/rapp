@@ -3,6 +3,7 @@
 
 #include "rapp_httprequest.h"
 #include "rapp_httpresponse.h"
+#include "rapp_logger.h"
 
 // Increment this on introdution of ABI incompatibilities.
 #define ABI_VERSION 1
@@ -10,7 +11,7 @@
 int rapp_get_abi_version(void);
 
 // FIXME until we settle on the configuration handling
-void *rapp_create(int ac, char **av, int *err);
+void *rapp_create(void *cookie, int ac, char **av, int *err);
 
 int rapp_destroy(void *handle);
 
