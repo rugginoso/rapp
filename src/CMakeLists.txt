@@ -23,5 +23,6 @@ set_target_properties(rapp
 target_link_libraries(rapp dl)
 
 include_directories(${HTTP_PARSER_DIR})
+include_directories(${PROJECT_SOURCE_DIR})
 
 install (TARGETS rapp DESTINATION bin)

@@ -10,6 +10,7 @@
 #include "eloop.h"
 #include "httpserver.h"
 #include "signalhandler.h"
+#include "container.h"
 
 static void
 on_signal(struct SignalHandler *signal_handler, void *data)
@@ -30,6 +31,7 @@ main(int argc, char *argv[])
   struct ELoop *eloop = NULL;
   struct HTTPServer *http_server = NULL;
   struct SignalHandler *signal_handler = NULL;
+  struct Container *container;
 
   logger = logger_open_console(LOG_LAST, stderr);
   if (logger == NULL) {
@@ -37,10 +39,15 @@ main(int argc, char *argv[])
     exit(1);
   }
 
+  container = container_new(logger, argv[1], 0, NULL); // FIXME
+  if (!container) {
+    exit(1);
+  }
+ 
   logger_trace(logger, LOG_INFO, "rapp",
                "rapp starting... (PID=%li)",
                getpid());
-  
+
   eloop = event_loop_new();
 
   signal_handler = signal_handler_new(eloop);
@@ -56,6 +63,8 @@ main(int argc, char *argv[])
   http_server_destroy(http_server);
   signal_handler_destroy(signal_handler);
   event_loop_destroy(eloop);
+
+  container_destroy(container);
 
   logger_trace(logger, LOG_INFO, "rapp",
                "%s", "rapp finished!");
