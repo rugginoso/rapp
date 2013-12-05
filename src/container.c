@@ -59,7 +59,8 @@ container_make(void *plugin, struct Logger *logger, const char *name,
         container->destroy = dlsym(plugin, "rapp_destroy");
 
         logger_trace(logger, LOG_INFO, "loader",
-                    "loaded plugin[%s]", container->name);
+                    "loaded plugin[%s] id=%p (%p)",
+                    container->name, container, container->plugin);
       }
     } else {
       logger_trace(logger, LOG_ERROR, "loader",

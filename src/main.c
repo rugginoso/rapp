@@ -31,7 +31,7 @@ main(int argc, char *argv[])
   struct ELoop *eloop = NULL;
   struct HTTPServer *http_server = NULL;
   struct SignalHandler *signal_handler = NULL;
-  struct Container *container;
+  struct Container *container = NULL;
 
   logger = logger_open_console(LOG_LAST, stderr);
   if (logger == NULL) {
