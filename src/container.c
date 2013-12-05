@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <inttypes.h>
 #include <dlfcn.h>
 
 #include "container.h"
@@ -19,26 +20,37 @@ struct Container {
   int (*destroy)(void *);
 };
 
-static int is_ABI_compatible(int core_abi, int plugin_abi)
+static int
+is_ABI_compatible(int core_abi, int plugin_abi)
 {
   return core_abi == plugin_abi;
 }
 
-static struct Container *container_make(void *plugin, 
-                                        struct Logger *logger,
-                                        const char *name,
-                                        int ac,
-                                        char **av)
+struct Logger *
+logger_get(void *cookie)
+{
+  struct Logger *logger = NULL;
+  if (cookie) {
+    struct Container *container = cookie;
+    logger = container->logger;
+  }
+  return logger;
+}
+
+
+static struct Container *
+container_make(void *plugin, struct Logger *logger, const char *name,
+               int ac, char **av)
 {
   int err = 0;
   struct Container *container = NULL;
-  void *(*plugin_create)(int ac, char **av, int *err);
+  void *(*plugin_create)(void *cookie, int ac, char **av, int *err);
   plugin_create = dlsym(plugin, "rapp_create");
   if (plugin_create) {
-    void *handle = plugin_create(ac, av, &err);
-    if (handle) {
-      container = calloc(1, sizeof(struct Container));
-      if (container) {
+    container = calloc(1, sizeof(struct Container));
+    if (container) {
+      void *handle = plugin_create(container, ac, av, &err);
+      if (handle) {
         container->name = strdup(name);
         container->logger = logger;
         container->plugin = plugin;
@@ -62,10 +74,8 @@ static struct Container *container_make(void *plugin,
   return container;
 }
 
-struct Container *container_new(struct Logger *logger,
-                                const char *name,
-                                int ac,
-                                char **av)
+struct Container *
+container_new(struct Logger *logger, const char *name, int ac, char **av)
 {
   struct Container *container = NULL;
   void *plugin = NULL;
@@ -100,7 +110,8 @@ struct Container *container_new(struct Logger *logger,
   return container;
 }
 
-void container_destroy(struct Container *container)
+void
+container_destroy(struct Container *container)
 {
   int err = 0;
 
