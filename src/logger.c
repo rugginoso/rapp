@@ -58,7 +58,7 @@ static const char *logger_template(LogLevel level)
 }
 
 static int logger_trace_console(void *user_data, LogLevel level,
-                             const char *tag, const char *fmt, va_list ap)
+                                const char *tag, const char *fmt, va_list ap)
 {
   int ret = 0;
   int is_dynbuf = 0;
