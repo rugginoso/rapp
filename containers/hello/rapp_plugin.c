@@ -23,14 +23,11 @@ rapp_serve(struct RappContainer      *handle,
 {
   int err = -1;
   if (handle) {
-    char *content_length = alloca(1024 + 1);
     size_t len = strlen(handle->message);
 
-    snprintf(content_length, 1024, "Content-Length: %d\r\n", len);
-
-    http_response_writer_write_data(response_writer, "HTTP/1.1 200 OK\r\n", 17);
-    http_response_writer_write_data(response_writer, "Content-Type: text/plain; charset=utf-8\r\n", 41);
-    http_response_writer_write_data(response_writer, content_length, strlen(content_length));
+    http_response_writer_begin(response_writer, "HTTP/1.1 200 OK" HTTP_EOL);
+    http_response_writer_printf(response_writer, "Content-Type: text/plain; charset=utf-8" HTTP_EOL);
+    http_response_writer_printf(response_writer, "Content-Length: %d" HTTP_EOL, len);
 
     http_response_writer_notify_headers_sent(response_writer);
 
