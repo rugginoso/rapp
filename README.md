@@ -65,7 +65,7 @@ and installed cmake run:
 Then you can start RApp using:
 ```bash
     $ cd build
-    $ LD_LIBRARY_PATH="../contrib/http-parser/" ./src/rapp
+    $ ./src/rapp
 ```
 
 License
