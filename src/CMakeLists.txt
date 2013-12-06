@@ -24,5 +24,6 @@ target_link_libraries(rapp dl)
 
 include_directories(${HTTP_PARSER_DIR})
 include_directories(${PROJECT_SOURCE_DIR})
+target_link_libraries(rapp ${LIBYAML_LIBRARIES})
 
 install (TARGETS rapp DESTINATION bin)

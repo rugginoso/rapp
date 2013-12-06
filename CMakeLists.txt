@@ -2,6 +2,7 @@ project(rapp)
 cmake_minimum_required(VERSION 2.8)
 list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
 include(CheckFunctionExists)
 include (CheckCSourceCompiles)
 
@@ -46,5 +47,8 @@ find_package(LIBYAML)
 #endif (NOT LIBYAML_FOUND)
 
 add_subdirectory(containers/hello)
+find_package(LibYAML REQUIRED)
+include_directories(${LIBYAML_INCLUDE_DIR})
+
 add_subdirectory(src)
 add_subdirectory(tests)
