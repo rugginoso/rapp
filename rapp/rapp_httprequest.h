@@ -22,4 +22,6 @@ void http_request_get_url_range(struct HTTPRequest *request, struct MemoryRange 
 int http_request_get_header_value_range(struct HTTPRequest *request, const char *header_name, struct MemoryRange *range);
 void http_request_get_headers_ranges(struct HTTPRequest *request, struct HeaderMemoryRange **ranges, unsigned *n_ranges);
 
+void http_request_get_body_range(struct HTTPRequest *request, struct MemoryRange *range);
+
 #endif /* RAPP_HTTPREQUEST_H */

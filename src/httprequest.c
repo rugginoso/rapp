@@ -15,6 +15,7 @@ struct HTTPRequest {
 
   struct MemoryRange url_range;
   struct HeaderMemoryRange headers_ranges[HTTP_REQUEST_MAX_HEADERS];
+  struct MemoryRange body_range;
 
   char *buffer;
   size_t buffer_length;
@@ -68,6 +69,19 @@ on_header_value(http_parser *parser, const char *at, size_t length)
 }
 
 static int
+on_body(http_parser *parser, const char *at, size_t length)
+{
+  struct HTTPRequest *request = NULL;
+
+  request = (struct HTTPRequest *)parser->data;
+
+  request->body_range.offset = at - request->buffer;
+  request->body_range.length = length;
+
+  return 0;
+}
+
+static int
 on_message_complete(http_parser *parser)
 {
   struct HTTPRequest *request = NULL;
@@ -95,6 +109,7 @@ http_request_new(void)
   request->parser_settings.on_url = on_url;
   request->parser_settings.on_header_field = on_header_field;
   request->parser_settings.on_header_value = on_header_value;
+  request->parser_settings.on_body = on_body;
   request->parser_settings.on_message_complete = on_message_complete;
 
   return request;
@@ -211,4 +226,14 @@ http_request_get_headers_ranges(struct HTTPRequest *request,
 
   *ranges = request->headers_ranges;
   *n_ranges = request->current_header;
+}
+
+void
+http_request_get_body_range(struct HTTPRequest *request,
+                            struct MemoryRange *range)
+{
+  assert(request != NULL);
+  assert(range != NULL);
+
+  *range = request->body_range;
 }
