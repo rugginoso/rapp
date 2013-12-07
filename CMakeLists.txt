@@ -45,6 +45,6 @@ find_package(LIBYAML)
 #  message(FATAL_ERROR "please install libyaml from your package manager or from http://pyyaml.org")
 #endif (NOT LIBYAML_FOUND)
 
-add_subdirectory(src)
 add_subdirectory(containers/hello)
+add_subdirectory(src)
 add_subdirectory(tests)
