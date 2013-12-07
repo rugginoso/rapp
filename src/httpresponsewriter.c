@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <assert.h>
 
 #include "tcpconnection.h"
@@ -77,3 +78,28 @@ http_response_writer_sendfile(struct HTTPResponseWriter *response_writer,
 
   return tcp_connection_sendfile(response_writer->tcp_connection, path);
 }
+
+// FIXME arbitrary
+#define BUFFER_SIZE 1024
+
+ssize_t
+http_response_writer_printf(struct HTTPResponseWriter *response_writer, const char *fmt, ...)
+{
+  ssize_t ret = 0;
+  char buffer[BUFFER_SIZE];
+
+  assert(response_writer != NULL);
+  assert(fmt != NULL);
+
+  va_list args;
+
+  va_start(args, fmt);
+  ret = vsnprintf(buffer, sizeof(buffer), fmt, args);
+  va_end(args);
+
+  if (ret > 0) {
+    ret = http_response_writer_write_data(response_writer, buffer, ret);
+  }
+  return ret;
+}
+

@@ -4,6 +4,7 @@ set(HTTP_PARSER_SOURCES ${HTTP_PARSER_DIR}/http_parser.c)
 
 add_executable(rapp
 				collector.c
+				container.c
 				eloop.c
 				httpconnection.c
 				httpresponsewriter.c
@@ -16,6 +17,12 @@ add_executable(rapp
 				logger.c
 				${HTTP_PARSER_SOURCES})
 
+set_target_properties(rapp
+				PROPERTIES COMPILE_FLAGS "-export-dynamic")
+
+target_link_libraries(rapp dl)
+
 include_directories(${HTTP_PARSER_DIR})
+include_directories(${PROJECT_SOURCE_DIR})
 
 install (TARGETS rapp DESTINATION bin)
