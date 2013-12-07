@@ -30,23 +30,26 @@ struct Logger *
 logger_get(void *cookie)
 {
   struct Logger *logger = NULL;
-  if (cookie) {
-    struct Container *container = cookie;
-    logger = container->logger;
-  }
-  return logger;
+
+  assert(cookie);
+
+  return ((struct Container *)cookie)->logger;
 }
 
 
+typedef void *(*PluginCreateFunc)(void * cookie, int ac, char **av, int *err);
+
 static struct Container *
-container_make(void *plugin, struct Logger *logger, const char *name,
-               int ac, char **av)
+container_make(void          *plugin,
+               struct Logger *logger,
+               const char    *name,
+               int            ac,
+               char         **av)
 {
-  int err = 0;
   struct Container *container = NULL;
-  void *(*plugin_create)(void *cookie, int ac, char **av, int *err);
-  plugin_create = dlsym(plugin, "rapp_create");
+  PluginCreateFunc plugin_create = dlsym(plugin, "rapp_create");
   if (plugin_create) {
+    int err = 0;
     container = calloc(1, sizeof(struct Container));
     if (container) {
       struct RappContainer *handle = plugin_create(container, ac, av, &err);
@@ -58,22 +61,19 @@ container_make(void *plugin, struct Logger *logger, const char *name,
         container->serve = dlsym(plugin, "rapp_serve");
         container->destroy = dlsym(plugin, "rapp_destroy");
 
-        logger_trace(logger, LOG_INFO, "loader",
-                    "loaded plugin[%s] id=%p (%p)",
-                    container->name, container, container->plugin);
+        logger_trace(logger, LOG_INFO, "loader", "loaded plugin[%s] id=%p (%p)", container->name, container, container->plugin);
       }
     } else {
-      logger_trace(logger, LOG_ERROR, "loader",
-                   "plugin[%s] creation failed error=%i",
-                   name, err);
+      logger_trace(logger, LOG_ERROR, "loader", "plugin[%s] creation failed error=%i", name, err);
     }
   } else {
-    logger_trace(logger, LOG_ERROR, "loader",
-                 "missing symbol in plugin[%s]: %s",
-                 name, dlerror());
+    logger_trace(logger, LOG_ERROR, "loader", "missing symbol in plugin[%s]: %s", name, dlerror());
   }
   return container;
 }
+
+
+typedef int (*PluginGetAbiVersionFunc)(void);
 
 struct Container *
 container_new(struct Logger *logger, const char *name, int ac, char **av)
@@ -86,27 +86,21 @@ container_new(struct Logger *logger, const char *name, int ac, char **av)
 
   plugin = dlopen(name, RTLD_NOW);
   if (plugin) {
-    int (*plugin_get_abi_version)(void) = NULL;
-    plugin_get_abi_version = dlsym(plugin, "rapp_get_abi_version");
+    PluginGetAbiVersionFunc plugin_get_abi_version = dlsym(plugin, "rapp_get_abi_version");
     if (plugin_get_abi_version) {
       int plugin_abi = plugin_get_abi_version();
       if (is_ABI_compatible(ABI_VERSION, plugin_abi)) {
         container = container_make(plugin, logger, name, ac, av);
       } else {
-        logger_trace(logger, LOG_ERROR, "loader", 
-                    "ABI mismatch: core=%i plugin[%s]=%i",
-                    ABI_VERSION, name, plugin_abi);
+        logger_trace(logger, LOG_ERROR, "loader", "ABI mismatch: core=%i plugin[%s]=%i", ABI_VERSION, name, plugin_abi);
         dlclose(plugin);
       }
     } else {
-      logger_trace(logger, LOG_ERROR, "loader",
-                   "missing symbol in plugin[%s]: %s",
-                   name, dlerror());
+      logger_trace(logger, LOG_ERROR, "loader", "missing symbol in plugin[%s]: %s", name, dlerror());
       dlclose(plugin);
     }
   } else {
-    logger_trace(logger, LOG_ERROR, "loader",
-                 "%s", dlerror());
+    logger_trace(logger, LOG_ERROR, "loader", "%s", dlerror());
   }
   return container;
 }
@@ -118,16 +112,13 @@ container_destroy(struct Container *container)
 
   assert(container != NULL);
 
-  logger_trace(container->logger, LOG_INFO, "loader",
-               "unloading plugin[%s] id=%p (%p)",
-               container->name, container, container->plugin);
+  logger_trace(container->logger, LOG_INFO, "loader", "unloading plugin[%s] id=%p (%p)", container->name, container, container->plugin);
 
   err = container->destroy(container->handle);
   if (!err) {
       dlclose(container->plugin);
 
-      logger_trace(container->logger, LOG_INFO, "loader",
-                   "unloaded plugin[%s]", container->name);
+      logger_trace(container->logger, LOG_INFO, "loader", "unloaded plugin[%s]", container->name);
       free(container);  // caveat emptor!
   }
 }
