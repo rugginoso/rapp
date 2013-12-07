@@ -16,11 +16,13 @@ RApp is an application container, written in C.
 It is focused on performances, targets GNU/Linux only and uses most of its own
 features like epoll and signalfd.
 
+
 Status
 ======
 RApp is still not complete, currently it accepts connections, parses http
 requests (using joyent's [http_parser](https://github.com/joyent/http-parser))
 and closes connection.
+
 
 Architecture
 ============
@@ -49,6 +51,16 @@ strctures.
 
 For now, for every connection the headers are only printed on stdout and the
 connection is closed.
+
+
+Dependencies
+============
+RApp requires a modern (>= 2013, kernel >= 3.8) Linux system to build and run.
+RApp depends on an handful of external packages:
+
+* [libYAML](http://pyyaml.org/wiki/LibYAML) to handle the configuration.
+* [check](http://check.sf.net) for the testsuite.
+
 
 Compile
 =======
