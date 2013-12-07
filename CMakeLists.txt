@@ -47,3 +47,4 @@ find_package(LIBYAML)
 
 add_subdirectory(src)
 add_subdirectory(containers/hello)
+add_subdirectory(tests)
