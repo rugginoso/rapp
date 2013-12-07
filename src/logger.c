@@ -15,7 +15,7 @@ struct Logger {
 
   LogLevel max_level;
 
-  LogHandlerFunc trace;
+  LogHandlerCallback trace;
   int (*close)(struct Logger *logger);
   int (*flush)(struct Logger *logger);
 };
@@ -130,7 +130,7 @@ static int logger_flush_file(struct Logger *logger)
   return err;
 }
 
-static int logger_close_file(struct Logger *logger)
+static int logger_destroy_file(struct Logger *logger)
 {
   /* the file ownership isn't yours, so we just
      want to make sure we delivered everything
@@ -145,7 +145,7 @@ static int logger_trace_null(void *user_data, LogLevel level,
   return 0;
 }
 
-static int logger_close_null(struct Logger *logger)
+static int logger_destroy_null(struct Logger *logger)
 {
   return 0;
 }
@@ -163,7 +163,7 @@ struct Logger *logger_open_null()
     logger->priv = NULL;
     logger->max_level = -1;
     logger->trace = logger_trace_null;
-    logger->close = logger_close_null;
+    logger->close = logger_destroy_null;
     logger->flush = logger_flush_null;
   }
   return logger;
@@ -181,7 +181,7 @@ struct Logger *logger_open_file(LogLevel max_level, FILE *sink)
     logger->priv = sink;
     logger->max_level = lev;
     logger->trace = logger_trace_file;
-    logger->close = logger_close_file;
+    logger->close = logger_destroy_file;
     logger->close = logger_flush_file;
   }
   return logger;
@@ -198,14 +198,14 @@ struct Logger *logger_open_console(LogLevel max_level, FILE *sink)
     logger->priv = con;
     logger->max_level = lev;
     logger->trace = logger_trace_console;
-    logger->close = logger_close_null;
+    logger->close = logger_destroy_null;
     logger->close = logger_flush_file;
   }
   return logger;
 }
 
 struct Logger *logger_open_custom(LogLevel max_level,
-                                  LogHandlerFunc logger_handler,
+                                  LogHandlerCallback logger_handler,
                                   void *user_data)
 {
   LogLevel lev = CLAMP(max_level, LOG_ERROR, LOG_MARK); /* TODO */
@@ -215,7 +215,7 @@ struct Logger *logger_open_custom(LogLevel max_level,
     logger->priv = user_data;
     logger->max_level = lev;
     logger->trace = logger_handler;
-    logger->close = logger_close_null;
+    logger->close = logger_destroy_null;
     logger->close = logger_flush_null;
   }
   return logger;
@@ -261,7 +261,7 @@ int logger_flush(struct Logger *logger)
   return logger->flush(logger);
 }
 
-int logger_close(struct Logger *logger)
+int logger_destroy(struct Logger *logger)
 {
   int err = -1;
   if (logger) {

@@ -69,7 +69,7 @@ main(int argc, char *argv[])
   logger_trace(logger, LOG_INFO, "rapp",
                "%s", "rapp finished!");
   
-  logger_close(logger);
+  logger_destroy(logger);
 
   return 0;
 }
