@@ -24,5 +24,11 @@ if(ENABLE_TESTS)
 
     add_executable(check_stub check_stub.c)
     add_test(test_stub ${EXECUTABLE_OUTPUT_PATH}/check_stub)
+
+    # collector
+    add_executable(check_collector check_collector.c ${rapp_SOURCE_DIR}/src/collector.c)
+    target_link_libraries(check_collector ${LIBCHECK_LIBRARY})
+    add_test(test_collector ${EXECUTABLE_OUTPUT_PATH}/check_collector)
+
 endif(ENABLE_TESTS)
 
