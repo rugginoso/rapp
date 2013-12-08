@@ -187,8 +187,8 @@ void
 http_request_get_url_range(struct HTTPRequest *request,
                            struct MemoryRange *range)
 {
-  assert(request != 0);
-  assert(range != 0);
+  assert(request != NULL);
+  assert(range != NULL);
 
   *range = request->url_range;
 }
