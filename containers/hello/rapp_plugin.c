@@ -25,7 +25,7 @@ rapp_serve(struct RappContainer      *handle,
   if (handle) {
     size_t len = strlen(handle->message);
 
-    http_response_writer_begin(response_writer, "HTTP/1.1 200 OK" HTTP_EOL);
+    http_response_writer_printf(response_writer, "HTTP/1.1 200 OK" HTTP_EOL);
     http_response_writer_printf(response_writer, "Content-Type: text/plain; charset=utf-8" HTTP_EOL);
     http_response_writer_printf(response_writer, "Content-Length: %d" HTTP_EOL, len);
 
