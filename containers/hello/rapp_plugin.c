@@ -42,6 +42,8 @@ int
 rapp_destroy(struct RappContainer *handle)
 {
   free(handle);
+
+  return 0;
 }
 
 struct RappContainer *
