@@ -13,7 +13,7 @@ struct Container {
   struct RappContainer *handle;
 
   struct Logger *logger;
-  const char *name;
+  char *name;
 
   int (*serve)(void *, struct HTTPRequest *, struct HTTPResponseWriter *);
 
@@ -119,6 +119,7 @@ container_destroy(struct Container *container)
       dlclose(container->plugin);
 
       logger_trace(container->logger, LOG_INFO, "loader", "unloaded plugin[%s]", container->name);
+      free(container->name);
       free(container);  // caveat emptor!
   }
 }
