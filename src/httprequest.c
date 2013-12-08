@@ -175,6 +175,14 @@ http_request_get_buffer(struct HTTPRequest *request)
   return request->buffer;
 }
 
+enum http_method
+http_request_get_method(struct HTTPRequest *request)
+{
+  assert(request != NULL);
+
+  return request->parser.method;
+}
+
 void
 http_request_get_url_range(struct HTTPRequest *request,
                            struct MemoryRange *range)

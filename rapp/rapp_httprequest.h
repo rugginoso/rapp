@@ -17,6 +17,8 @@ struct HTTPRequest;
 
 const char *http_request_get_buffer(struct HTTPRequest *request);
 
+enum http_method http_request_get_method(struct HTTPRequest *request);
+
 void http_request_get_url_range(struct HTTPRequest *request, struct MemoryRange *range);
 
 int http_request_get_header_value_range(struct HTTPRequest *request, const char *header_name, struct MemoryRange *range);
