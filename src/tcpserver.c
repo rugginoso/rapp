@@ -13,7 +13,8 @@
 #include "eloop.h"
 
 #define BACKLOG 1024
-#define PORT_S_LEN strlen("65535") + 1
+#define STRLEN(s) (sizeof(s)/sizeof(s[0]))
+#define PORT_S_LEN STRLEN("65535")
 
 
 struct TcpServer {
