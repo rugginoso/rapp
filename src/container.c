@@ -146,7 +146,7 @@ container_destroy(struct Container *container)
 
   logger_trace(container->logger, LOG_INFO, "loader", "unloading plugin[%s] id=%p (%p)", container->name, container, container->plugin);
 
-  if (container->destroy(container->handle) != 0) {
+  if (container->destroy(container->handle) == 0) {
       dlclose(container->plugin);
 
       logger_trace(container->logger, LOG_INFO, "loader", "unloaded plugin[%s]", container->name);
