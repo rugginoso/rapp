@@ -7,19 +7,25 @@
 
 #include <eloop.h>
 
+#define FIFO_NAME "check_eloop.fifo"
+#define STRLEN(s) (sizeof(s)/sizeof(s[0]))
+
 static const char *message = "hello world";
+
+struct ELoop *eloop = NULL;
+int watched_fd = -1;
+ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
+char buf[STRLEN(message)];
 
 static int
 read_func(int         fd,
           const void *data)
 {
   struct ELoop *eloop = (struct ELoop *)data;
-  char buf[strlen(message) + 1];
+
+  ck_assert_int_eq(fd, watched_fd);
 
   read(fd, buf, strlen(message));
-  buf[strlen(message)] = 0;
-
-  ck_assert_str_eq(buf, message);
 
   event_loop_stop(eloop);
 
@@ -32,6 +38,8 @@ write_func(int         fd,
 {
   struct ELoop *eloop = (struct ELoop *)data;
 
+  ck_assert_int_eq(fd, watched_fd);
+
   write(fd, message, strlen(message) + 1);
 
   event_loop_stop(eloop);
@@ -39,55 +47,52 @@ write_func(int         fd,
   return 0;
 }
 
+void
+setup(void)
+{
+  eloop = event_loop_new();
+
+  mkfifo(FIFO_NAME, 0600);
+  watched_fd = open("check_eloop.fifo", O_RDWR);
+
+  memset(callbacks, 0, sizeof(ELoopWatchFdCallback) * ELOOP_CALLBACK_MAX);
+  memset(buf, 0, strlen(message) + 1);
+}
+
+void teardown(void)
+{
+  close(watched_fd);
+  unlink(FIFO_NAME);
+  event_loop_destroy(eloop);
+}
 
 START_TEST(test_eloop_calls_read_func_on_pending_data)
 {
-  struct ELoop *eloop = event_loop_new();
-  mkfifo("check_eloop.fifo", 0600);
-  int fd = open("check_eloop.fifo", O_RDWR);
-
-  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
   callbacks[ELOOP_CALLBACK_READ] = read_func;
-  callbacks[ELOOP_CALLBACK_WRITE] = NULL;
-  callbacks[ELOOP_CALLBACK_CLOSE] = NULL;
 
-  event_loop_add_fd_watch(eloop, fd, callbacks, eloop);
+  event_loop_add_fd_watch(eloop, watched_fd, callbacks, eloop);
 
-  write(fd, message, strlen(message));
+  write(watched_fd, message, strlen(message));
 
   event_loop_run(eloop);
 
-  close(fd);
-  unlink("check_eloop.fifo");
-  event_loop_destroy(eloop);
+  ck_assert_str_eq(buf, message);
 }
 END_TEST
 
 
 START_TEST(test_eloop_calls_write_func_when_fd_becomes_writable)
 {
-  struct ELoop *eloop = event_loop_new();
-  mkfifo("check_eloop.fifo", 0600);
-  int fd = open("check_eloop.fifo", O_RDWR);
-  char buf[strlen(message) + 1];
-
-  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
-  callbacks[ELOOP_CALLBACK_READ] = NULL;
   callbacks[ELOOP_CALLBACK_WRITE] = write_func;
-  callbacks[ELOOP_CALLBACK_CLOSE] = NULL;
 
-  event_loop_add_fd_watch(eloop, fd, callbacks, eloop);
+  event_loop_add_fd_watch(eloop, watched_fd, callbacks, eloop);
 
   event_loop_run(eloop);
 
-  read(fd, buf, strlen(message));
+  read(watched_fd, buf, strlen(message));
   buf[strlen(message)] = 0;
 
   ck_assert_str_eq(buf, message);
-
-  close(fd);
-  unlink("check_eloop.fifo");
-  event_loop_destroy(eloop);
 }
 END_TEST
 
@@ -98,6 +103,7 @@ eloop_suite(void)
   Suite *s = suite_create("rapp.core.eloop");
   TCase *tc = tcase_create("rapp.core.eloop");
 
+  tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_eloop_calls_read_func_on_pending_data);
   tcase_add_test(tc, test_eloop_calls_write_func_when_fd_becomes_writable);
   suite_add_tcase(s, tc);
