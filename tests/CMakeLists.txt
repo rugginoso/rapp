@@ -14,7 +14,7 @@ if(ENABLE_TESTS)
     include_directories(${rapp_SOURCE_DIR})
     include_directories(${rapp_SOURCE_DIR}/src)
     # for the custom headers - if any
-    include_directories(${rapp_BINARY_DIR}/tests)
+    include_directories(${rapp_SOURCE_DIR}/tests)
 
     if(CMAKE_COMPILER_IS_GNUCC)
         message(STATUS "Enabling the code coverage support")
