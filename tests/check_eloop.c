@@ -66,7 +66,7 @@ void teardown(void)
   event_loop_destroy(eloop);
 }
 
-START_TEST(test_eloop_calls_read_func_on_pending_data)
+START_TEST(test_eloop_calls_read_func_when_fd_has_pending_data)
 {
   callbacks[ELOOP_CALLBACK_READ] = read_func;
 
@@ -104,7 +104,7 @@ eloop_suite(void)
   TCase *tc = tcase_create("rapp.core.eloop");
 
   tcase_add_checked_fixture (tc, setup, teardown);
-  tcase_add_test(tc, test_eloop_calls_read_func_on_pending_data);
+  tcase_add_test(tc, test_eloop_calls_read_func_when_fd_has_pending_data);
   tcase_add_test(tc, test_eloop_calls_write_func_when_fd_becomes_writable);
   suite_add_tcase(s, tc);
 
