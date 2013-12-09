@@ -5,6 +5,7 @@ set(HTTP_PARSER_SOURCES ${HTTP_PARSER_DIR}/http_parser.c)
 add_executable(rapp
 				collector.c
 				container.c
+                config.c
 				eloop.c
 				httpconnection.c
 				httpresponsewriter.c
