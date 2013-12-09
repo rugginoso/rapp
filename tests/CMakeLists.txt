@@ -30,5 +30,10 @@ if(ENABLE_TESTS)
     target_link_libraries(check_collector ${LIBCHECK_LIBRARY})
     add_test(test_collector ${EXECUTABLE_OUTPUT_PATH}/check_collector)
 
+    # event loop
+    add_executable(check_eloop check_eloop.c ${rapp_SOURCE_DIR}/src/eloop.c ${rapp_SOURCE_DIR}/src/collector.c)
+    target_link_libraries(check_eloop ${LIBCHECK_LIBRARY})
+    add_test(test_eloop ${EXECUTABLE_OUTPUT_PATH}/check_eloop)
+
 endif(ENABLE_TESTS)
 
