@@ -40,5 +40,10 @@ if(ENABLE_TESTS)
     target_link_libraries(check_signalhandler ${LIBCHECK_LIBRARY})
     add_test(test_signalhandler ${EXECUTABLE_OUTPUT_PATH}/check_signalhandler)
 
+    # tcp server
+    add_executable(check_tcpserver check_tcpserver.c ${rapp_SOURCE_DIR}/src/tcpserver.c ${rapp_SOURCE_DIR}/src/tcpconnection.c ${rapp_SOURCE_DIR}/src/eloop.c ${rapp_SOURCE_DIR}/src/collector.c)
+    target_link_libraries(check_tcpserver ${LIBCHECK_LIBRARY})
+    add_test(test_tcpserver ${EXECUTABLE_OUTPUT_PATH}/check_tcpserver)
+
 endif(ENABLE_TESTS)
 
