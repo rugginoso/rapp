@@ -55,6 +55,7 @@ if(ENABLE_TESTS)
     # tcp server
     add_executable(check_tcpserver
         check_tcpserver.c
+        ${rapp_SOURCE_DIR}/tests/test_tcp_client.c
         ${rapp_SOURCE_DIR}/src/tcpserver.c
         ${rapp_SOURCE_DIR}/src/tcpconnection.c
         ${rapp_SOURCE_DIR}/src/eloop.c
