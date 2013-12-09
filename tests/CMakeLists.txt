@@ -26,22 +26,40 @@ if(ENABLE_TESTS)
     add_test(test_stub ${EXECUTABLE_OUTPUT_PATH}/check_stub)
 
     # collector
-    add_executable(check_collector check_collector.c ${rapp_SOURCE_DIR}/src/collector.c)
+    add_executable(check_collector
+        check_collector.c
+        ${rapp_SOURCE_DIR}/src/collector.c
+    )
     target_link_libraries(check_collector ${LIBCHECK_LIBRARY})
     add_test(test_collector ${EXECUTABLE_OUTPUT_PATH}/check_collector)
 
     # event loop
-    add_executable(check_eloop check_eloop.c ${rapp_SOURCE_DIR}/src/eloop.c ${rapp_SOURCE_DIR}/src/collector.c)
+    add_executable(check_eloop
+        check_eloop.c
+        ${rapp_SOURCE_DIR}/src/eloop.c
+        ${rapp_SOURCE_DIR}/src/collector.c
+    )
     target_link_libraries(check_eloop ${LIBCHECK_LIBRARY})
     add_test(test_eloop ${EXECUTABLE_OUTPUT_PATH}/check_eloop)
 
     # signal handler
-    add_executable(check_signalhandler check_signalhandler.c ${rapp_SOURCE_DIR}/src/signalhandler.c ${rapp_SOURCE_DIR}/src/eloop.c ${rapp_SOURCE_DIR}/src/collector.c)
+    add_executable(check_signalhandler
+        check_signalhandler.c
+        ${rapp_SOURCE_DIR}/src/signalhandler.c
+        ${rapp_SOURCE_DIR}/src/eloop.c
+        ${rapp_SOURCE_DIR}/src/collector.c
+    )
     target_link_libraries(check_signalhandler ${LIBCHECK_LIBRARY})
     add_test(test_signalhandler ${EXECUTABLE_OUTPUT_PATH}/check_signalhandler)
 
     # tcp server
-    add_executable(check_tcpserver check_tcpserver.c ${rapp_SOURCE_DIR}/src/tcpserver.c ${rapp_SOURCE_DIR}/src/tcpconnection.c ${rapp_SOURCE_DIR}/src/eloop.c ${rapp_SOURCE_DIR}/src/collector.c)
+    add_executable(check_tcpserver
+        check_tcpserver.c
+        ${rapp_SOURCE_DIR}/src/tcpserver.c
+        ${rapp_SOURCE_DIR}/src/tcpconnection.c
+        ${rapp_SOURCE_DIR}/src/eloop.c
+        ${rapp_SOURCE_DIR}/src/collector.c
+    )
     target_link_libraries(check_tcpserver ${LIBCHECK_LIBRARY})
     add_test(test_tcpserver ${EXECUTABLE_OUTPUT_PATH}/check_tcpserver)
 
