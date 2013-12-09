@@ -44,8 +44,8 @@ END_TEST
 static Suite *
 signal_handler_suite(void)
 {
-  Suite *s = suite_create("rapp.core.eloop");
-  TCase *tc = tcase_create("rapp.core.eloop");
+  Suite *s = suite_create("rapp.core.signalhandler");
+  TCase *tc = tcase_create("rapp.core.signalhandler");
 
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_signal_handler_calls_callback_when_signal_arrives);
