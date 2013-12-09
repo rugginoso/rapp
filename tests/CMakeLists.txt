@@ -19,7 +19,6 @@ if(ENABLE_TESTS)
     if(CMAKE_COMPILER_IS_GNUCC)
         message(STATUS "Enabling the code coverage support")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
-	set(EON3D_DBG_LIBS ${EON3D_DBG_LIBS} gcov)
     endif(CMAKE_COMPILER_IS_GNUCC)
 
     add_executable(check_stub check_stub.c)
