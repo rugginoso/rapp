@@ -47,6 +47,17 @@ write_func(int         fd,
   return 0;
 }
 
+static int
+close_func(int         fd,
+           const void *data)
+{
+  struct ELoop *eloop = (struct ELoop *)data;
+
+  event_loop_stop(eloop);
+
+  return 0;
+}
+
 void
 setup(void)
 {
@@ -97,6 +108,19 @@ START_TEST(test_eloop_calls_write_func_when_fd_becomes_writable)
 END_TEST
 
 
+START_TEST(test_eloop_calls_close_func_when_fd_is_closed)
+{
+  callbacks[ELOOP_CALLBACK_CLOSE] = close_func;
+
+  event_loop_add_fd_watch(eloop, watched_fd, callbacks, eloop);
+
+  close(watched_fd);
+
+  event_loop_run(eloop);
+}
+END_TEST
+
+
 static Suite *
 eloop_suite(void)
 {
@@ -106,6 +130,7 @@ eloop_suite(void)
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_eloop_calls_read_func_when_fd_has_pending_data);
   tcase_add_test(tc, test_eloop_calls_write_func_when_fd_becomes_writable);
+  tcase_add_test(tc, test_eloop_calls_close_func_when_fd_is_closed);
   suite_add_tcase(s, tc);
 
   return s;
