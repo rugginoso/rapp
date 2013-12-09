@@ -35,5 +35,10 @@ if(ENABLE_TESTS)
     target_link_libraries(check_eloop ${LIBCHECK_LIBRARY})
     add_test(test_eloop ${EXECUTABLE_OUTPUT_PATH}/check_eloop)
 
+    # signal handler
+    add_executable(check_signalhandler check_signalhandler.c ${rapp_SOURCE_DIR}/src/signalhandler.c ${rapp_SOURCE_DIR}/src/eloop.c ${rapp_SOURCE_DIR}/src/collector.c)
+    target_link_libraries(check_signalhandler ${LIBCHECK_LIBRARY})
+    add_test(test_signalhandler ${EXECUTABLE_OUTPUT_PATH}/check_signalhandler)
+
 endif(ENABLE_TESTS)
 
