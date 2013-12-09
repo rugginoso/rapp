@@ -23,17 +23,20 @@ struct ConfigDescParams {
     int value_min;
     int value_max;
     int multivalued;
+    int num_values;
     TAILQ_ENTRY(ConfigDescParams) entries;
     TAILQ_HEAD(ConfigValuesHead, ConfigValue) values;
 };
 
 struct Config {
     TAILQ_HEAD(ConfigDescParamsHead, ConfigDescParams) desc;
+    int num_params;
 };
 
 
 int config_init(struct Config* conf) {
     TAILQ_INIT(&conf->desc);
+    conf->num_params = 0;
     return 0;
 }
 
@@ -62,7 +65,9 @@ int config_param_add(struct Config *conf,
             break;
     }
     params->multivalued = 0;
+    params->num_values = 0;
     TAILQ_INSERT_TAIL(&conf->desc, params, entries);
+    conf->num_params++;
     return 1;
 }
 
@@ -130,6 +135,7 @@ int config_add_value(struct Config *conf, const char *name, const char *value,
                 default:
                     return 1; // FIXME
             }
+            np->num_values++;
             TAILQ_INSERT_TAIL(&np->values, cv, entries);
             return 0;
         }
