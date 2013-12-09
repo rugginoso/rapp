@@ -10,7 +10,7 @@
 
 struct ConfigValue {
     union {
-        int intvalue;
+        long intvalue;
         char *strvalue;
     } value;
     TAILQ_ENTRY(ConfigValue) entries;
@@ -20,8 +20,8 @@ struct ConfigDescParams {
     ConfigParamType type;
     const char *help;
     const char *name;
-    int value_min;
-    int value_max;
+    long value_min;
+    long value_max;
     int multivalued;
     int num_values;
     TAILQ_ENTRY(ConfigDescParams) entries;
@@ -31,13 +31,35 @@ struct ConfigDescParams {
 struct Config {
     TAILQ_HEAD(ConfigDescParamsHead, ConfigDescParams) desc;
     int num_params;
+    int freezed;
 };
 
 
-int config_init(struct Config* conf) {
+struct Config *config_new(void) {
+    struct Config *conf = (struct Config*) malloc(sizeof(struct Config));
+    if (!conf)
+        return NULL;
     TAILQ_INIT(&conf->desc);
     conf->num_params = 0;
-    return 0;
+    conf->freezed = 0;
+    return conf;
+}
+
+void config_destroy(struct Config* conf) {
+    assert(conf != NULL);
+    struct ConfigDescParams *np;
+    struct ConfigValue *cv;
+    while (conf->desc.tqh_first != NULL) {
+        while (np->values.tqh_first != NULL) {
+            cv = np->values.tqh_first;
+            TAILQ_REMOVE(&np->values, np->values.tqh_first, entries);
+            free(cv);
+        }
+        np = conf->desc.tqh_first;
+        TAILQ_REMOVE(&conf->desc, conf->desc.tqh_first, entries);
+        free(np);
+    }
+    free(conf);
 }
 
 int config_param_add(struct Config *conf,
@@ -45,7 +67,10 @@ int config_param_add(struct Config *conf,
                      ConfigParamType type,
                      const char *help) {
 
-    int ret;
+    assert(conf != NULL);
+    if (conf->freezed == 1)
+        return 1;
+
     size_t size = sizeof(struct ConfigDescParams);
     struct ConfigDescParams *params = (struct ConfigDescParams*) malloc(size);
     params->type = type;
@@ -58,8 +83,8 @@ int config_param_add(struct Config *conf,
             params->value_max = 1;
             break;
         case PARAM_INT:
-            params->value_min = INT_MIN;
-            params->value_max = INT_MAX;
+            params->value_min = LONG_MIN;
+            params->value_max = LONG_MAX;
         default:
             params->value_min = params->value_max = 0;
             break;
@@ -68,13 +93,17 @@ int config_param_add(struct Config *conf,
     params->num_values = 0;
     TAILQ_INSERT_TAIL(&conf->desc, params, entries);
     conf->num_params++;
-    return 1;
+    return 0;
 }
 
 int config_param_set_range_int(struct Config *conf,
                                const char *name,
-                               int value_min,
-                               int value_max) {
+                               long value_min,
+                               long value_max) {
+    assert(conf != NULL);
+    if (conf->freezed == 1)
+        return 1;
+
     struct ConfigDescParams *np;
     for (np=conf->desc.tqh_first; np != NULL; np=np->entries.tqe_next) {
         if (strcmp(np->name, name) == 0) {
@@ -91,6 +120,9 @@ int config_param_set_range_int(struct Config *conf,
 int config_param_set_multivalued(struct Config *conf,
                                  const char *name,
                                  int flag) {
+    assert(conf != NULL);
+    if (conf->freezed == 1)
+        return 1;
     struct ConfigDescParams *np;
     for (np=conf->desc.tqh_first; np != NULL; np=np->entries.tqe_next) {
         if (strcmp(np->name, name) == 0) {
@@ -113,6 +145,9 @@ int config_add_value(struct Config *conf, const char *name, const char *value,
 
     for (np=conf->desc.tqh_first; np != NULL; np=np->entries.tqe_next) {
         if (strcmp(np->name, name) == 0) {
+            if (np->multivalued == 0 && np->num_values > 0) {
+                return 1;
+            }
             cv = (struct ConfigValue*) malloc(sizeof(struct ConfigValue));
             if (!cv)
                 return 1;  // FIXME
@@ -143,7 +178,8 @@ int config_add_value(struct Config *conf, const char *name, const char *value,
     return 1;
 }
 
-int config_get_nth_int(struct Config *conf, const char *name, int nth, int *value) {
+int config_get_nth_int(struct Config *conf, const char *name, int position,
+                       long *value) {
 
     struct ConfigDescParams *np;
     struct ConfigValue *cv;
@@ -151,8 +187,9 @@ int config_get_nth_int(struct Config *conf, const char *name, int nth, int *valu
     for (np=conf->desc.tqh_first; np != NULL; np = np->entries.tqe_next) {
         if (strcmp(np->name, name) == 0) {
             assert(np->type == PARAM_INT || np->type == PARAM_BOOL);
-            if(np->multivalued == 1 || nth == 0) {
-                for(cv=np->values.tqh_first; cv != NULL && i < nth; cv=cv->entries.tqe_next);
+            if(np->multivalued == 1 || position == 0) {
+                for(cv=np->values.tqh_first; cv != NULL && i < position;
+                    cv=cv->entries.tqe_next);
                 if (cv) {
                     *value = cv->value.intvalue;
                     return 0;
@@ -163,11 +200,11 @@ int config_get_nth_int(struct Config *conf, const char *name, int nth, int *valu
     return 1;
 }
 
-int config_get_nth_bool(struct Config *conf, const char *name, int nth, int *value) {
-    return config_get_nth_int(conf, name, nth, value);
+int config_get_nth_bool(struct Config *conf, const char *name, int position, int *value) {
+    return config_get_nth_int(conf, name, position, (long*) value);
 }
 
-int config_get_nth_string(struct Config *conf, const char *name, int nth,
+int config_get_nth_string(struct Config *conf, const char *name, int position,
                           const char **value, size_t *len) {
 
     struct ConfigDescParams *np;
@@ -176,8 +213,8 @@ int config_get_nth_string(struct Config *conf, const char *name, int nth,
     for (np=conf->desc.tqh_first; np != NULL; np = np->entries.tqe_next) {
         if (strcmp(np->name, name) == 0) {
             assert(np->type == PARAM_STRING);
-            if(np->multivalued == 1 || nth == 0) {
-                for(cv=np->values.tqh_first; cv != NULL && i < nth; cv=cv->entries.tqe_next);
+            if(np->multivalued == 1 || position == 0) {
+                for(cv=np->values.tqh_first; cv != NULL && i < position; cv=cv->entries.tqe_next);
                 if (cv) {
                     *value = strdup(cv->value.strvalue);
                     *len = strlen(*value);
