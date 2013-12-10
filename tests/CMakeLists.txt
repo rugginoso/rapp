@@ -22,6 +22,7 @@ if(ENABLE_TESTS)
     endif(CMAKE_COMPILER_IS_GNUCC)
 
     add_executable(check_stub check_stub.c)
+    target_link_libraries(check_stub ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_stub ${EXECUTABLE_OUTPUT_PATH}/check_stub)
 
     # collector
@@ -29,7 +30,7 @@ if(ENABLE_TESTS)
         check_collector.c
         ${rapp_SOURCE_DIR}/src/collector.c
     )
-    target_link_libraries(check_collector ${LIBCHECK_LIBRARY})
+    target_link_libraries(check_collector ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_collector ${EXECUTABLE_OUTPUT_PATH}/check_collector)
 
     # event loop
@@ -38,7 +39,7 @@ if(ENABLE_TESTS)
         ${rapp_SOURCE_DIR}/src/eloop.c
         ${rapp_SOURCE_DIR}/src/collector.c
     )
-    target_link_libraries(check_eloop ${LIBCHECK_LIBRARY})
+    target_link_libraries(check_eloop ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_eloop ${EXECUTABLE_OUTPUT_PATH}/check_eloop)
 
     # signal handler
@@ -48,7 +49,7 @@ if(ENABLE_TESTS)
         ${rapp_SOURCE_DIR}/src/eloop.c
         ${rapp_SOURCE_DIR}/src/collector.c
     )
-    target_link_libraries(check_signalhandler ${LIBCHECK_LIBRARY})
+    target_link_libraries(check_signalhandler ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_signalhandler ${EXECUTABLE_OUTPUT_PATH}/check_signalhandler)
 
     # tcp server
@@ -60,7 +61,7 @@ if(ENABLE_TESTS)
         ${rapp_SOURCE_DIR}/src/eloop.c
         ${rapp_SOURCE_DIR}/src/collector.c
     )
-    target_link_libraries(check_tcpserver ${LIBCHECK_LIBRARY})
+    target_link_libraries(check_tcpserver ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_tcpserver ${EXECUTABLE_OUTPUT_PATH}/check_tcpserver)
 
 endif(ENABLE_TESTS)
