@@ -17,7 +17,6 @@ do {                                                                          \
     return 1;                                                                 \
   opt = NULL;                                                                 \
   for (opt=s->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {    \
-    printf("%s", name);                                                       \
     if (strcmp(opt->name, (name)) == 0)                                       \
       break;                                                                  \
   }                                                                           \
