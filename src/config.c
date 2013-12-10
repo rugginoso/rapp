@@ -86,7 +86,7 @@ struct ConfigSection* get_section(struct Config *conf, const char *section) {
         return NULL;
 
     for (sect=conf->sections.tqh_first; sect != NULL; sect=sect->entries.tqe_next) {
-        if (strcmp(sect->name, section))
+        if (strcmp(sect->name, section) == 0)
             return sect;
     }
     return NULL;
@@ -176,7 +176,7 @@ int config_param_set_range_int(struct Config *conf,
                                long value_min,
                                long value_max) {
     struct ConfigDescParams *np;
-    if (!conf || conf->freezed == 1 || value_min < value_max)
+    if (!conf || conf->freezed == 1 || value_min > value_max)
         return 1;
     np = get_desc_param(conf, section, name);
     if (!np || np->type != PARAM_INT)
@@ -255,7 +255,7 @@ int config_get_nth_int(struct Config *conf, const char *section,
     np = get_desc_param(conf, section, name);
     if (!np)
         return 1;
-    if (np->type != PARAM_INT || np->type != PARAM_BOOL)
+    if (np->type != PARAM_INT && np->type != PARAM_BOOL)
         return 1;
     if(np->multivalued == 0 && position != 0)
         return 1;
