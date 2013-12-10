@@ -60,7 +60,7 @@ main(int argc, char *argv[])
   config_get_string(config, "core", "address", &address);
   config_get_int(config, "core", "port", &port);
   logger_trace(logger, LOG_INFO, "rapp", "listening on %s", address);
-  logger_trace(logger, LOG_INFO, "rapp", "listening on %i", port);
+  logger_trace(logger, LOG_INFO, "rapp", "listening on %d", port);
 
   container = container_new(logger, argv[1], 0, NULL); // FIXME
   if (!container) {
