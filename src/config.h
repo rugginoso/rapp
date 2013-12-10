@@ -14,7 +14,7 @@ struct ConfigSection;
 // PRIVATE
 struct Config *config_new(struct Logger *logger);
 void config_destroy(struct Config *conf);
-
+int config_parse(struct Config *conf, const char* filename);
 
 int config_add_value(struct Config *conf, const char *section,
                      const char *name, const char* value);
@@ -46,6 +46,7 @@ int config_get_nth_string(struct Config *conf, const char *section,
                           const char **value);
 int config_get_num_values(struct Config *conf, const char *section,
                          const char *name, int *num_values);
+
 
 #define config_get_bool(CONF, SECTION, NAME, VALUE) \
             config_get_nth_bool(CONF, SECTION, NAME, 0, VALUE)

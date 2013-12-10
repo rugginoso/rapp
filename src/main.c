@@ -58,6 +58,8 @@ main(int argc, char *argv[])
   assert(config_add_value(config, "core", "address", "127.0.0.1") == 0);
   assert(config_add_value(config, "core", "port", "100000") == 1);
   assert(config_add_value_int(config, "core", "loglevel", LOG_DEBUG) == 0);
+
+  assert(config_parse(config, "example.yaml") == 0);
   char *address;
   long port;
   config_get_string(config, "core", "address", (const char **)&address);

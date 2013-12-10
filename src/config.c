@@ -12,6 +12,8 @@
 #define INFO(conf, fmt, ...) LOG(conf, LOG_INFO, fmt, __VA_ARGS__)
 #define WARN(conf, fmt, ...) LOG(conf, LOG_WARNING, fmt, __VA_ARGS__)
 #define DEBUG(conf, fmt, ...) LOG(conf, LOG_DEBUG, fmt, __VA_ARGS__)
+#define ERROR(conf, fmt, ...) LOG(conf, LOG_ERROR, fmt, __VA_ARGS__)
+#define CRITICAL(conf, fmt, ...) LOG(conf, LOG_CRITICAL, fmt, __VA_ARGS__)
 
 #define GET_OPTION(opt, conf, section, name)                                  \
 do {                                                                          \
@@ -392,12 +394,75 @@ int config_opt_set_default_bool(struct Config *conf, const char *section,
     return config_opt_set_default_int(conf, section, name, value);
 }
 
+int yaml_parse_init
 
-int parse_config(struct Logger *logger) {
-    FILE *fh = fopen("example.yaml", "r");
+int config_parse(struct Config *conf, const char* filename) {
     yaml_parser_t parser;
-    if(!yaml_parser_initialize(&parser)) {
-        logger_trace(logger, LOG_CRITICAL, "rapp",
-                     "Failed to initialize yaml parser");
+    yaml_token_t  token;
+    char *err;
+    FILE *fh = fopen(filename, "r");
+    if (!fh) {
+        err = strerror(errno);
+        CRITICAL(conf, "Cannot open file '%s': %s", filename, err);
+        return 1;
     }
+    DEBUG(conf, "Parsing file %s", filename);
+    memset(&parser, 0, sizeof(parser));
+    if(!yaml_parser_initialize(&parser)) {
+        CRITICAL(conf, "Cannot initialize YAML parser: %p", parser);
+        return 1;
+    }
+    yaml_parser_set_input_file(&parser, fh);
+
+    // we should get the STREAM_START first
+    yaml_parser_scan(&parser, &token);
+    if (token.type != YAML_STREAM_START_TOKEN) {
+        CRITICAL(conf, "Malformed yaml file %s: no stream start",
+                 filename);
+        return 1;
+    }
+
+    // read the first token. This must be a start of doc token
+    yaml_parser_scan(&parser, &token);
+    if (token.type != YAML_DOCUMENT_START_TOKEN) {
+        CRITICAL(conf, "Malformed yaml file %s: no start of doc found",
+                 filename);
+        return 1;
+    }
+    // config format is a global mapping of mappings
+    yaml_parser_scan(&parser, &token);
+    if (token.type != YAML_BLOCK_MAPPING_START_TOKEN) {
+        CRITICAL(conf, "Malformed yaml file %s: No global mapping found",
+                 filename);
+        return 1;
+    }
+
+    do {
+        yaml_parser_scan(&parser, &token);
+        switch(token.type)
+        {
+            /* Stream start/end */
+            case YAML_STREAM_START_TOKEN: puts("STREAM START"); break;
+            case YAML_STREAM_END_TOKEN:   puts("STREAM END");   break;
+                                          /* Token types (read before actual token) */
+            case YAML_KEY_TOKEN:   printf("(Key token)   "); break;
+            case YAML_VALUE_TOKEN: printf("(Value token) "); break;
+                                   /* Block delimeters */
+            case YAML_BLOCK_SEQUENCE_START_TOKEN: puts("<b>Start Block (Sequence)</b>"); break;
+            case YAML_BLOCK_ENTRY_TOKEN:          puts("<b>Start Block (Entry)</b>");    break;
+            case YAML_BLOCK_END_TOKEN:            puts("<b>End block</b>");              break;
+                                                  /* Data */
+            case YAML_BLOCK_MAPPING_START_TOKEN:  puts("[Block mapping]");            break;
+            case YAML_SCALAR_TOKEN:  printf("scalar %s \n", token.data.scalar.value); break;
+                                     /* Others */
+            default:
+                                     printf("Got token of type %d\n", token.type);
+        }
+        if(token.type != YAML_STREAM_END_TOKEN)
+            yaml_token_delete(&token);
+    } while (token.type != YAML_STREAM_END_TOKEN);
+
+    yaml_parser_delete(&parser);
+    fclose(fh);
+    return 0;
 }
