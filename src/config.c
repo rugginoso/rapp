@@ -20,6 +20,7 @@ struct ConfigDescParams {
     ConfigParamType type;
     char *help;
     char *name;
+    int range_set;
     long value_min;
     long value_max;
     int multivalued;
@@ -183,6 +184,7 @@ int config_param_set_range_int(struct Config *conf,
         return 1;
     np->value_min = value_min;
     np->value_max = value_max;
+    np->range_set = 1;
     return 0;
 }
 
@@ -224,7 +226,7 @@ int config_add_value(struct Config *conf, const char *section,
             val = strtol(value, &endptr, 10);
             if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN))
                     || (errno != 0 && val == 0)
-                    || (val < np->value_min) || (val > np->value_max)) {
+                    || (np->range_set == 1 && (val < np->value_min) || (val > np->value_max))) {
                 free(cv);
                 return 1;
             }
