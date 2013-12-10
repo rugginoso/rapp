@@ -31,13 +31,13 @@ int config_get_nth_int(struct Config *conf, const char *section,
                        const char *name, int position, long *value);
 int config_get_nth_string(struct Config *conf, const char *section,
                           const char *name, int position,
-                          const char **value, size_t *len);
+                          const char **value);
 
-#define config_get_bool(CONF, NAME, VALUE) \
-            config_get_nth_bool(CONF, NAME, 0, VALUE)
-#define config_get_int(CONF, NAME, VALUE) \
-            config_get_nth_int(CONF, NAME, 0, VALUE)
-#define config_get_string(CONF, NAME, VALUE) \
-            config_get_nth_string(CONF, NAME, 0, VALUE)
+#define config_get_bool(CONF, SECTION, NAME, VALUE) \
+            config_get_nth_bool(CONF, SECTION, NAME, 0, VALUE)
+#define config_get_int(CONF, SECTION, NAME, VALUE) \
+            config_get_nth_int(CONF, SECTION, NAME, 0, VALUE)
+#define config_get_string(CONF, SECTION, NAME, VALUE) \
+            config_get_nth_string(CONF, SECTION, NAME, 0, VALUE)
 
 #endif  /* CONFIG_H */

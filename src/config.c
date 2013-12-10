@@ -123,7 +123,7 @@ int config_param_add(struct Config *conf,
     struct ConfigSection *sect = get_section(conf, section);
     if (!sect) {
         sect = (struct ConfigSection*) malloc(sizeof(struct ConfigSection));
-        TAILQ_INIT(&conf->sections);
+        TAILQ_INIT(&sect->desc);
         sect->name = strdup(section);
         if (!sect->name) {
             free(sect);
@@ -273,7 +273,7 @@ int config_get_nth_bool(struct Config *conf, const char *name, const char *secti
 
 int config_get_nth_string(struct Config *conf, const char *section,
                           const char *name, int position,
-                          const char **value, size_t *len) {
+                          const char **value) {
 
     struct ConfigDescParams *np;
     struct ConfigValue *cv;
@@ -286,8 +286,7 @@ int config_get_nth_string(struct Config *conf, const char *section,
     for(cv=np->values.tqh_first; cv != NULL && i < position; cv=cv->entries.tqe_next);
     if (!cv)
         return 1;
-    *value = cv->value.strvalue;
-    *len = strlen(*value);
+    *value = strdup(cv->value.strvalue);
     return 0;
 }
 
