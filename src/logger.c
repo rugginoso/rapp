@@ -1,13 +1,16 @@
-#include "logger.h"
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <errno.h>
+#include <assert.h>
 #include <ctype.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include <sys/stat.h>
+
+#include "logger.h"
 
 
 struct Logger {
@@ -41,7 +44,8 @@ enum {
   LOG_TEMPLATE_LEN = 32 /* upper bound, really */
 };
 
-static const char *logger_template(LogLevel level)
+static const char *
+logger_template(LogLevel level)
 {
   /* WARNING: we MUST keep in sync templates order with LOG* macros */
   static const char *logger_templates[] = {
@@ -57,8 +61,12 @@ static const char *logger_template(LogLevel level)
   return logger_templates[level - LOG_CRITICAL];
 }
 
-static int logger_trace_console(void *user_data, LogLevel level,
-                                const char *tag, const char *fmt, va_list ap)
+static int
+logger_trace_console(void       *user_data,
+                     LogLevel    level,
+                     const char *tag,
+                     const char *fmt,
+                     va_list     ap)
 {
   int ret = 0;
   int is_dynbuf = 0;
@@ -67,6 +75,9 @@ static int logger_trace_console(void *user_data, LogLevel level,
   char *msg = buf;
   size_t size = sizeof(buf);
   const char *template = NULL;
+
+  assert(tag != NULL);
+  assert(fmt != NULL);
 
   tag = (tag != NULL) ?tag :"";
   /* LOG_EXTRA special handling: force always empty tag */
@@ -108,20 +119,27 @@ static int logger_trace_console(void *user_data, LogLevel level,
   return ret;
 }
 
-int logger_panic(const char *msg)
+/* for extreme circumstances, like unable to creae a logger. */
+int
+logger_panic(const char *msg)
 {
   fprintf(stderr, "[CRI] %s\n", msg);
   return 0;
 }
 
-static int logger_trace_file(void *user_data, LogLevel level,
-                             const char *tag, const char *fmt, va_list ap)
+static int
+logger_trace_file(void       *user_data,
+                  LogLevel    level,
+                  const char *tag,
+                  const char *fmt,
+                  va_list     ap)
 {
   /* FIXME: needs formatting */
   return logger_trace_console(user_data, LOG_MARK, tag, fmt, ap);
 }
 
-static int logger_flush_file(struct Logger *logger)
+static int
+logger_flush_file(struct Logger *logger)
 {
   int err = fflush(logger->priv);
   if (err == EOF) {
@@ -130,7 +148,8 @@ static int logger_flush_file(struct Logger *logger)
   return err;
 }
 
-static int logger_destroy_file(struct Logger *logger)
+static int
+logger_destroy_file(struct Logger *logger)
 {
   /* the file ownership isn't yours, so we just
      want to make sure we delivered everything
@@ -138,25 +157,30 @@ static int logger_destroy_file(struct Logger *logger)
   return logger_flush_file(logger);
 }
 
-
-static int logger_trace_null(void *user_data, LogLevel level,
-                             const char *tag, const char *fmt, va_list ap)
+static int
+logger_trace_null(void       *user_data,
+                  LogLevel    level,
+                  const char *tag,
+                  const char *fmt,
+                  va_list     ap)
 {
   return 0;
 }
 
-static int logger_destroy_null(struct Logger *logger)
+static int
+logger_destroy_null(struct Logger *logger)
 {
   return 0;
 }
 
-static int logger_flush_null(struct Logger *logger)
+static int
+logger_flush_null(struct Logger *logger)
 {
   return 0;
 }
 
-
-struct Logger *logger_open_null()
+struct Logger *
+logger_open_null(void)
 {
   struct Logger *logger = calloc(1, sizeof(struct Logger));
   if (logger) {
@@ -169,7 +193,9 @@ struct Logger *logger_open_null()
   return logger;
 }
 
-struct Logger *logger_open_file(LogLevel max_level, FILE *sink)
+struct Logger *
+logger_open_file(LogLevel max_level,
+                 FILE    *sink)
 {
   LogLevel lev = CLAMP(max_level, LOG_ERROR, LOG_MARK); /* TODO */
   struct Logger *logger = NULL;
@@ -188,7 +214,9 @@ struct Logger *logger_open_file(LogLevel max_level, FILE *sink)
 }
 
 
-struct Logger *logger_open_console(LogLevel max_level, FILE *sink)
+struct Logger *
+logger_open_console(LogLevel max_level,
+                    FILE    *sink)
 {
   FILE *con = (sink) ?sink :stderr;
   LogLevel lev = CLAMP(max_level, LOG_ERROR, LOG_MARK); /* TODO */
@@ -204,9 +232,10 @@ struct Logger *logger_open_console(LogLevel max_level, FILE *sink)
   return logger;
 }
 
-struct Logger *logger_open_custom(LogLevel max_level,
-                                  LogHandlerCallback logger_handler,
-                                  void *user_data)
+struct Logger *
+logger_open_custom(LogLevel           max_level,
+                   LogHandlerCallback logger_handler,
+                   void              *user_data)
 {
   LogLevel lev = CLAMP(max_level, LOG_ERROR, LOG_MARK); /* TODO */
 
@@ -221,12 +250,19 @@ struct Logger *logger_open_custom(LogLevel max_level,
   return logger;
 }
 
-
-int logger_trace(struct Logger *logger,
-                 LogLevel level, const char *tag, const char *fmt, ...)
+int
+logger_trace(struct Logger *logger,
+             LogLevel       level,
+             const char    *tag,
+             const char    *fmt,
+             ...)
 {
   int err = 0;
   va_list args;
+
+  assert(logger);
+  assert(tag);
+  assert(fmt);
 
   va_start(args, fmt);
   err = logger_trace_va(logger, level, tag, fmt, args);
@@ -235,15 +271,18 @@ int logger_trace(struct Logger *logger,
   return err;
 }
 
-int logger_trace_va(struct Logger *logger,
-                    LogLevel level, const char *tag, const char *fmt,
-                    va_list args)
+int
+logger_trace_va(struct Logger *logger,
+                LogLevel       level,
+                const char    *tag,
+                const char    *fmt,
+                va_list        args)
 {
   int err = 0;
 
-  if (!logger || !fmt || !tag) {
-    return -1;
-  }
+  assert(logger);
+  assert(tag);
+  assert(fmt);
 
   level = CLAMP(level, LOG_ERROR, LOG_MARK); /* TODO */
 
@@ -253,7 +292,8 @@ int logger_trace_va(struct Logger *logger,
   return err;
 }
 
-int logger_flush(struct Logger *logger)
+int
+logger_flush(struct Logger *logger)
 {
   if (!logger) {
     return -1;
@@ -261,7 +301,8 @@ int logger_flush(struct Logger *logger)
   return logger->flush(logger);
 }
 
-int logger_destroy(struct Logger *logger)
+int
+logger_destroy(struct Logger *logger)
 {
   int err = -1;
   if (logger) {

@@ -20,12 +20,9 @@ typedef enum {
 
 struct Logger *logger_get(void *cookie);
 
-int logger_trace(struct Logger *logger,
-                 LogLevel level, const char *tag, const char *fmt, ...);
+int logger_trace(struct Logger *logger, LogLevel level, const char *tag, const char *fmt, ...);
 
-int logger_trace_va(struct Logger *logger,
-                    LogLevel level, const char *tag, const char *fmt,
-                    va_list args);
+int logger_trace_va(struct Logger *logger, LogLevel level, const char *tag, const char *fmt, va_list args);
 
 #endif /* RAPP_LOGGER_H */
 
