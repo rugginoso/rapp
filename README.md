@@ -9,6 +9,8 @@
                  |_|   |_|
 
 
+[![Build Status](https://secure.travis-ci.org/rugginoso/rapp.png?branch=develop)](https://travis-ci.org/rugginoso/rapp)
+
 Overview
 ========
 RApp is an application container, written in C.
@@ -93,11 +95,11 @@ Braces must be at the right of the control structures
     if (fd = open(path, O_RDONLY)) < 0) {
       ...
     }
-    
+
     for (p = object->items; p != NULL; p = p->next) {
       ...
     }
-    
+
     while (count) {
       ...
     }
@@ -139,16 +141,16 @@ Assertions on parameters are placed after variables declaaration.
 
 ```c
    int
-   foobar(struct SomeObject *object, 
+   foobar(struct SomeObject *object,
           char              *name)
    {
      int foo = 0;
-     
+
      assert(object != NULL);
      assert(name != NULL);
      ...
    }
-   
+
 ```
 
 Objects
@@ -165,10 +167,10 @@ returning void and taking an <object> instance as the only parameter.
 
 ```c
    struct SomeObject;
-   
+
    struct SomeObject *some_object_new(void);
    void some_object_destroy(struct SomeObject *some_object);
-   
+
    void some_object_do_action(struct SomeObject *some_object, int foo);
 ```
 
@@ -181,7 +183,7 @@ System includes must come first, applications ones after.
 ```c
    #include <stdlib.h>
    #include <string.h>
-   
+
    #include <sys/types.h>
    #include <sys/stat.h>
 
