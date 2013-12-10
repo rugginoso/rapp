@@ -1,0 +1,6 @@
+#ifndef RAPP_CONFIG_H
+#define RAPP_CONFIG_H
+
+#cmakedefine SO_REUSEPORT_FOUND
+
+#endif /* RAPP_CONFIG_H */

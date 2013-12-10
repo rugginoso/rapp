@@ -1,0 +1,8 @@
+language: c
+compiler: gcc
+before_install: sudo apt-get update
+install: sudo apt-get install check
+script: mkdir build && cd build && cmake -DENABLE_CONTAINER_HELLO=1 -DENABLE_TESTS=1 .. && make
+branches:
+  only:
+    - develop

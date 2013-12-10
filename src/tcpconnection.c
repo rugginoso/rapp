@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/sendfile.h>
+#include <sys/socket.h>
 
 #include "tcpconnection.h"
 #include "eloop.h"
@@ -144,7 +145,7 @@ tcp_connection_read_data(struct TcpConnection *connection,
 {
   assert(connection != NULL);
 
-  return read(connection->fd, data, length);
+  return recv(connection->fd, data, length, 0);
 }
 
 ssize_t
@@ -154,7 +155,7 @@ tcp_connection_write_data(struct TcpConnection *connection,
 {
   assert(connection != NULL);
 
-  return write(connection->fd, data, length);
+  return send(connection->fd, data, length, MSG_NOSIGNAL);
 }
 
 ssize_t
