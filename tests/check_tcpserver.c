@@ -48,11 +48,11 @@ START_TEST(test_tcp_server_calls_callback_when_accepts_new_connections)
   tcp_server_set_accept_callback(tcp_server, accept_func, eloop);
   tcp_server_start_listen(tcp_server, HOST, PORT);
 
-  ck_assert_int_ge(connect_to(HOST, PORT), 0);
+  ck_assert(connect_to(HOST, PORT) >= 0);
 
   event_loop_run(eloop);
 
-  ck_assert_ptr_ne(tcp_connection, NULL);
+  ck_assert(tcp_connection != NULL);
 }
 END_TEST
 
