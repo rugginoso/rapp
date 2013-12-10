@@ -24,7 +24,7 @@ http_response_writer_new(struct TcpConnection            *tcp_connection,
 
   assert(tcp_connection != NULL);
 
-  if ((response_writer = calloc(sizeof(struct HTTPResponseWriter), 1)) == NULL) {
+  if ((response_writer = calloc(1, sizeof(struct HTTPResponseWriter))) == NULL) {
     perror("calloc");
     return NULL;
   }

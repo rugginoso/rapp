@@ -48,7 +48,7 @@ http_server_new(struct ELoop *eloop)
 {
   struct HTTPServer *http_server = NULL;
 
-  if ((http_server = calloc(sizeof(struct HTTPServer), 1)) == NULL) {
+  if ((http_server = calloc(1, sizeof(struct HTTPServer))) == NULL) {
     perror("calloc");
     return NULL;
   }

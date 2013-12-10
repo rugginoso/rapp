@@ -98,7 +98,7 @@ http_request_new(void)
 {
   struct HTTPRequest *request = NULL;
 
-  if ((request = calloc(sizeof(struct HTTPRequest), 1)) == NULL) {
+  if ((request = calloc(1, sizeof(struct HTTPRequest))) == NULL) {
     perror("calloc");
     return NULL;
   }

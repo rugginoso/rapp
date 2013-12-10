@@ -23,7 +23,7 @@ collector_new(void)
 {
   struct Collector *collector = NULL;
 
-  if ((collector = calloc(sizeof(struct Collector), 1)) == NULL) {
+  if ((collector = calloc(1, sizeof(struct Collector))) == NULL) {
     perror("calloc");
     return NULL;
   }
@@ -57,7 +57,7 @@ void collector_schedule_free(struct Collector  *collector,
       return;
   }
 
-  if ((entry = calloc(sizeof(struct CollectEntry), 1)) == NULL) {
+  if ((entry = calloc(1, sizeof(struct CollectEntry))) == NULL) {
     perror("calloc");
     return;
   }
