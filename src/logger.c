@@ -1,4 +1,3 @@
-
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -52,7 +51,7 @@ logger_template(LogLevel level)
     COL_RED"CRI [%s]: %s"COL_GRAY"\n",    /* LOG_CRITICAL */
     COL_RED"ERR [%s]"COL_GRAY": %s\n",    /* LOG_ERROROR    */
     COL_YELLOW"WRN [%s]"COL_GRAY": %s\n", /* LOG_WARNING  */
-    COL_WHITE"INF [%s]"COL_GRAY": %s\n",  /* LOG_INFO     */
+    COL_GREEN"INF [%s]"COL_GRAY": %s\n",  /* LOG_INFO     */
     COL_BLUE"DBG [%s]"COL_GRAY": %s\n",   /* LOG_DEBUG    */
     "%s%s" /* LOG_MARK: the tag placeholder must be present but tag
               value will be ignored */
