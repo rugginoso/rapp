@@ -37,7 +37,7 @@ check_c_source_compiles(
   }
   " SO_REUSEPORT_FOUND)
   if (NOT SO_REUSEPORT_FOUND)
-  message(FATAL_ERROR "signalfd not found. WARNING! rapp runs on modern linuxes only!")
+  message(FATAL_ERROR "SO_REUSEPORT not found. WARNING! rapp runs on modern linuxes only!")
 endif (NOT SO_REUSEPORT_FOUND)
 
 find_package(LIBYAML)
