@@ -50,6 +50,8 @@ main(int argc, char *argv[])
   config_param_add(config, "core", "port", PARAM_INT, "Port");
   config_param_add(config, "core", "loglevel", PARAM_STRING, "Verbosity level");
 
+  config_param_set_range_int(config, "port", "core", 0, 65535);
+
   config_add_value(config, "core", "address", "127.0.0.1");
   config_add_value(config, "core", "port", "8080");
   config_add_value(config, "core", "loglevel", "DEBUG");
