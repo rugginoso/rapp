@@ -8,6 +8,8 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include <config.h>
+
 #include "tcpserver.h"
 #include "tcpconnection.h"
 #include "eloop.h"
@@ -133,11 +135,13 @@ tcp_server_start_listen(struct TcpServer *server,
     return -1;
   }
 
+  #ifdef SO_REUSEPORT_FOUND
   if (setsockopt(server->listen_fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(int)) < 0) {
     perror("setsockopt");
     freeaddrinfo(addrinfos);
     return -1;
   }
+  #endif
 
   if (bind(server->listen_fd, addrinfos->ai_addr, addrinfos->ai_addrlen) < 0) {
     perror("bind");
