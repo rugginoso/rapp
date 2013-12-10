@@ -51,6 +51,12 @@ void collector_schedule_free(struct Collector  *collector,
   assert(free_func != NULL);
   assert(data != NULL);
 
+  // Look for already added object
+  for (entry = collector->collect_entries_list; entry != NULL; entry = entry->next) {
+    if (entry->data == data)
+      return;
+  }
+
   if ((entry = calloc(sizeof(struct CollectEntry), 1)) == NULL) {
     perror("calloc");
     return;
