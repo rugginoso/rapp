@@ -61,17 +61,17 @@ Coding Style
 Indentation
 -----------
 2 spaces
-new line at the end of file
+new line at the end of file.
 
 Functions
 ---------
-In function dichiaration parameters can be in the same line of the function:
+In function declaration, the parameters can be in the same line of the function name:
 
 ```c
     int foo(struct Bar *object, int value, void *data);
 ```
 
-But in function implementation return value is in its own line as well each parameter:
+But in function implementation, the return value is in its own line as well each parameter:
 
 ```c
    int
@@ -116,9 +116,9 @@ But functions have braches on a new line
 Variables
 ---------
 Variables must have descriptive names, short names are allowed only for
-automatic variables used in cicles.
+automatic variables used in loops.
 
-Variables must be defined and initialized at the start of the function
+Variables must be defined and initialized at the start of the function:
 
 ```c
     int
@@ -133,9 +133,9 @@ Variables must be defined and initialized at the start of the function
 
 Assertions
 ----------
-Use assert conditions on all function paramters on which makes sense. Assert expecially
+Use assert conditions on all function parameters on which makes sense. Assert expecially
 pointers values.
-Assertions on parameters are placed after variables dichiaration.
+Assertions on parameters are placed after variables declaaration.
 
 ```c
    int
@@ -153,13 +153,13 @@ Assertions on parameters are placed after variables dichiaration.
 
 Objects
 -------
-RApp uses an OOP approach. Each object must have its own header and implemntation files, which must be named as the object they are defining.
+RApp uses an OOP approach. Each object must have its own header and implemwntation files, which must be named as the object they are defining.
 
-Use opque structures for private data.
+Use opaque structures for private data.
 
 Methods must be named <object>_<action>, taking as the first parameter on <object> instance.
 
-Each object must define an <object>_new mthod, returning an <object> instance, and a <object>_destroy method,
+Each object must define an <object>_new method, returning an <object> instance, and a <object>_destroy method,
 returning void and taking an <object> instance as the only parameter.
 
 
