@@ -1,5 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
+#include "logger.h"
 
 typedef enum {
     PARAM_BOOL,
@@ -11,7 +12,7 @@ struct Config;
 struct ConfigSection;
 
 // PRIVATE
-struct Config *config_new(void);
+struct Config *config_new(struct Logger *logger);
 void config_destroy(struct Config *conf);
 
 

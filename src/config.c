@@ -6,22 +6,33 @@
 #include <sys/queue.h>
 #include <yaml.h>
 #include "config.h"
-#include "logger.h"
+
+
+#define LOG(conf, level, fmt, ...) logger_trace(conf->logger, level, "config", fmt, __VA_ARGS__)
+#define INFO(conf, fmt, ...) LOG(conf, LOG_INFO, fmt, __VA_ARGS__)
+#define WARN(conf, fmt, ...) LOG(conf, LOG_WARNING, fmt, __VA_ARGS__)
+#define DEBUG(conf, fmt, ...) LOG(conf, LOG_DEBUG, fmt, __VA_ARGS__)
 
 #define GET_OPTION(opt, conf, section, name)                                  \
 do {                                                                          \
-  if (!(conf) || !(section) || !(name))                                       \
+  if (!(conf) || !(section) || !(name)) {                                     \
+    WARN(conf, "missing or unset parameter %p", conf);                        \
     return 1;                                                                 \
+  }                                                                           \
   struct ConfigSection* s = get_section((conf), (section));                   \
-  if (!s)                                                                     \
+  if (!s) {                                                                   \
+    WARN(conf, "No such section: %s", (section));                             \
     return 1;                                                                 \
+  }                                                                           \
   opt = NULL;                                                                 \
   for (opt=s->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {    \
     if (strcmp(opt->name, (name)) == 0)                                       \
       break;                                                                  \
   }                                                                           \
-  if (!opt)                                                                   \
+  if (!opt) {                                                                 \
+    WARN(conf, "No such option %s in section %s", (name), (section));         \
     return 1;                                                                 \
+  }                                                                           \
 } while (0)
 
 struct ConfigValue {
@@ -60,22 +71,26 @@ struct ConfigSection {
 struct Config {
     int freezed;
     int num_sections;
+    struct Logger *logger;
     TAILQ_HEAD(ConfigSectionHead, ConfigSection) sections;
 };
 
 
-struct Config *config_new(void) {
+struct Config *config_new(struct Logger *logger) {
     struct Config *conf = (struct Config*) malloc(sizeof(struct Config));
     if (!conf)
         return NULL;
     TAILQ_INIT(&conf->sections);
     conf->num_sections = 0;
     conf->freezed = 0;
+    conf->logger = logger;
+    DEBUG(conf, "Successfully initialized empty config object %p", conf);
     return conf;
 }
 
 void config_destroy(struct Config* conf) {
     assert(conf != NULL);
+
     struct ConfigOption *np;
     struct ConfigValue *cv;
     struct ConfigSection *sect;
@@ -133,6 +148,7 @@ int config_opt_add(struct Config *conf,
             return 1;
         }
         TAILQ_INSERT_TAIL(&conf->sections, sect, entries);
+        DEBUG(conf, "Created section '%s'", section);
     }
     size_t size = sizeof(struct ConfigOption);
     struct ConfigOption *opt = (struct ConfigOption*) malloc(size);
@@ -175,6 +191,7 @@ int config_opt_add(struct Config *conf,
     opt->default_set = 0;
     TAILQ_INSERT_TAIL(&sect->options, opt, entries);
     sect->num_opts++;
+    DEBUG(conf, "Added parameter '%s.%s' (type %d)", section, name, type);
     return 0;
 }
 
@@ -192,6 +209,7 @@ int config_opt_set_range_int(struct Config *conf,
     opt->value_min = value_min;
     opt->value_max = value_max;
     opt->range_set = 1;
+    DEBUG(conf, "Set range for '%s.%s' to [%d,%d]", section, name, value_min, value_max);
     return 0;
 }
 
@@ -204,6 +222,7 @@ int config_opt_set_multivalued(struct Config *conf,
     if (conf->freezed == 1)
         return 1;
     opt->multivalued = flag;
+    DEBUG(conf, "Set '%s.%s' as multivalued", section, name);
     return 0;
 }
 
@@ -227,6 +246,7 @@ int config_add_value_int(struct Config *conf, const char *section,
     cv->value.intvalue = value;
     opt->num_values++;
     TAILQ_INSERT_TAIL(&opt->values, cv, entries);
+    DEBUG(conf, "Added value '%s.%s' = %d", section, name, value);
     return 0;
 }
 
@@ -259,10 +279,12 @@ int config_add_value(struct Config *conf, const char *section,
                 return 1;
             }
             cv->value.intvalue = val;
+            DEBUG(conf, "Added value '%s.%s' = %d", section, name, val);
             break;
 
         case PARAM_STRING:
             cv->value.strvalue = strdup(value);
+            DEBUG(conf, "Added value '%s.%s' = '%s'", section, name, value);
             break;
 
         default:
@@ -349,6 +371,7 @@ int config_opt_set_default_string(struct Config *conf, const char *section,
     if (!opt->default_value.strvalue)
         return 1;
     opt->default_set = 1;
+    DEBUG(conf, "Set default for '%s.%s' = '%s'", section, name, value);
     return 0;
 }
 
@@ -358,6 +381,7 @@ int config_opt_set_default_int(struct Config *conf, const char *section,
     GET_OPTION(opt, conf, section, name);
     opt->default_value.intvalue = value;
     opt->default_set = 1;
+    DEBUG(conf, "Set default for '%s.%s' = %d", section, name, value);
     return 0;
 }
 
@@ -370,7 +394,6 @@ int config_opt_set_default_bool(struct Config *conf, const char *section,
 
 
 int parse_config(struct Logger *logger) {
-    //FIXME
     FILE *fh = fopen("example.yaml", "r");
     yaml_parser_t parser;
     if(!yaml_parser_initialize(&parser)) {

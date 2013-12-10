@@ -41,7 +41,7 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  config = config_new();
+  config = config_new(logger);
   if (!config) {
       exit(1);
   }
