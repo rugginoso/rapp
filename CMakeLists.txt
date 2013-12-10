@@ -27,9 +27,8 @@ if (NOT SIGNALFD_FOUND)
 endif (NOT SIGNALFD_FOUND)
 
 CHECK_SYMBOL_EXISTS(SO_REUSEPORT sys/socket.h SO_REUSEPORT_FOUND)
-if (NOT SO_REUSEPORT_FOUND)
-  message(FATAL_ERROR "SO_REUSEPORT not found. WARNING! rapp runs on modern linuxes only!")
-endif (NOT SO_REUSEPORT_FOUND)
+
+configure_file(${CMAKE_SOURCE_DIR}/config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 
 find_package(LIBYAML)
 #if (NOT LIBYAML_FOUND)
