@@ -32,7 +32,7 @@ event_loop_new(void)
 {
   struct ELoop *eloop = NULL;
 
-  if ((eloop = calloc(sizeof(struct ELoop), 1)) == NULL) {
+  if ((eloop = calloc(1, sizeof(struct ELoop))) == NULL) {
     perror("calloc");
     return NULL;
   }
@@ -128,7 +128,7 @@ event_loop_add_fd_watch(struct ELoop         *eloop,
     }
   }
 
-  if ((eloop_callback = calloc(sizeof(struct ELoopCallback), 1)) == NULL) {
+  if ((eloop_callback = calloc(1, sizeof(struct ELoopCallback))) == NULL) {
     perror("calloc");
     return -1;
   }

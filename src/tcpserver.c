@@ -34,7 +34,7 @@ tcp_server_new(struct ELoop *eloop)
 
   assert(eloop != NULL);
 
-  if ((server = calloc(sizeof(struct TcpServer), 1)) == NULL) {
+  if ((server = calloc(1, sizeof(struct TcpServer))) == NULL) {
     perror("calloc");
     return NULL;
   }

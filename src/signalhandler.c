@@ -49,7 +49,7 @@ signal_handler_new(struct ELoop *eloop)
   struct SignalHandler *signal_handler = NULL;
   ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
 
-  if ((signal_handler = calloc(sizeof(struct SignalHandler), 1)) == NULL) {
+  if ((signal_handler = calloc(1, sizeof(struct SignalHandler))) == NULL) {
     perror("calloc");
     return NULL;
   }

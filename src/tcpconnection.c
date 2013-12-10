@@ -29,7 +29,7 @@ tcp_connection_with_fd(int fd, struct ELoop *eloop)
   assert(fd >= 0);
   assert(eloop != NULL);
 
-  if ((connection = calloc(sizeof(struct TcpConnection), 1)) == NULL) {
+  if ((connection = calloc(1, sizeof(struct TcpConnection))) == NULL) {
     perror("calloc");
     return NULL;
   }

@@ -118,7 +118,7 @@ http_connection_new(struct TcpConnection *tcp_connection)
 
   assert(tcp_connection != NULL);
 
-  if ((http_connection = calloc(sizeof(struct HTTPConnection), 1)) == NULL) {
+  if ((http_connection = calloc(1, sizeof(struct HTTPConnection))) == NULL) {
     perror("calloc");
     return NULL;
   }
