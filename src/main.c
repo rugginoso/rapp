@@ -11,6 +11,7 @@
 #include "httpserver.h"
 #include "signalhandler.h"
 #include "container.h"
+#include "config.h"
 
 static void
 on_signal(struct SignalHandler *signal_handler, void *data)
@@ -32,6 +33,7 @@ main(int argc, char *argv[])
   struct HTTPServer *http_server = NULL;
   struct SignalHandler *signal_handler = NULL;
   struct Container *container = NULL;
+  struct Config *config = NULL;
 
   logger = logger_open_console(LOG_LAST, stderr);
   if (logger == NULL) {
@@ -39,11 +41,30 @@ main(int argc, char *argv[])
     exit(1);
   }
 
+  config = config_new();
+  if (!config) {
+      exit(1);
+  }
+
+  config_param_add(config, "core", "address", PARAM_STRING, "Address to listen to");
+  config_param_add(config, "core", "port", PARAM_INT, "Port");
+  config_param_add(config, "core", "loglevel", PARAM_STRING, "Verbosity level");
+
+  config_add_value(config, "core", "address", "127.0.0.1");
+  config_add_value(config, "core", "port", "8080");
+  config_add_value(config, "core", "loglevel", "DEBUG");
+  const char *address;
+  long port;
+  config_get_string(config, "core", "address", &address);
+  config_get_int(config, "core", "port", &port);
+  logger_trace(logger, LOG_INFO, "rapp", "listening on %s", address);
+  logger_trace(logger, LOG_INFO, "rapp", "listening on %i", port);
+
   container = container_new(logger, argv[1], 0, NULL); // FIXME
   if (!container) {
     exit(1);
   }
- 
+
   logger_trace(logger, LOG_INFO, "rapp",
                "rapp starting... (PID=%li)",
                getpid());
@@ -68,7 +89,7 @@ main(int argc, char *argv[])
 
   logger_trace(logger, LOG_INFO, "rapp",
                "%s", "rapp finished!");
-  
+
   logger_destroy(logger);
 
   return 0;
