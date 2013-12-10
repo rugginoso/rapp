@@ -55,9 +55,9 @@ main(int argc, char *argv[])
   config_add_value(config, "core", "address", "127.0.0.1");
   config_add_value(config, "core", "port", "8080");
   config_add_value(config, "core", "loglevel", "DEBUG");
-  const char *address;
+  char *address;
   long port;
-  config_get_string(config, "core", "address", &address);
+  config_get_string(config, "core", "address", (const char **)&address);
   config_get_int(config, "core", "port", &port);
   logger_trace(logger, LOG_INFO, "rapp", "listening on %s", address);
   logger_trace(logger, LOG_INFO, "rapp", "listening on %d", port);
@@ -79,7 +79,8 @@ main(int argc, char *argv[])
 
   http_server = http_server_new(eloop);
 
-  http_server_start(http_server, "127.0.0.1", 8000);
+  http_server_start(http_server, address, port);
+  free(address);
 
   event_loop_run(eloop);
 
@@ -88,6 +89,8 @@ main(int argc, char *argv[])
   event_loop_destroy(eloop);
 
   container_destroy(container);
+
+  config_destroy(config);
 
   logger_trace(logger, LOG_INFO, "rapp",
                "%s", "rapp finished!");
