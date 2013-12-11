@@ -37,6 +37,10 @@ find_package(LIBYAML)
 
 option(ENABLE_TESTS "compile testsuite")
 
+if(ENABLE_TESTS)
+  enable_testing()
+endif(ENABLE_TESTS)
+
 add_subdirectory(containers/hello)
 add_subdirectory(src)
 add_subdirectory(tests)
