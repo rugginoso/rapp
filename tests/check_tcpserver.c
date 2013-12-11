@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <check.h>
 
-#include <test_tcp_client.h>
 #include <eloop.h>
 #include <tcpserver.h>
 
+#include "test_utils.h"
 
 #define HOST "localhost"
 #define PORT 8000

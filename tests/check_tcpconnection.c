@@ -2,18 +2,15 @@
 #include <check.h>
 #include <sys/socket.h>
 
-#include <test_tcp_client.h>
 #include <eloop.h>
 #include <tcpconnection.h>
 
-#include <test_tcp_client.h>
-#include <test_tcp_server.h>
+#include "test_utils.h"
 
 #define HOST "localhost"
 #define PORT 8000
 
 #define MESSAGE "Hello world!"
-#define STRLEN(s) (sizeof(s)/sizeof(s[0]))
 #define MESSAGE_LEN STRLEN(MESSAGE)
 
 struct ELoop *eloop = NULL;

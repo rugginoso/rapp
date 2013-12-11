@@ -55,7 +55,7 @@ if(ENABLE_TESTS)
     # tcp server
     add_executable(check_tcpserver
         check_tcpserver.c
-        ${rapp_SOURCE_DIR}/tests/test_tcp_client.c
+        ${rapp_SOURCE_DIR}/tests/test_utils.c
         ${rapp_SOURCE_DIR}/src/tcpserver.c
         ${rapp_SOURCE_DIR}/src/tcpconnection.c
         ${rapp_SOURCE_DIR}/src/eloop.c
@@ -67,8 +67,7 @@ if(ENABLE_TESTS)
     # tcp connection
     add_executable(check_tcpconnection
         check_tcpconnection.c
-        ${rapp_SOURCE_DIR}/tests/test_tcp_client.c
-        ${rapp_SOURCE_DIR}/tests/test_tcp_server.c
+        ${rapp_SOURCE_DIR}/tests/test_utils.c
         ${rapp_SOURCE_DIR}/src/tcpconnection.c
         ${rapp_SOURCE_DIR}/src/eloop.c
         ${rapp_SOURCE_DIR}/src/collector.c

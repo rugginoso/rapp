@@ -7,8 +7,9 @@
 
 #include <eloop.h>
 
+#include "test_utils.h"
+
 #define FIFO_NAME "check_eloop.fifo"
-#define STRLEN(s) (sizeof(s)/sizeof(s[0]))
 
 static const char *message = "hello world";
 
