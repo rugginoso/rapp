@@ -88,7 +88,8 @@ on_message_complete(http_parser *parser)
 
   request = (struct HTTPRequest *)parser->data;
 
-  request->parse_finish_callback(request, request->data);
+  if (request->parse_finish_callback != NULL)
+    request->parse_finish_callback(request, request->data);
 
   return 0;
 }
