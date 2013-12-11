@@ -15,6 +15,23 @@
 #define ERROR(conf, fmt, ...) LOG(conf, LOG_ERROR, fmt, __VA_ARGS__)
 #define CRITICAL(conf, fmt, ...) LOG(conf, LOG_CRITICAL, fmt, __VA_ARGS__)
 
+#define GET_OPTION_FROM_SECT(opt, conf, sect, name)                           \
+do {                                                                          \
+  if (!(conf) || !(sect) || !(name)) {                                        \
+    WARN(conf, "missing or unset parameter %p", conf);                        \
+    return 1;                                                                 \
+  }                                                                           \
+  opt = NULL;                                                                 \
+  for (opt=sect->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) { \
+    if (strcmp(opt->name, (name)) == 0)                                       \
+      break;                                                                  \
+  }                                                                           \
+  if (!opt) {                                                                 \
+    WARN(conf, "No such option %s in section %s", (name), (sect->name));      \
+    return 1;                                                                 \
+  }                                                                           \
+} while(0)
+
 #define GET_OPTION(opt, conf, section, name)                                  \
 do {                                                                          \
   if (!(conf) || !(section) || !(name)) {                                     \
@@ -26,16 +43,8 @@ do {                                                                          \
     WARN(conf, "No such section: %s", (section));                             \
     return 1;                                                                 \
   }                                                                           \
-  opt = NULL;                                                                 \
-  for (opt=s->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {    \
-    if (strcmp(opt->name, (name)) == 0)                                       \
-      break;                                                                  \
-  }                                                                           \
-  if (!opt) {                                                                 \
-    WARN(conf, "No such option %s in section %s", (name), (section));         \
-    return 1;                                                                 \
-  }                                                                           \
-} while (0)
+  GET_OPTION_FROM_SECT(opt, conf, s, name);                                   \
+} while(0)
 
 struct ConfigValue {
     union {
@@ -90,31 +99,45 @@ struct Config *config_new(struct Logger *logger) {
     return conf;
 }
 
+void config_option_remove_all_values(struct ConfigOption *opt) {
+    struct ConfigValue *cv;
+    while (opt->values.tqh_first != NULL) {
+        cv = opt->values.tqh_first;
+        TAILQ_REMOVE(&opt->values, opt->values.tqh_first, entries);
+        if (opt->type == PARAM_STRING)
+            free(cv->value.strvalue);
+        free(cv);
+        opt->num_values--;
+    }
+}
+
+void config_option_destroy(struct ConfigOption *opt) {
+    config_option_remove_all_values(opt);
+    free(opt->name);
+    if (opt->help)
+        free(opt->help);
+    free(opt);
+}
+
+void config_section_destroy(struct ConfigSection *sect) {
+    struct ConfigOption *opt;
+    while (sect->options.tqh_first != NULL) {
+        opt = sect->options.tqh_first;
+        TAILQ_REMOVE(&sect->options, sect->options.tqh_first, entries);
+        config_option_destroy(opt);
+    }
+    free(sect->name);
+    free(sect);
+}
+
+
 void config_destroy(struct Config* conf) {
     assert(conf != NULL);
-
-    struct ConfigOption *np;
-    struct ConfigValue *cv;
     struct ConfigSection *sect;
     while (conf->sections.tqh_first != NULL) {
         sect = conf->sections.tqh_first;
-        while (sect->options.tqh_first != NULL) {
-            np = sect->options.tqh_first;
-            while (np->values.tqh_first != NULL) {
-                cv = np->values.tqh_first;
-                TAILQ_REMOVE(&np->values, np->values.tqh_first, entries);
-                if (np->type == PARAM_STRING)
-                    free(cv->value.strvalue);
-                free(cv);
-            }
-            TAILQ_REMOVE(&sect->options, sect->options.tqh_first, entries);
-            free(np->name);
-            free(np->help);
-            free(np);
-        }
+        config_section_destroy(sect);
         TAILQ_REMOVE(&conf->sections, conf->sections.tqh_first, entries);
-        free(sect->name);
-        free(sect);
     }
     free(conf);
 }
@@ -131,6 +154,22 @@ struct ConfigSection* get_section(struct Config *conf, const char *section) {
     return NULL;
 }
 
+struct ConfigSection* section_create(struct Config *conf, const char *name) {
+    struct ConfigSection *sect;
+    sect = (struct ConfigSection*) malloc(sizeof(struct ConfigSection));
+    if (!sect)
+        return NULL;
+    TAILQ_INIT(&sect->options);
+    sect->name = strdup(name);
+    if (!sect->name) {
+        free(sect);
+        return NULL;
+    }
+    TAILQ_INSERT_TAIL(&conf->sections, sect, entries);
+    DEBUG(conf, "Created section '%s'", name);
+    return sect;
+}
+
 
 int config_opt_add(struct Config *conf,
                    const char *section,
@@ -142,15 +181,9 @@ int config_opt_add(struct Config *conf,
         return 1;
     struct ConfigSection *sect = get_section(conf, section);
     if (!sect) {
-        sect = (struct ConfigSection*) malloc(sizeof(struct ConfigSection));
-        TAILQ_INIT(&sect->options);
-        sect->name = strdup(section);
-        if (!sect->name) {
-            free(sect);
+        sect = section_create(conf, section);
+        if (!sect)
             return 1;
-        }
-        TAILQ_INSERT_TAIL(&conf->sections, sect, entries);
-        DEBUG(conf, "Created section '%s'", section);
     }
     size_t size = sizeof(struct ConfigOption);
     struct ConfigOption *opt = (struct ConfigOption*) malloc(size);
@@ -167,7 +200,8 @@ int config_opt_add(struct Config *conf,
     }
     opt->name = strdup(name);
     if (!opt->name) {
-        free(opt->help);
+        if (opt->help)
+            free(opt->help);
         free(opt);
         return 1;
     }
@@ -228,11 +262,30 @@ int config_opt_set_multivalued(struct Config *conf,
     return 0;
 }
 
-int config_add_value_int(struct Config *conf, const char *section,
-                         const char *name, long value) {
-    struct ConfigOption *opt;
+int opt_add_value_string(struct ConfigOption *opt, const char *name,
+                         const char *value) {
     struct ConfigValue *cv;
-    GET_OPTION(opt, conf, section, name);
+    if (opt->multivalued == 0 && opt->num_values > 0) {
+        return 1;
+    }
+    if (!value || opt->type != PARAM_STRING)
+        return 1;
+    cv = (struct ConfigValue*) malloc(sizeof(struct ConfigValue));
+    if (!cv)
+        return 1;
+    cv->value.strvalue = strdup(value);
+    if (!cv->value.strvalue) {
+        free(cv);
+        return 1;
+    }
+    opt->num_values++;
+    TAILQ_INSERT_TAIL(&opt->values, cv, entries);
+    return 0;
+}
+
+int opt_add_value_int(struct ConfigOption *opt, const char *name,
+                      long value) {
+    struct ConfigValue *cv;
     if (opt->type != PARAM_BOOL && opt->type != PARAM_INT) {
         return 1;
     }
@@ -248,52 +301,27 @@ int config_add_value_int(struct Config *conf, const char *section,
     cv->value.intvalue = value;
     opt->num_values++;
     TAILQ_INSERT_TAIL(&opt->values, cv, entries);
+    return 0;
+}
+
+int config_add_value_int(struct Config *conf, const char *section,
+                         const char *name, long value) {
+    struct ConfigOption *opt;
+    GET_OPTION(opt, conf, section, name);
+    if (opt_add_value_int(opt, name, value) != 0)
+        return 1;
     DEBUG(conf, "Added value '%s.%s' = %d", section, name, value);
     return 0;
 }
 
-
-int config_add_value(struct Config *conf, const char *section,
-                     const char *name, const char *value) {
+int config_add_value_string(struct Config *conf, const char *section,
+                            const char *name, const char *value) {
     struct ConfigOption *opt;
-    struct ConfigValue *cv;
-    char *endptr;
-    long val;
-    int *temp;
-    if (!value)
-        return 1;
     GET_OPTION(opt, conf, section, name);
-    if (opt->multivalued == 0 && opt->num_values > 0) {
+    if (opt_add_value_string(opt, name, value) != 0) {
         return 1;
     }
-    cv = (struct ConfigValue*) malloc(sizeof(struct ConfigValue));
-    if (!cv)
-        return 1;
-    switch (opt->type) {
-        case PARAM_BOOL:
-        case PARAM_INT:
-            errno = 0;
-            val = strtol(value, &endptr, 10);
-            if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN))
-                    || (errno != 0 && val == 0)
-                    || (opt->range_set == 1 && (val < opt->value_min) || (val > opt->value_max))) {
-                free(cv);
-                return 1;
-            }
-            cv->value.intvalue = val;
-            DEBUG(conf, "Added value '%s.%s' = %d", section, name, val);
-            break;
-
-        case PARAM_STRING:
-            cv->value.strvalue = strdup(value);
-            DEBUG(conf, "Added value '%s.%s' = '%s'", section, name, value);
-            break;
-
-        default:
-            return 1;
-    }
-    opt->num_values++;
-    TAILQ_INSERT_TAIL(&opt->values, cv, entries);
+    DEBUG(conf, "Added value '%s.%s' = '%s'", section, name, value);
     return 0;
 }
 
@@ -424,24 +452,155 @@ int yaml_parse_init(struct Config *conf, const char *filename,
     return 0;
 }
 
+int yaml_parse_key_value(struct Config *conf,
+                         struct ConfigSection *section,
+                         yaml_parser_t *parser,
+                         int *last) {
+    struct ConfigOption *opt;
+    char *name, *endptr;
+    long val;
+    yaml_token_t token;
+    yaml_parser_scan(parser, &token);
+    *last = 0;
+    if (token.type != YAML_KEY_TOKEN) {
+        if (token.type == YAML_BLOCK_END_TOKEN) {
+            *last = 1;
+            return 1;
+        }
+        ERROR(conf, "Expected key token, got %d", token.type);
+        return 1;
+    }
+    yaml_parser_scan(parser, &token);
+    if (token.type != YAML_SCALAR_TOKEN) {
+        ERROR(conf, "Expected scalar token, got %d", token.type);
+        return 1;
+    }
+
+    name = strdup(token.data.scalar.value);
+    if (!name)
+        return 1;
+
+    GET_OPTION_FROM_SECT(opt, conf, section, name);
+    if (!opt) {
+        ERROR(conf, "%s.%s not found", section->name, name);
+        free(name);
+        return 1;
+    }
+
+    yaml_token_delete(&token);
+    yaml_parser_scan(parser, &token);
+    if (token.type != YAML_VALUE_TOKEN) {
+        ERROR(conf, "Expected value token, got %d", token.type);
+        free(name);
+        yaml_token_delete(&token);
+        return 1;
+    }
+
+    yaml_token_delete(&token);
+    yaml_parser_scan(parser, &token);
+    if (token.type != YAML_SCALAR_TOKEN) {
+        ERROR(conf, "Expected scalar token, got %d", token.type);
+        free(name);
+        yaml_token_delete(&token);
+        return 1;
+    }
+
+    if (opt->multivalued == 0) {
+        // TODO: if scalar, we should wipe out values anyway.
+        // this is pending support for lists in yaml
+        config_option_remove_all_values(opt);
+    }
+
+    switch(opt->type) {
+        case PARAM_STRING:
+            if (opt_add_value_string(opt, name, token.data.scalar.value) != 0) {
+                ERROR(conf, "Cannot set value for %s.%s to %s", section->name,
+                      name, token.data.scalar.value);
+                free(name);
+                yaml_token_delete(&token);
+                return 1;
+            }
+            DEBUG(conf, "Added %s.%s = %s", section->name, name, token.data.scalar.value);
+            break;
+        case PARAM_BOOL:
+        case PARAM_INT:
+            errno = 0;
+            val = strtol(token.data.scalar.value, &endptr, 10);
+            if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN))
+                    || (errno != 0 && val == 0)
+                    || (opt->range_set == 1 && (val < opt->value_min) || (val > opt->value_max))) {
+                ERROR(conf, "Invalid integer %s", token.data.scalar.value);
+                free(name);
+                return 1;
+            }
+            if (opt_add_value_int(opt, name, val) != 0) {
+                ERROR(conf, "Cannot set value for %s.%s to %d", section->name,
+                      name, val);
+                free(name);
+                yaml_token_delete(&token);
+                return 1;
+            }
+            DEBUG(conf, "Added %s.%s = %d", section->name, name, val);
+            break;
+    }
+    yaml_token_delete(&token);
+    free(name);
+    return 0;
+}
+
+int yaml_skip_section(yaml_parser_t *parser) {
+    yaml_token_t token;
+    do {
+        yaml_token_delete(&token);
+        yaml_parser_scan(parser, &token);
+    } while(token.type != YAML_BLOCK_END_TOKEN);
+    yaml_token_delete(&token);
+    return 0;
+}
+
+
 int yaml_parse_section(struct Config *conf,
                        const char *filename,
                        const char *sectionname,
                        yaml_parser_t *parser) {
 
+    yaml_token_t token;
+    int last;
+    struct ConfigSection* section = get_section(conf, sectionname);
+    if (!section) {
+        INFO(conf, "Skipping unkown section %s", sectionname);
+        if (yaml_skip_section(parser) != 0)
+            return 1;
+        return 0;
+    }
     DEBUG(conf, "Inside parse_section for %s", sectionname);
-/*
- * (Value token) [Block mapping]
- * (Key token)   scalar address
- * (Value token) scalar 127.0.0.1
- * (Key token)   scalar port
- * (Value token) scalar 8080
- * <b>End block</b>
- */
+    yaml_parser_scan(parser, &token);
+    if (token.type != YAML_VALUE_TOKEN) {
+        CRITICAL(conf, "Malformed yaml file %s: expected value, got %d",
+                 filename, token.type);
+        return 1;
+    }
+    yaml_token_delete(&token);
+    yaml_parser_scan(parser, &token);
+    if (token.type != YAML_BLOCK_MAPPING_START_TOKEN) {
+        CRITICAL(conf, "Malformed yaml file %s: expected block, got %d",
+                 filename, token.type);
+        return 1;
+    }
+    while(1) {
+        if (yaml_parse_key_value(conf, section, parser, &last) != 0) {
+            if (last == 1)
+                break;
+             else
+                return 1;
+        }
+    }
     return 0;
 }
 
 int config_parse(struct Config *conf, const char* filename) {
+    // TODO: multivalue support / list in yaml as values
+    // TODO: erase values if section is present twice
     yaml_parser_t parser;
     yaml_token_t token;
     int done, ret = 0;
@@ -493,34 +652,7 @@ int config_parse(struct Config *conf, const char* filename) {
             break;
         }
     }
- // * STREAM END
-
-#if 0
-    do {
-        yaml_parser_scan(&parser, &token);
-        switch(token.type)
-        {
-            /* Stream start/end */
-            case YAML_STREAM_START_TOKEN: puts("STREAM START"); break;
-            case YAML_STREAM_END_TOKEN:   puts("STREAM END");   break;
-                                          /* Token types (read before actual token) */
-            case YAML_KEY_TOKEN:   printf("(Key token)   "); break;
-            case YAML_VALUE_TOKEN: printf("(Value token) "); break;
-                                   /* Block delimeters */
-            case YAML_BLOCK_SEQUENCE_START_TOKEN: puts("<b>Start Block (Sequence)</b>"); break;
-            case YAML_BLOCK_ENTRY_TOKEN:          puts("<b>Start Block (Entry)</b>");    break;
-            case YAML_BLOCK_END_TOKEN:            puts("<b>End block</b>");              break;
-                                                  /* Data */
-            case YAML_BLOCK_MAPPING_START_TOKEN:  puts("[Block mapping]");            break;
-            case YAML_SCALAR_TOKEN:  printf("scalar %s \n", token.data.scalar.value); break;
-                                     /* Others */
-            default:
-                                     printf("Got token of type %d\n", token.type);
-        }
-        if(token.type != YAML_STREAM_END_TOKEN)
-            yaml_token_delete(&token);
-    } while (token.type != YAML_STREAM_END_TOKEN);
-#endif
+ // TODO: * STREAM END
 
 cleanup:
     yaml_parser_delete(&parser);
