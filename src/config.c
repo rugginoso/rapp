@@ -114,6 +114,8 @@ void config_option_remove_all_values(struct ConfigOption *opt) {
 void config_option_destroy(struct ConfigOption *opt) {
     config_option_remove_all_values(opt);
     free(opt->name);
+    if (opt->default_set && opt->type == PARAM_STRING)
+        free(opt->default_value.strvalue);
     if (opt->help)
         free(opt->help);
     free(opt);
