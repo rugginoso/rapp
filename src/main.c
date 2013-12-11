@@ -43,7 +43,8 @@ main(int argc, char *argv[])
 
   config = config_new(logger);
   if (!config) {
-      exit(1);
+    logger_destroy(logger);
+    exit(1);
   }
 
   assert(config_opt_add(config, "core", "address", PARAM_STRING, "Address to listen to") == 0);
@@ -65,6 +66,9 @@ main(int argc, char *argv[])
 
   container = container_new(logger, argv[1], 0, NULL); // FIXME
   if (!container) {
+    config_destroy(config);
+    logger_destroy(logger);
+    free(address);
     exit(1);
   }
 
