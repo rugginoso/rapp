@@ -138,8 +138,8 @@ void config_destroy(struct Config* conf) {
     struct ConfigSection *sect;
     while (conf->sections.tqh_first != NULL) {
         sect = conf->sections.tqh_first;
-        config_section_destroy(sect);
         TAILQ_REMOVE(&conf->sections, conf->sections.tqh_first, entries);
+        config_section_destroy(sect);
     }
     free(conf);
 }
@@ -188,7 +188,7 @@ int config_opt_add(struct Config *conf,
             return 1;
     }
     size_t size = sizeof(struct ConfigOption);
-    struct ConfigOption *opt = (struct ConfigOption*) malloc(size);
+    struct ConfigOption *opt = (struct ConfigOption*) calloc(1, size);
     if (!opt) {
         return 1;
     }
@@ -472,6 +472,7 @@ int yaml_parse_key_value(struct Config *conf,
         ERROR(conf, "Expected key token, got %d", token.type);
         return 1;
     }
+    yaml_token_delete(&token);
     yaml_parser_scan(parser, &token);
     if (token.type != YAML_SCALAR_TOKEN) {
         ERROR(conf, "Expected scalar token, got %d", token.type);
@@ -552,11 +553,12 @@ int yaml_parse_key_value(struct Config *conf,
 
 int yaml_skip_section(yaml_parser_t *parser) {
     yaml_token_t token;
+    int type;
     do {
-        yaml_token_delete(&token);
         yaml_parser_scan(parser, &token);
-    } while(token.type != YAML_BLOCK_END_TOKEN);
-    yaml_token_delete(&token);
+        type = token.type;
+        yaml_token_delete(&token);
+    } while(type != YAML_BLOCK_END_TOKEN);
     return 0;
 }
 
@@ -597,6 +599,7 @@ int yaml_parse_section(struct Config *conf,
                 return 1;
         }
     }
+    yaml_token_delete(&token);
     return 0;
 }
 
@@ -628,10 +631,11 @@ int config_parse(struct Config *conf, const char* filename) {
     }
 
     while (1) {
-        yaml_token_delete(&token);
         yaml_parser_scan(&parser, &token);
-        if (token.type == YAML_BLOCK_END_TOKEN)
+        if (token.type == YAML_BLOCK_END_TOKEN) {
+            yaml_token_delete(&token);
             break;
+        }
 
         if (token.type != YAML_KEY_TOKEN) {
             CRITICAL(conf, "Malformed yaml file %s: expected section name key, got %d",
@@ -653,6 +657,7 @@ int config_parse(struct Config *conf, const char* filename) {
             ret = 1;
             break;
         }
+        yaml_token_delete(&token);
     }
  // TODO: * STREAM END
 
