@@ -36,6 +36,12 @@ find_package(LIBYAML)
 #  message(FATAL_ERROR "please install libyaml from your package manager or from http://pyyaml.org")
 #endif (NOT LIBYAML_FOUND)
 
+option(ENABLE_TESTS "compile testsuite")
+
+if(ENABLE_TESTS)
+  enable_testing()
+endif(ENABLE_TESTS)
+
 add_subdirectory(containers/hello)
 find_package(LibYAML REQUIRED)
 include_directories(${LIBYAML_INCLUDE_DIR})

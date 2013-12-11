@@ -1,5 +1,3 @@
-option(ENABLE_TESTS "compile testsuite")
-
 if(ENABLE_TESTS)
     find_package(LIBCHECK)
     if(LIBCHECK_NOTFOUND)
@@ -55,7 +53,7 @@ if(ENABLE_TESTS)
     # tcp server
     add_executable(check_tcpserver
         check_tcpserver.c
-        ${rapp_SOURCE_DIR}/tests/test_tcp_client.c
+        ${rapp_SOURCE_DIR}/tests/test_utils.c
         ${rapp_SOURCE_DIR}/src/tcpserver.c
         ${rapp_SOURCE_DIR}/src/tcpconnection.c
         ${rapp_SOURCE_DIR}/src/eloop.c
@@ -63,6 +61,17 @@ if(ENABLE_TESTS)
     )
     target_link_libraries(check_tcpserver ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_tcpserver ${EXECUTABLE_OUTPUT_PATH}/check_tcpserver)
+
+    # tcp connection
+    add_executable(check_tcpconnection
+        check_tcpconnection.c
+        ${rapp_SOURCE_DIR}/tests/test_utils.c
+        ${rapp_SOURCE_DIR}/src/tcpconnection.c
+        ${rapp_SOURCE_DIR}/src/eloop.c
+        ${rapp_SOURCE_DIR}/src/collector.c
+    )
+    target_link_libraries(check_tcpconnection ${LIBCHECK_LIBRARY} m rt pthread)
+    add_test(test_tcpconnection ${EXECUTABLE_OUTPUT_PATH}/check_tcpconnection)
 
 endif(ENABLE_TESTS)
 

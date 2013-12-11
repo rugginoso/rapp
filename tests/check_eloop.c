@@ -7,15 +7,17 @@
 
 #include <eloop.h>
 
-#define FIFO_NAME "check_eloop.fifo"
-#define STRLEN(s) (sizeof(s)/sizeof(s[0]))
+#include "test_utils.h"
 
-static const char *message = "hello world";
+#define FIFO_NAME "check_eloop.fifo"
+
+#define MESSAGE "Hello world!"
+#define MESSAGE_LEN STRLEN(MESSAGE)
 
 struct ELoop *eloop = NULL;
 int watched_fd = -1;
 ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
-char buf[STRLEN(message)];
+char buf[MESSAGE_LEN];
 
 static int
 read_func(int         fd,
@@ -25,7 +27,7 @@ read_func(int         fd,
 
   ck_assert_int_eq(fd, watched_fd);
 
-  read(fd, buf, strlen(message));
+  read(fd, buf, MESSAGE_LEN);
 
   event_loop_stop(eloop);
 
@@ -40,7 +42,7 @@ write_func(int         fd,
 
   ck_assert_int_eq(fd, watched_fd);
 
-  write(fd, message, strlen(message) + 1);
+  write(fd, MESSAGE, MESSAGE_LEN);
 
   event_loop_stop(eloop);
 
@@ -64,10 +66,10 @@ setup(void)
   eloop = event_loop_new();
 
   mkfifo(FIFO_NAME, 0600);
-  watched_fd = open("check_eloop.fifo", O_RDWR);
+  watched_fd = open(FIFO_NAME, O_RDWR);
 
   memset(callbacks, 0, sizeof(ELoopWatchFdCallback) * ELOOP_CALLBACK_MAX);
-  memset(buf, 0, strlen(message) + 1);
+  memset(buf, 0, MESSAGE_LEN);
 }
 
 void teardown(void)
@@ -83,11 +85,11 @@ START_TEST(test_eloop_calls_read_func_when_fd_has_pending_data)
 
   event_loop_add_fd_watch(eloop, watched_fd, callbacks, eloop);
 
-  write(watched_fd, message, strlen(message));
+  write(watched_fd, MESSAGE, MESSAGE_LEN);
 
   event_loop_run(eloop);
 
-  ck_assert_str_eq(buf, message);
+  ck_assert_str_eq(buf, MESSAGE);
 }
 END_TEST
 
@@ -100,10 +102,9 @@ START_TEST(test_eloop_calls_write_func_when_fd_becomes_writable)
 
   event_loop_run(eloop);
 
-  read(watched_fd, buf, strlen(message));
-  buf[strlen(message)] = 0;
+  read(watched_fd, buf, MESSAGE_LEN);
 
-  ck_assert_str_eq(buf, message);
+  ck_assert_str_eq(buf, MESSAGE);
 }
 END_TEST
 
