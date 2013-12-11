@@ -1,5 +1,3 @@
-option(ENABLE_TESTS "compile testsuite")
-
 if(ENABLE_TESTS)
     find_package(LIBCHECK)
     if(LIBCHECK_NOTFOUND)
