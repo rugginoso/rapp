@@ -68,6 +68,7 @@ struct ConfigOption {
         char *strvalue;
     } default_value;
     int default_set;
+    struct ConfigSection *section;
     TAILQ_ENTRY(ConfigOption) entries;
     TAILQ_HEAD(ConfigValuesHead, ConfigValue) values;
 };
@@ -192,6 +193,7 @@ int config_opt_add(struct Config *conf,
     if (!opt) {
         return 1;
     }
+    opt->section = sect;
     opt->type = type;
     if (help) {
         opt->help = strdup(help);
@@ -264,8 +266,7 @@ int config_opt_set_multivalued(struct Config *conf,
     return 0;
 }
 
-int opt_add_value_string(struct ConfigOption *opt, const char *name,
-                         const char *value) {
+int opt_add_value_string(struct ConfigOption *opt, const char *value) {
     struct ConfigValue *cv;
     if (opt->multivalued == 0 && opt->num_values > 0) {
         return 1;
@@ -285,8 +286,7 @@ int opt_add_value_string(struct ConfigOption *opt, const char *name,
     return 0;
 }
 
-int opt_add_value_int(struct ConfigOption *opt, const char *name,
-                      long value) {
+int opt_add_value_int(struct ConfigOption *opt, long value) {
     struct ConfigValue *cv;
     if (opt->type != PARAM_BOOL && opt->type != PARAM_INT) {
         return 1;
@@ -310,7 +310,7 @@ int config_add_value_int(struct Config *conf, const char *section,
                          const char *name, long value) {
     struct ConfigOption *opt;
     GET_OPTION(opt, conf, section, name);
-    if (opt_add_value_int(opt, name, value) != 0)
+    if (opt_add_value_int(opt, value) != 0)
         return 1;
     DEBUG(conf, "Added value '%s.%s' = %d", section, name, value);
     return 0;
@@ -320,7 +320,7 @@ int config_add_value_string(struct Config *conf, const char *section,
                             const char *name, const char *value) {
     struct ConfigOption *opt;
     GET_OPTION(opt, conf, section, name);
-    if (opt_add_value_string(opt, name, value) != 0) {
+    if (opt_add_value_string(opt, value) != 0) {
         return 1;
     }
     DEBUG(conf, "Added value '%s.%s' = '%s'", section, name, value);
@@ -454,28 +454,115 @@ int yaml_parse_init(struct Config *conf, const char *filename,
     return 0;
 }
 
+int config_set_value_from_yaml_scalar(struct Config *conf,
+                                     struct ConfigOption *opt,
+                                     yaml_token_t *token) {
+    long val;
+    char *endptr;
+    switch(opt->type) {
+        case PARAM_STRING:
+            if (opt_add_value_string(opt, token->data.scalar.value) != 0) {
+                ERROR(conf, "Cannot set value for %s.%s to %s", opt->section->name,
+                      opt->name, token->data.scalar.value);
+                return 1;
+            }
+            DEBUG(conf, "Added %s.%s = %s", opt->section->name, opt->name, token->data.scalar.value);
+            break;
+        case PARAM_BOOL:
+        case PARAM_INT:
+            errno = 0;
+            val = strtol(token->data.scalar.value, &endptr, 10);
+            if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN))
+                    || (errno != 0 && val == 0)
+                    || (opt->range_set == 1 && (val < opt->value_min) || (val > opt->value_max))) {
+                ERROR(conf, "Invalid integer %s", token->data.scalar.value);
+                return 1;
+            }
+            if (opt_add_value_int(opt, val) != 0) {
+                ERROR(conf, "Cannot set value for %s.%s to %d", opt->section->name,
+                      opt->name, val);
+                return 1;
+            }
+            DEBUG(conf, "Added %s.%s = %d", opt->section->name, opt->name, val);
+            break;
+    }
+    return 0;
+}
+
+int config_set_value_from_yaml_list(struct Config *conf,
+                                    struct ConfigOption *opt,
+                                    yaml_parser_t *parser,
+                                    yaml_token_t *token) {
+    if (opt->multivalued == 0 ) {
+        ERROR(conf, "Option %s.%s does not support multiple values.",
+              opt->section->name, opt->name);
+        return 1;
+    }
+    // sequences are BLOCK_ENTRY/SCALAR values
+    // read block entry
+    yaml_token_delete(token);
+    yaml_parser_scan(parser, token);
+    while (token->type == YAML_BLOCK_ENTRY_TOKEN ||
+           token->type == YAML_SCALAR_TOKEN ||
+           token->type == YAML_FLOW_ENTRY_TOKEN) {
+
+        if (token->type != YAML_SCALAR_TOKEN) {
+            // read scalar
+            yaml_token_delete(token);
+            yaml_parser_scan(parser, token);
+            if (token->type != YAML_SCALAR_TOKEN) {
+                ERROR(conf, "Expected scalar value, got %d", token->type);
+                return 1;
+            }
+        }
+        if (config_set_value_from_yaml_scalar(conf, opt, token) != 0) {
+            return 1;
+        }
+        // read block entry
+        yaml_token_delete(token);
+        yaml_parser_scan(parser, token);
+    }
+    if (token->type != YAML_BLOCK_END_TOKEN &&
+        token->type != YAML_FLOW_SEQUENCE_END_TOKEN) {
+        ERROR(conf, "Expected block end token, got %d", token->type);
+        return 1;
+    }
+    return 0;
+}
+
+
 int yaml_parse_key_value(struct Config *conf,
                          struct ConfigSection *section,
                          yaml_parser_t *parser,
                          int *last) {
     struct ConfigOption *opt;
-    char *name, *endptr;
-    long val;
+    char *name;
     yaml_token_t token;
     yaml_parser_scan(parser, &token);
     *last = 0;
-    if (token.type != YAML_KEY_TOKEN) {
-        if (token.type == YAML_BLOCK_END_TOKEN) {
+    if (token.type != YAML_KEY_TOKEN &&
+        token.type != YAML_FLOW_ENTRY_TOKEN) {
+        if (token.type == YAML_BLOCK_END_TOKEN ||
+            token.type == YAML_FLOW_MAPPING_END_TOKEN) {
             *last = 1;
             return 1;
         }
         ERROR(conf, "Expected key token, got %d", token.type);
         return 1;
     }
+    if (token.type == YAML_FLOW_ENTRY_TOKEN) {
+        yaml_token_delete(&token);
+        yaml_parser_scan(parser, &token);
+        if (token.type != YAML_KEY_TOKEN) {
+            ERROR(conf, "Expected key token, got %d", token.type);
+            return 1;
+        }
+    }
+
     yaml_token_delete(&token);
     yaml_parser_scan(parser, &token);
     if (token.type != YAML_SCALAR_TOKEN) {
-        ERROR(conf, "Expected scalar token, got %d", token.type);
+        ERROR(conf, "Expected scalar key name, got %d", token.type);
         return 1;
     }
 
@@ -501,51 +588,39 @@ int yaml_parse_key_value(struct Config *conf,
 
     yaml_token_delete(&token);
     yaml_parser_scan(parser, &token);
-    if (token.type != YAML_SCALAR_TOKEN) {
-        ERROR(conf, "Expected scalar token, got %d", token.type);
+    if (token.type != YAML_SCALAR_TOKEN &&
+        token.type != YAML_BLOCK_SEQUENCE_START_TOKEN &&
+        token.type != YAML_FLOW_SEQUENCE_START_TOKEN) {
+        ERROR(conf, "Expected value as scalar/list got %d", token.type);
         free(name);
         yaml_token_delete(&token);
         return 1;
     }
 
-    if (opt->multivalued == 0) {
-        // TODO: if scalar, we should wipe out values anyway.
-        // this is pending support for lists in yaml
-        config_option_remove_all_values(opt);
+    // wipe out any previous values, so that this configuration override any
+    // previous value read, but does not increase the number of values.
+    // This means that for scalar type we overwrite the value and for
+    // multivalued we override the whole list.
+    // Note that defaults are kept in a separate value so this is not
+    // touching those.
+    config_option_remove_all_values(opt);
+
+    if (token.type == YAML_BLOCK_SEQUENCE_START_TOKEN ||
+        token.type == YAML_FLOW_SEQUENCE_START_TOKEN) {
+        if (config_set_value_from_yaml_list(conf, opt, parser, &token) != 0) {
+            yaml_token_delete(&token);
+            free(name);
+            return 1;
+        }
+    }
+    else { // SCALAR
+        if (config_set_value_from_yaml_scalar(conf, opt, &token) != 0) {
+            yaml_token_delete(&token);
+            free(name);
+            return 1;
+        }
     }
 
-    switch(opt->type) {
-        case PARAM_STRING:
-            if (opt_add_value_string(opt, name, token.data.scalar.value) != 0) {
-                ERROR(conf, "Cannot set value for %s.%s to %s", section->name,
-                      name, token.data.scalar.value);
-                free(name);
-                yaml_token_delete(&token);
-                return 1;
-            }
-            DEBUG(conf, "Added %s.%s = %s", section->name, name, token.data.scalar.value);
-            break;
-        case PARAM_BOOL:
-        case PARAM_INT:
-            errno = 0;
-            val = strtol(token.data.scalar.value, &endptr, 10);
-            if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN))
-                    || (errno != 0 && val == 0)
-                    || (opt->range_set == 1 && (val < opt->value_min) || (val > opt->value_max))) {
-                ERROR(conf, "Invalid integer %s", token.data.scalar.value);
-                free(name);
-                return 1;
-            }
-            if (opt_add_value_int(opt, name, val) != 0) {
-                ERROR(conf, "Cannot set value for %s.%s to %d", section->name,
-                      name, val);
-                free(name);
-                yaml_token_delete(&token);
-                return 1;
-            }
-            DEBUG(conf, "Added %s.%s = %d", section->name, name, val);
-            break;
-    }
     yaml_token_delete(&token);
     free(name);
     return 0;
@@ -586,7 +661,8 @@ int yaml_parse_section(struct Config *conf,
     }
     yaml_token_delete(&token);
     yaml_parser_scan(parser, &token);
-    if (token.type != YAML_BLOCK_MAPPING_START_TOKEN) {
+    if (token.type != YAML_BLOCK_MAPPING_START_TOKEN &&
+        token.type != YAML_FLOW_MAPPING_START_TOKEN) {
         CRITICAL(conf, "Malformed yaml file %s: expected block, got %d",
                  filename, token.type);
         return 1;
@@ -605,7 +681,6 @@ int yaml_parse_section(struct Config *conf,
 
 int config_parse(struct Config *conf, const char* filename) {
     // TODO: multivalue support / list in yaml as values
-    // TODO: erase values if section is present twice
     yaml_parser_t parser;
     yaml_token_t token;
     int done, ret = 0;

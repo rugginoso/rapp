@@ -47,18 +47,21 @@ main(int argc, char *argv[])
     exit(1);
   }
 
+  char *address;
+  long port;
   assert(config_opt_add(config, "core", "address", PARAM_STRING, "Address to listen to") == 0);
   assert(config_opt_add(config, "core", "port", PARAM_INT, "Port") == 0);
   assert(config_opt_add(config, "core", "loglevel", PARAM_INT, "Verbosity level") == 0);
+  assert(config_opt_add(config, "core", "test", PARAM_STRING, "Multi test") == 0);
 
   assert(config_opt_set_range_int(config, "core", "port", 0, 65535) == 0);
+  assert(config_opt_set_multivalued(config, "core", "test", 1) == 0);
   assert(config_opt_set_default_int(config, "core", "port", 8080) == 0);
   assert(config_opt_set_default_string(config, "core", "address", "127.0.0.1") == 0);
   assert(config_opt_set_default_int(config, "core", "loglevel", LOG_INFO) == 0);
 
   assert(config_parse(config, "example.yaml") == 0);
-  char *address;
-  long port;
+
   config_get_string(config, "core", "address", (const char **)&address);
   config_get_int(config, "core", "port", &port);
   logger_trace(logger, LOG_INFO, "rapp", "listening on %s", address);
