@@ -29,6 +29,8 @@ setup(void)
   client_fd = connect_to(HOST, PORT);
 
   tcp_connection = tcp_connection_with_fd(accept(server_fd, NULL, NULL), eloop);
+
+  memset(buf, 0, MESSAGE_LEN);
 }
 
 void teardown(void)
@@ -42,6 +44,8 @@ void teardown(void)
 static void
 on_read(struct TcpConnection *c, const void *data)
 {
+  struct ELoop *eloop = (struct ELoop *)data;
+
   tcp_connection_read_data(c, buf, MESSAGE_LEN);
 
   event_loop_stop(eloop);
@@ -50,6 +54,8 @@ on_read(struct TcpConnection *c, const void *data)
 static void
 on_write(struct TcpConnection *c, const void *data)
 {
+  struct ELoop *eloop = (struct ELoop *)data;
+
   tcp_connection_write_data(c, MESSAGE, MESSAGE_LEN);
 
   event_loop_stop(eloop);
@@ -58,6 +64,8 @@ on_write(struct TcpConnection *c, const void *data)
 static void
 on_close(struct TcpConnection *c, const void *data)
 {
+  struct ELoop *eloop = (struct ELoop *)data;
+
   event_loop_stop(eloop);
 }
 
