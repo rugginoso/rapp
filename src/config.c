@@ -394,11 +394,57 @@ int config_opt_set_default_bool(struct Config *conf, const char *section,
     return config_opt_set_default_int(conf, section, name, value);
 }
 
-int yaml_parse_init
+int yaml_parse_init(struct Config *conf, const char *filename,
+                    yaml_parser_t *parser) {
+    yaml_token_t token;
+    // we should get the STREAM_START first
+    yaml_parser_scan(parser, &token);
+    if (token.type != YAML_STREAM_START_TOKEN) {
+        CRITICAL(conf, "Malformed yaml file %s: no stream start",
+                 filename);
+        return 1;
+    }
+
+    // read the first token. This must be a start of doc token
+    yaml_token_delete(&token);
+    yaml_parser_scan(parser, &token);
+    if (token.type != YAML_DOCUMENT_START_TOKEN) {
+        CRITICAL(conf, "Malformed yaml file %s: no start of doc found",
+                 filename);
+        return 1;
+    }
+    // config format is a global mapping of mappings
+    yaml_token_delete(&token);
+    yaml_parser_scan(parser, &token);
+    if (token.type != YAML_BLOCK_MAPPING_START_TOKEN) {
+        CRITICAL(conf, "Malformed yaml file %s: No global mapping found",
+                 filename);
+        return 1;
+    }
+    return 0;
+}
+
+int yaml_parse_section(struct Config *conf,
+                       const char *filename,
+                       const char *sectionname,
+                       yaml_parser_t *parser) {
+
+    DEBUG(conf, "Inside parse_section for %s", sectionname);
+/*
+ * (Value token) [Block mapping]
+ * (Key token)   scalar address
+ * (Value token) scalar 127.0.0.1
+ * (Key token)   scalar port
+ * (Value token) scalar 8080
+ * <b>End block</b>
+ */
+    return 0;
+}
 
 int config_parse(struct Config *conf, const char* filename) {
     yaml_parser_t parser;
-    yaml_token_t  token;
+    yaml_token_t token;
+    int done, ret = 0;
     char *err;
     FILE *fh = fopen(filename, "r");
     if (!fh) {
@@ -410,33 +456,46 @@ int config_parse(struct Config *conf, const char* filename) {
     memset(&parser, 0, sizeof(parser));
     if(!yaml_parser_initialize(&parser)) {
         CRITICAL(conf, "Cannot initialize YAML parser: %p", parser);
+        fclose(fh);
         return 1;
     }
     yaml_parser_set_input_file(&parser, fh);
 
-    // we should get the STREAM_START first
-    yaml_parser_scan(&parser, &token);
-    if (token.type != YAML_STREAM_START_TOKEN) {
-        CRITICAL(conf, "Malformed yaml file %s: no stream start",
-                 filename);
-        return 1;
+    if (yaml_parse_init(conf, filename, &parser) != 0) {
+        ret = 1;
+        goto cleanup;
     }
 
-    // read the first token. This must be a start of doc token
-    yaml_parser_scan(&parser, &token);
-    if (token.type != YAML_DOCUMENT_START_TOKEN) {
-        CRITICAL(conf, "Malformed yaml file %s: no start of doc found",
-                 filename);
-        return 1;
-    }
-    // config format is a global mapping of mappings
-    yaml_parser_scan(&parser, &token);
-    if (token.type != YAML_BLOCK_MAPPING_START_TOKEN) {
-        CRITICAL(conf, "Malformed yaml file %s: No global mapping found",
-                 filename);
-        return 1;
-    }
+    while (1) {
+        yaml_token_delete(&token);
+        yaml_parser_scan(&parser, &token);
+        if (token.type == YAML_BLOCK_END_TOKEN)
+            break;
 
+        if (token.type != YAML_KEY_TOKEN) {
+            CRITICAL(conf, "Malformed yaml file %s: expected section name key, got %d",
+                     filename, token.type);
+            ret = 1;
+            goto cleanup;
+        }
+
+        yaml_token_delete(&token);
+        yaml_parser_scan(&parser, &token);
+        if (token.type != YAML_SCALAR_TOKEN) {
+            CRITICAL(conf, "Malformed yaml file %s: expected section name, got %d",
+                     filename, token.type);
+            ret = 1;
+            goto cleanup;
+        }
+        if (yaml_parse_section(conf, filename, token.data.scalar.value,
+                               &parser) != 0) {
+            ret = 1;
+            break;
+        }
+    }
+ // * STREAM END
+
+#if 0
     do {
         yaml_parser_scan(&parser, &token);
         switch(token.type)
@@ -461,8 +520,11 @@ int config_parse(struct Config *conf, const char* filename) {
         if(token.type != YAML_STREAM_END_TOKEN)
             yaml_token_delete(&token);
     } while (token.type != YAML_STREAM_END_TOKEN);
+#endif
 
+cleanup:
     yaml_parser_delete(&parser);
     fclose(fh);
-    return 0;
+    return ret;
+
 }
