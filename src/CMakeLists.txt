@@ -6,6 +6,7 @@ add_executable(rapp
 				collector.c
 				container.c
                 config.c
+                config_yaml_parser.c
 				eloop.c
 				httpconnection.c
 				httpresponsewriter.c

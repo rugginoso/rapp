@@ -9,17 +9,6 @@ typedef enum {
 } ConfigParamType;
 
 struct Config;
-struct ConfigSection;
-
-// PRIVATE
-struct Config *config_new(struct Logger *logger);
-void config_destroy(struct Config *conf);
-int config_parse(struct Config *conf, const char* filename);
-
-int config_add_value_string(struct Config *conf, const char *section,
-                            const char *name, const char* value);
-int config_add_value_int(struct Config *conf, const char *section,
-                         const char *name, long value);
 
 // PUBLIC
 int config_opt_add(struct Config *conf, const char *section,
