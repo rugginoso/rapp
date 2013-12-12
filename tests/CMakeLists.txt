@@ -16,6 +16,7 @@ if(ENABLE_TESTS)
 
     if(CMAKE_COMPILER_IS_GNUCC)
         message(STATUS "Enabling the code coverage support")
+        include(CodeCoverage)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
     endif(CMAKE_COMPILER_IS_GNUCC)
 
@@ -30,6 +31,7 @@ if(ENABLE_TESTS)
     )
     target_link_libraries(check_collector ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_collector ${EXECUTABLE_OUTPUT_PATH}/check_collector)
+    setup_target_for_coverage(check_collector_coverage tests/check_collector coverage)
 
     # event loop
     add_executable(check_eloop
@@ -39,6 +41,7 @@ if(ENABLE_TESTS)
     )
     target_link_libraries(check_eloop ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_eloop ${EXECUTABLE_OUTPUT_PATH}/check_eloop)
+    setup_target_for_coverage(check_eloop_coverage tests/check_eloop coverage)
 
     # signal handler
     add_executable(check_signalhandler
@@ -49,6 +52,7 @@ if(ENABLE_TESTS)
     )
     target_link_libraries(check_signalhandler ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_signalhandler ${EXECUTABLE_OUTPUT_PATH}/check_signalhandler)
+    setup_target_for_coverage(check_signalhandler_coverage tests/check_signalhandler coverage)
 
     # tcp server
     add_executable(check_tcpserver
@@ -61,6 +65,7 @@ if(ENABLE_TESTS)
     )
     target_link_libraries(check_tcpserver ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_tcpserver ${EXECUTABLE_OUTPUT_PATH}/check_tcpserver)
+    setup_target_for_coverage(check_tcpserver_coverage tests/check_tcpserver coverage)
 
     # tcp connection
     add_executable(check_tcpconnection
@@ -72,6 +77,7 @@ if(ENABLE_TESTS)
     )
     target_link_libraries(check_tcpconnection ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_tcpconnection ${EXECUTABLE_OUTPUT_PATH}/check_tcpconnection)
+    setup_target_for_coverage(check_tcpconnection_coverage tests/check_tcpconnection coverage)
 
 endif(ENABLE_TESTS)
 
