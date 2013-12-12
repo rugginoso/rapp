@@ -56,6 +56,19 @@ Then you can start RApp using:
     $ cd build
     $ ./src/rapp
 ```
+For run tests:
+```bash
+   $ cmake -DENABLE_TESTS=1 -DCMAKE_BUILD_TYPE=Debug ..
+   $ make
+   $ make test
+```
+To generate test coverage report:
+```bash
+   $ cmake -DENABLE_TESTS=1 -DCMAKE_BUILD_TYPE=Debug ..
+   $ make
+   $ make coverage
+   $ open coverage/index.html
+```
 
 Coding Style
 ============
