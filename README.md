@@ -64,7 +64,7 @@ For run tests:
 ```
 To generate test coverage report:
 ```bash
-   $ cmake -DENABLE_TESTS=1 -DCMAKE_BUILD_TYPE=Debug ..
+   $ cmake -DENABLE_TESTS=1 -DENABLE_TESTS_COVERAGE=1 -DCMAKE_BUILD_TYPE=Debug ..
    $ make
    $ make coverage
    $ open coverage/index.html

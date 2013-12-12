@@ -15,9 +15,12 @@ if(ENABLE_TESTS)
     include_directories(${rapp_SOURCE_DIR}/tests)
 
     if(CMAKE_COMPILER_IS_GNUCC)
-        message(STATUS "Enabling the code coverage support")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
-        include(TestCoverage)
+        option(ENABLE_TESTS_COVERAGE "build test coverage report")
+        if (ENABLE_TESTS_COVERAGE)
+            message(STATUS "Enabling the code coverage support")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
+            include(TestCoverage)
+        endif(ENABLE_TESTS_COVERAGE)
     endif(CMAKE_COMPILER_IS_GNUCC)
 
     add_executable(check_stub check_stub.c)
@@ -29,7 +32,7 @@ if(ENABLE_TESTS)
         check_collector.c
         ${rapp_SOURCE_DIR}/src/collector.c
     )
-    target_link_libraries(check_collector ${LIBCHECK_LIBRARY} m rt pthread gcov)
+    target_link_libraries(check_collector ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_collector ${EXECUTABLE_OUTPUT_PATH}/check_collector)
 
     # event loop
@@ -38,7 +41,7 @@ if(ENABLE_TESTS)
         ${rapp_SOURCE_DIR}/src/eloop.c
         ${rapp_SOURCE_DIR}/src/collector.c
     )
-    target_link_libraries(check_eloop ${LIBCHECK_LIBRARY} m rt pthread gcov)
+    target_link_libraries(check_eloop ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_eloop ${EXECUTABLE_OUTPUT_PATH}/check_eloop)
 
     # signal handler
@@ -48,7 +51,7 @@ if(ENABLE_TESTS)
         ${rapp_SOURCE_DIR}/src/eloop.c
         ${rapp_SOURCE_DIR}/src/collector.c
     )
-    target_link_libraries(check_signalhandler ${LIBCHECK_LIBRARY} m rt pthread gcov)
+    target_link_libraries(check_signalhandler ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_signalhandler ${EXECUTABLE_OUTPUT_PATH}/check_signalhandler)
 
     # tcp server
@@ -60,7 +63,7 @@ if(ENABLE_TESTS)
         ${rapp_SOURCE_DIR}/src/eloop.c
         ${rapp_SOURCE_DIR}/src/collector.c
     )
-    target_link_libraries(check_tcpserver ${LIBCHECK_LIBRARY} m rt pthread gcov)
+    target_link_libraries(check_tcpserver ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_tcpserver ${EXECUTABLE_OUTPUT_PATH}/check_tcpserver)
 
     # tcp connection
@@ -71,7 +74,7 @@ if(ENABLE_TESTS)
         ${rapp_SOURCE_DIR}/src/eloop.c
         ${rapp_SOURCE_DIR}/src/collector.c
     )
-    target_link_libraries(check_tcpconnection ${LIBCHECK_LIBRARY} m rt pthread gcov)
+    target_link_libraries(check_tcpconnection ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_tcpconnection ${EXECUTABLE_OUTPUT_PATH}/check_tcpconnection)
 
 endif(ENABLE_TESTS)
