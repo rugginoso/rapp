@@ -258,13 +258,55 @@ int yaml_parse_section(struct Config *conf,
     return 0;
 }
 
-int config_parse(struct Config *conf, const char* filename) {
-    // TODO: multivalue support / list in yaml as values
-    yaml_parser_t parser;
+int config_parse_main(struct Config *conf, yaml_parser_t *parser,
+                      const char *sourcename) {
     yaml_token_t token;
     int done, ret = 0;
+    if (yaml_parse_init(conf, sourcename, parser) != 0) {
+        ret = 1;
+        goto cleanup;
+    }
+
+    while (1) {
+        yaml_parser_scan(parser, &token);
+        if (token.type == YAML_BLOCK_END_TOKEN) {
+            yaml_token_delete(&token);
+            break;
+        }
+
+        if (token.type != YAML_KEY_TOKEN) {
+            CRITICAL(conf, "Malformed yaml file %s: expected section name key, got %d",
+                     sourcename, token.type);
+            ret = 1;
+            goto cleanup;
+        }
+
+        yaml_token_delete(&token);
+        yaml_parser_scan(parser, &token);
+        if (token.type != YAML_SCALAR_TOKEN) {
+            CRITICAL(conf, "Malformed yaml file %s: expected section name, got %d",
+                     sourcename, token.type);
+            ret = 1;
+            goto cleanup;
+        }
+        if (yaml_parse_section(conf, sourcename, token.data.scalar.value,
+                               parser) != 0) {
+            ret = 1;
+            break;
+        }
+        yaml_token_delete(&token);
+    }
+cleanup:
+    yaml_parser_delete(parser);
+    return ret;
+
+}
+
+int config_parse(struct Config *conf, const char* filename) {
+    yaml_parser_t parser;
     char *err;
     FILE *fh = fopen(filename, "r");
+    int res;
     if (!fh) {
         err = strerror(errno);
         CRITICAL(conf, "Cannot open file '%s': %s", filename, err);
@@ -278,45 +320,22 @@ int config_parse(struct Config *conf, const char* filename) {
         return 1;
     }
     yaml_parser_set_input_file(&parser, fh);
-
-    if (yaml_parse_init(conf, filename, &parser) != 0) {
-        ret = 1;
-        goto cleanup;
-    }
-
-    while (1) {
-        yaml_parser_scan(&parser, &token);
-        if (token.type == YAML_BLOCK_END_TOKEN) {
-            yaml_token_delete(&token);
-            break;
-        }
-
-        if (token.type != YAML_KEY_TOKEN) {
-            CRITICAL(conf, "Malformed yaml file %s: expected section name key, got %d",
-                     filename, token.type);
-            ret = 1;
-            goto cleanup;
-        }
-
-        yaml_token_delete(&token);
-        yaml_parser_scan(&parser, &token);
-        if (token.type != YAML_SCALAR_TOKEN) {
-            CRITICAL(conf, "Malformed yaml file %s: expected section name, got %d",
-                     filename, token.type);
-            ret = 1;
-            goto cleanup;
-        }
-        if (yaml_parse_section(conf, filename, token.data.scalar.value,
-                               &parser) != 0) {
-            ret = 1;
-            break;
-        }
-        yaml_token_delete(&token);
-    }
- // TODO: * STREAM END
-
-cleanup:
-    yaml_parser_delete(&parser);
+    res = config_parse_main(conf, &parser, filename);
     fclose(fh);
-    return ret;
+    return res;
+}
+
+int config_parse_string(struct Config *conf, const char *source) {
+    const char *sourcename = "<string>";
+    yaml_parser_t parser;
+
+    if (!source || !conf)
+        return 1;
+    memset(&parser, 0, sizeof(parser));
+    if(!yaml_parser_initialize(&parser)) {
+        CRITICAL(conf, "Cannot initialize YAML parser: %p", parser);
+        return 1;
+    }
+    yaml_parser_set_input_string(&parser, source, strlen(source));
+    return config_parse_main(conf, &parser, sourcename);
 }
