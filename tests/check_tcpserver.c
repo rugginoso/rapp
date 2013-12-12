@@ -36,7 +36,8 @@ setup(void)
 
 void teardown(void)
 {
-  tcp_connection_destroy(tcp_connection);
+  if (tcp_connection != NULL)
+    tcp_connection_destroy(tcp_connection);
   tcp_server_destroy(tcp_server);
   event_loop_destroy(eloop);
 }
@@ -56,6 +57,21 @@ START_TEST(test_tcp_server_calls_callback_when_accepts_new_connections)
 }
 END_TEST
 
+START_TEST(test_tcp_server_dont_bind_on_not_existent_address)
+{
+  ck_assert(tcp_server_start_listen(tcp_server, "notexistent", PORT) != 0);
+}
+END_TEST
+
+START_TEST(test_tcp_server_dont_bind_on_used_port)
+{
+  int other_server_fd = listen_to(HOST, PORT);
+
+  ck_assert(tcp_server_start_listen(tcp_server, HOST, PORT) != 0);
+
+  close(other_server_fd);
+}
+END_TEST
 
 static Suite *
 tcp_server_suite(void)
@@ -65,6 +81,8 @@ tcp_server_suite(void)
 
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_tcp_server_calls_callback_when_accepts_new_connections);
+  tcase_add_test(tc, test_tcp_server_dont_bind_on_not_existent_address);
+  tcase_add_test(tc, test_tcp_server_dont_bind_on_used_port);
   suite_add_tcase(s, tc);
 
   return s;
