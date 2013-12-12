@@ -60,6 +60,14 @@ close_func(int         fd,
   return 0;
 }
 
+static void
+free_func(void *data)
+{
+  struct ELoop *eloop = (struct ELoop *)data;
+
+  event_loop_stop(eloop);
+}
+
 void
 setup(void)
 {
@@ -120,6 +128,11 @@ START_TEST(test_eloop_calls_close_func_when_fd_is_closed)
 }
 END_TEST
 
+START_TEST(test_eloop_calls_free_func_when_is_scheduled)
+{
+  event_loop_schedule_free(eloop, free_func, eloop);
+}
+END_TEST
 
 static Suite *
 eloop_suite(void)
@@ -131,6 +144,7 @@ eloop_suite(void)
   tcase_add_test(tc, test_eloop_calls_read_func_when_fd_has_pending_data);
   tcase_add_test(tc, test_eloop_calls_write_func_when_fd_becomes_writable);
   tcase_add_test(tc, test_eloop_calls_close_func_when_fd_is_closed);
+  tcase_add_test(tc, test_eloop_calls_free_func_when_is_scheduled);
   suite_add_tcase(s, tc);
 
   return s;
