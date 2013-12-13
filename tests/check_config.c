@@ -5,12 +5,22 @@
 #include <config_private.h>
 #include <logger.h>
 
-#define S "sect"
-#define N "name"
+#define S "sectname"
+#define N "optname"
 #define PS PARAM_STRING
 
-#define ck_assert_call_ok(fun, ...) ck_assert_int_eq(fun(__VA_ARGS__), 0);
-#define ck_assert_call_fail(fun, ...) ck_assert_int_ne(fun(__VA_ARGS__), 0);
+int ck_call_res;
+#define ck_call(fun, eq, expected, ...)             \
+do {                                                \
+    ck_call_res = fun(__VA_ARGS__);                 \
+    if (eq)                                         \
+        ck_assert_int_eq(ck_call_res, expected);    \
+    else                                            \
+        ck_assert_int_ne(ck_call_res, expected);    \
+} while(0)
+
+#define ck_assert_call_ok(fun, ...) ck_call(fun, 1, 0, __VA_ARGS__)
+#define ck_assert_call_fail(fun, ...) ck_call(fun, 0, 0, __VA_ARGS__)
 
 
 struct Config *conf;
@@ -26,6 +36,18 @@ void
 teardown(void)
 {
     config_destroy(conf);
+}
+
+struct ConfigOption*
+get_test_option(void) {
+    struct ConfigSection *sect;
+    struct ConfigOption *opt;
+    sect = get_section(conf, S);
+    for (opt=sect->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {
+        if (strcmp(opt->name, N) == 0)
+            return opt;
+    }
+    return NULL;
 }
 
 
@@ -54,9 +76,36 @@ START_TEST(test_config_create)
 }
 END_TEST
 
-START_TEST(test_config_opt_add)
+START_TEST(test_config_opt_string)
 {
+    struct ConfigOption *opt;
+    char *value;
+    int res;
     ck_assert_call_ok(config_opt_add, conf, S, N, PARAM_STRING, "tests");
+    opt = get_test_option();
+    ck_assert_call_ok(config_opt_set_default_string, conf, S, N, "default");
+    ck_assert_str_eq(opt->default_value.strvalue, "default");
+    ck_assert_call_ok(config_get_nth_string, conf, S, N, 0, &value);
+    ck_assert_str_eq(value, "default");
+    free(value);
+
+    ck_assert_call_ok(config_add_value_string, conf, S, N, "value");
+    // multivalued is off
+    ck_assert_call_fail(config_add_value_string, conf, S, N, "value");
+    ck_assert_call_ok(config_get_nth_string, conf, S, N, 0, &value);
+    ck_assert_str_eq(value, "value");
+    free(value);
+    ck_assert_call_ok(config_opt_set_multivalued, conf, S, N, 1);
+    ck_assert_call_ok(config_add_value_string, conf, S, N, "value2");
+    ck_assert_call_ok(config_get_num_values, conf, S, N, &res);
+    ck_assert_int_eq(res, 2);
+    ck_assert_call_ok(config_get_nth_string, conf, S, N, 0, &value);
+    ck_assert_str_eq(value, "value");
+    free(value);
+    ck_assert_call_ok(config_get_nth_string, conf, S, N, 1, &value);
+    ck_assert_str_eq(value, "value2");
+    free(value);
+
 }
 END_TEST
 
@@ -69,7 +118,7 @@ config_suite(void)
 
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_config_create);
-  tcase_add_test(tc, test_config_opt_add);
+  tcase_add_test(tc, test_config_opt_string);
   suite_add_tcase(s, tc);
 
   return s;
