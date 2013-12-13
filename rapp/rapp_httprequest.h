@@ -3,6 +3,13 @@
 
 #define HTTP_REQUEST_MAX_HEADERS 1024 // FIXME: choose an appropriate size
 
+#define EXTRACT_MEMORY_RANGE(dest, buffer, range)       \
+do {                                                    \
+  dest = alloca(range.length + 1);                      \
+  memcpy(dest, &(buffer[range.offset]), range.length);  \
+  dest[range.length] = 0;                               \
+} while(0)
+
 struct MemoryRange {
   size_t offset;
   size_t length;

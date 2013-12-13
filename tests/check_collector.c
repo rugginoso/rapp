@@ -11,10 +11,12 @@
 
 char buf[MESSAGE_LEN];
 struct Collector *collector = NULL;
+int calls = 0;
 
 static void
 free_func(void *data)
 {
+  calls++;
   memcpy(buf, MESSAGE, MESSAGE_LEN);
 }
 
@@ -22,6 +24,7 @@ void setup()
 {
   collector = collector_new();
   memset(buf, 0, MESSAGE_LEN);
+  calls = 0;
 }
 
 void teardown()
@@ -40,6 +43,18 @@ START_TEST(test_collector_calls_free_func_on_collect)
 }
 END_TEST
 
+START_TEST(test_collector_calls_free_func_only_one_time_per_object)
+{
+  collector_schedule_free(collector, free_func, MESSAGE);
+  collector_schedule_free(collector, free_func, MESSAGE);
+
+  collector_collect(collector);
+
+  ck_assert_str_eq(buf, MESSAGE);
+  ck_assert_int_eq(calls, 1);
+}
+END_TEST
+
 
 static Suite *
 collector_suite(void)
@@ -49,6 +64,7 @@ collector_suite(void)
 
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_collector_calls_free_func_on_collect);
+  tcase_add_test(tc, test_collector_calls_free_func_only_one_time_per_object);
   suite_add_tcase(s, tc);
 
   return s;

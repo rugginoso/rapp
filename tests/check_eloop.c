@@ -1,23 +1,21 @@
 #include <stdlib.h>
 #include <check.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <sys/socket.h>
 
 #include <eloop.h>
-
 #include "test_utils.h"
-
-#define FIFO_NAME "check_eloop.fifo"
 
 #define MESSAGE "Hello world!"
 #define MESSAGE_LEN STRLEN(MESSAGE)
 
+#define WATCHED 0
+#define OTHER 1
+
 struct ELoop *eloop = NULL;
-int watched_fd = -1;
 ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
 char buf[MESSAGE_LEN];
+int fds[2];
 
 static int
 read_func(int         fd,
@@ -25,7 +23,7 @@ read_func(int         fd,
 {
   struct ELoop *eloop = (struct ELoop *)data;
 
-  ck_assert_int_eq(fd, watched_fd);
+  ck_assert_int_eq(fd, fds[WATCHED]);
 
   read(fd, buf, MESSAGE_LEN);
 
@@ -40,7 +38,7 @@ write_func(int         fd,
 {
   struct ELoop *eloop = (struct ELoop *)data;
 
-  ck_assert_int_eq(fd, watched_fd);
+  ck_assert_int_eq(fd, fds[WATCHED]);
 
   write(fd, MESSAGE, MESSAGE_LEN);
 
@@ -55,9 +53,19 @@ close_func(int         fd,
 {
   struct ELoop *eloop = (struct ELoop *)data;
 
+  ck_assert_int_eq(fd, fds[WATCHED]);
+
   event_loop_stop(eloop);
 
   return 0;
+}
+
+static void
+free_func(void *data)
+{
+  struct ELoop *eloop = (struct ELoop *)data;
+
+  event_loop_stop(eloop);
 }
 
 void
@@ -65,8 +73,7 @@ setup(void)
 {
   eloop = event_loop_new();
 
-  mkfifo(FIFO_NAME, 0600);
-  watched_fd = open(FIFO_NAME, O_RDWR);
+  socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
 
   memset(callbacks, 0, sizeof(ELoopWatchFdCallback) * ELOOP_CALLBACK_MAX);
   memset(buf, 0, MESSAGE_LEN);
@@ -74,8 +81,8 @@ setup(void)
 
 void teardown(void)
 {
-  close(watched_fd);
-  unlink(FIFO_NAME);
+  close(fds[WATCHED]);
+  close(fds[OTHER]);
   event_loop_destroy(eloop);
 }
 
@@ -83,9 +90,9 @@ START_TEST(test_eloop_calls_read_func_when_fd_has_pending_data)
 {
   callbacks[ELOOP_CALLBACK_READ] = read_func;
 
-  event_loop_add_fd_watch(eloop, watched_fd, callbacks, eloop);
+  event_loop_add_fd_watch(eloop, fds[WATCHED], callbacks, eloop);
 
-  write(watched_fd, MESSAGE, MESSAGE_LEN);
+  write(fds[OTHER], MESSAGE, MESSAGE_LEN);
 
   event_loop_run(eloop);
 
@@ -98,11 +105,11 @@ START_TEST(test_eloop_calls_write_func_when_fd_becomes_writable)
 {
   callbacks[ELOOP_CALLBACK_WRITE] = write_func;
 
-  event_loop_add_fd_watch(eloop, watched_fd, callbacks, eloop);
+  event_loop_add_fd_watch(eloop, fds[WATCHED], callbacks, eloop);
 
   event_loop_run(eloop);
 
-  read(watched_fd, buf, MESSAGE_LEN);
+  read(fds[OTHER], buf, MESSAGE_LEN);
 
   ck_assert_str_eq(buf, MESSAGE);
 }
@@ -113,14 +120,19 @@ START_TEST(test_eloop_calls_close_func_when_fd_is_closed)
 {
   callbacks[ELOOP_CALLBACK_CLOSE] = close_func;
 
-  event_loop_add_fd_watch(eloop, watched_fd, callbacks, eloop);
+  event_loop_add_fd_watch(eloop, fds[WATCHED], callbacks, eloop);
 
-  close(watched_fd);
+  close(fds[OTHER]);
 
   event_loop_run(eloop);
 }
 END_TEST
 
+START_TEST(test_eloop_calls_free_func_when_is_scheduled)
+{
+  event_loop_schedule_free(eloop, free_func, eloop);
+}
+END_TEST
 
 static Suite *
 eloop_suite(void)
@@ -132,6 +144,7 @@ eloop_suite(void)
   tcase_add_test(tc, test_eloop_calls_read_func_when_fd_has_pending_data);
   tcase_add_test(tc, test_eloop_calls_write_func_when_fd_becomes_writable);
   tcase_add_test(tc, test_eloop_calls_close_func_when_fd_is_closed);
+  tcase_add_test(tc, test_eloop_calls_free_func_when_is_scheduled);
   suite_add_tcase(s, tc);
 
   return s;

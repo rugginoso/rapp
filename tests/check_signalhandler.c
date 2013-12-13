@@ -17,6 +17,19 @@ on_signal(struct SignalHandler *signal_handler, void *data)
   event_loop_stop(eloop);
 }
 
+static void
+on_signal_to_remove_handler(struct SignalHandler *signal_handler, void *data)
+{
+  signal_handler_remove_signal_callback(signal_handler, SIGUSR1);
+  kill(getpid(), SIGUSR1);
+}
+
+static void
+on_posix_signal(int sig)
+{
+  event_loop_stop(eloop);
+}
+
 void
 setup(void)
 {
@@ -40,6 +53,17 @@ START_TEST(test_signal_handler_calls_callback_when_signal_arrives)
 }
 END_TEST
 
+START_TEST(test_signal_handler_dont_calls_callback_when_signal_handler_was_removed)
+{
+  signal_handler_add_signal_callback(signal_handler, SIGUSR1, on_signal_to_remove_handler, eloop);
+
+  signal(SIGUSR1, on_posix_signal);
+
+  kill(getpid(), SIGUSR1);
+
+  event_loop_run(eloop);
+}
+END_TEST
 
 static Suite *
 signal_handler_suite(void)
@@ -49,6 +73,7 @@ signal_handler_suite(void)
 
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_signal_handler_calls_callback_when_signal_arrives);
+  tcase_add_test(tc, test_signal_handler_dont_calls_callback_when_signal_handler_was_removed);
   suite_add_tcase(s, tc);
 
   return s;
