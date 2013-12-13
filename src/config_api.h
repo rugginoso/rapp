@@ -32,7 +32,7 @@ int config_get_nth_int(struct Config *conf, const char *section,
                        const char *name, int position, long *value);
 int config_get_nth_string(struct Config *conf, const char *section,
                           const char *name, int position,
-                          const char **value);
+                          char **value);
 int config_get_num_values(struct Config *conf, const char *section,
                          const char *name, int *num_values);
 

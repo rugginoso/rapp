@@ -128,7 +128,7 @@ int config_get_nth_bool(struct Config *conf, const char *name, const char *secti
 
 int config_get_nth_string(struct Config *conf, const char *section,
                           const char *name, int position,
-                          const char **value) {
+                          char **value) {
 
     struct ConfigOption *opt;
     struct ConfigValue *cv;
