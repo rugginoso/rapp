@@ -11,7 +11,7 @@ int yaml_parse_init(struct Config *conf, const char *filename,
     if (token.type != YAML_STREAM_START_TOKEN) {
         CRITICAL(conf, "Malformed yaml file %s: no stream start",
                  filename);
-        return 1;
+        return -1;
     }
 
     // read the first token. This must be a start of doc token
@@ -20,7 +20,7 @@ int yaml_parse_init(struct Config *conf, const char *filename,
     if (token.type != YAML_DOCUMENT_START_TOKEN) {
         CRITICAL(conf, "Malformed yaml file %s: no start of doc found",
                  filename);
-        return 1;
+        return -1;
     }
     // config format is a global mapping of mappings
     yaml_token_delete(&token);
@@ -28,7 +28,7 @@ int yaml_parse_init(struct Config *conf, const char *filename,
     if (token.type != YAML_BLOCK_MAPPING_START_TOKEN) {
         CRITICAL(conf, "Malformed yaml file %s: No global mapping found",
                  filename);
-        return 1;
+        return -1;
     }
     return 0;
 }
@@ -43,7 +43,7 @@ int config_set_value_from_yaml_scalar(struct Config *conf,
             if (opt_add_value_string(opt, token->data.scalar.value) != 0) {
                 ERROR(conf, "Cannot set value for %s.%s to %s", opt->section->name,
                       opt->name, token->data.scalar.value);
-                return 1;
+                return -1;
             }
             DEBUG(conf, "Added %s.%s = %s", opt->section->name, opt->name, token->data.scalar.value);
             break;
@@ -55,12 +55,12 @@ int config_set_value_from_yaml_scalar(struct Config *conf,
                     || (errno != 0 && val == 0)
                     || (opt->range_set == 1 && (val < opt->value_min) || (val > opt->value_max))) {
                 ERROR(conf, "Invalid integer %s", token->data.scalar.value);
-                return 1;
+                return -1;
             }
             if (opt_add_value_int(opt, val) != 0) {
                 ERROR(conf, "Cannot set value for %s.%s to %d", opt->section->name,
                       opt->name, val);
-                return 1;
+                return -1;
             }
             DEBUG(conf, "Added %s.%s = %d", opt->section->name, opt->name, val);
             break;
@@ -75,7 +75,7 @@ int config_set_value_from_yaml_list(struct Config *conf,
     if (opt->multivalued == 0 ) {
         ERROR(conf, "Option %s.%s does not support multiple values.",
               opt->section->name, opt->name);
-        return 1;
+        return -1;
     }
     // sequences are BLOCK_ENTRY/SCALAR values
     // read block entry
@@ -91,11 +91,11 @@ int config_set_value_from_yaml_list(struct Config *conf,
             yaml_parser_scan(parser, token);
             if (token->type != YAML_SCALAR_TOKEN) {
                 ERROR(conf, "Expected scalar value, got %d", token->type);
-                return 1;
+                return -1;
             }
         }
         if (config_set_value_from_yaml_scalar(conf, opt, token) != 0) {
-            return 1;
+            return -1;
         }
         // read block entry
         yaml_token_delete(token);
@@ -104,7 +104,7 @@ int config_set_value_from_yaml_list(struct Config *conf,
     if (token->type != YAML_BLOCK_END_TOKEN &&
         token->type != YAML_FLOW_SEQUENCE_END_TOKEN) {
         ERROR(conf, "Expected block end token, got %d", token->type);
-        return 1;
+        return -1;
     }
     return 0;
 }
@@ -124,17 +124,17 @@ int yaml_parse_key_value(struct Config *conf,
         if (token.type == YAML_BLOCK_END_TOKEN ||
             token.type == YAML_FLOW_MAPPING_END_TOKEN) {
             *last = 1;
-            return 1;
+            return -1;
         }
         ERROR(conf, "Expected key token, got %d", token.type);
-        return 1;
+        return -1;
     }
     if (token.type == YAML_FLOW_ENTRY_TOKEN) {
         yaml_token_delete(&token);
         yaml_parser_scan(parser, &token);
         if (token.type != YAML_KEY_TOKEN) {
             ERROR(conf, "Expected key token, got %d", token.type);
-            return 1;
+            return -1;
         }
     }
 
@@ -142,18 +142,18 @@ int yaml_parse_key_value(struct Config *conf,
     yaml_parser_scan(parser, &token);
     if (token.type != YAML_SCALAR_TOKEN) {
         ERROR(conf, "Expected scalar key name, got %d", token.type);
-        return 1;
+        return -1;
     }
 
     name = strdup(token.data.scalar.value);
     if (!name)
-        return 1;
+        return -1;
 
     GET_OPTION_FROM_SECT(opt, conf, section, name);
     if (!opt) {
         ERROR(conf, "%s.%s not found", section->name, name);
         free(name);
-        return 1;
+        return -1;
     }
 
     yaml_token_delete(&token);
@@ -162,7 +162,7 @@ int yaml_parse_key_value(struct Config *conf,
         ERROR(conf, "Expected value token, got %d", token.type);
         free(name);
         yaml_token_delete(&token);
-        return 1;
+        return -1;
     }
 
     yaml_token_delete(&token);
@@ -173,7 +173,7 @@ int yaml_parse_key_value(struct Config *conf,
         ERROR(conf, "Expected value as scalar/list got %d", token.type);
         free(name);
         yaml_token_delete(&token);
-        return 1;
+        return -1;
     }
 
     // wipe out any previous values, so that this configuration override any
@@ -189,14 +189,14 @@ int yaml_parse_key_value(struct Config *conf,
         if (config_set_value_from_yaml_list(conf, opt, parser, &token) != 0) {
             yaml_token_delete(&token);
             free(name);
-            return 1;
+            return -1;
         }
     }
     else { // SCALAR
         if (config_set_value_from_yaml_scalar(conf, opt, &token) != 0) {
             yaml_token_delete(&token);
             free(name);
-            return 1;
+            return -1;
         }
     }
 
@@ -228,7 +228,7 @@ int yaml_parse_section(struct Config *conf,
     if (!section) {
         INFO(conf, "Skipping unkown section %s", sectionname);
         if (yaml_skip_section(parser) != 0)
-            return 1;
+            return -1;
         return 0;
     }
     DEBUG(conf, "Inside parse_section for %s", sectionname);
@@ -236,7 +236,7 @@ int yaml_parse_section(struct Config *conf,
     if (token.type != YAML_VALUE_TOKEN) {
         CRITICAL(conf, "Malformed yaml file %s: expected value, got %d",
                  filename, token.type);
-        return 1;
+        return -1;
     }
     yaml_token_delete(&token);
     yaml_parser_scan(parser, &token);
@@ -244,14 +244,14 @@ int yaml_parse_section(struct Config *conf,
         token.type != YAML_FLOW_MAPPING_START_TOKEN) {
         CRITICAL(conf, "Malformed yaml file %s: expected block, got %d",
                  filename, token.type);
-        return 1;
+        return -1;
     }
     while(1) {
         if (yaml_parse_key_value(conf, section, parser, &last) != 0) {
             if (last == 1)
                 break;
              else
-                return 1;
+                return -1;
         }
     }
     yaml_token_delete(&token);
@@ -263,7 +263,7 @@ int config_parse_main(struct Config *conf, yaml_parser_t *parser,
     yaml_token_t token;
     int done, ret = 0;
     if (yaml_parse_init(conf, sourcename, parser) != 0) {
-        ret = 1;
+        ret = -1;
         goto cleanup;
     }
 
@@ -277,7 +277,7 @@ int config_parse_main(struct Config *conf, yaml_parser_t *parser,
         if (token.type != YAML_KEY_TOKEN) {
             CRITICAL(conf, "Malformed yaml file %s: expected section name key, got %d",
                      sourcename, token.type);
-            ret = 1;
+            ret = -1;
             goto cleanup;
         }
 
@@ -286,12 +286,12 @@ int config_parse_main(struct Config *conf, yaml_parser_t *parser,
         if (token.type != YAML_SCALAR_TOKEN) {
             CRITICAL(conf, "Malformed yaml file %s: expected section name, got %d",
                      sourcename, token.type);
-            ret = 1;
+            ret = -1;
             goto cleanup;
         }
         if (yaml_parse_section(conf, sourcename, token.data.scalar.value,
                                parser) != 0) {
-            ret = 1;
+            ret = -1;
             break;
         }
         yaml_token_delete(&token);
@@ -310,14 +310,14 @@ int config_parse(struct Config *conf, const char* filename) {
     if (!fh) {
         err = strerror(errno);
         CRITICAL(conf, "Cannot open file '%s': %s", filename, err);
-        return 1;
+        return -1;
     }
     DEBUG(conf, "Parsing file %s", filename);
     memset(&parser, 0, sizeof(parser));
     if(!yaml_parser_initialize(&parser)) {
         CRITICAL(conf, "Cannot initialize YAML parser: %p", parser);
         fclose(fh);
-        return 1;
+        return -1;
     }
     yaml_parser_set_input_file(&parser, fh);
     res = config_parse_main(conf, &parser, filename);
@@ -330,11 +330,11 @@ int config_parse_string(struct Config *conf, const char *source) {
     yaml_parser_t parser;
 
     if (!source || !conf)
-        return 1;
+        return -1;
     memset(&parser, 0, sizeof(parser));
     if(!yaml_parser_initialize(&parser)) {
         CRITICAL(conf, "Cannot initialize YAML parser: %p", parser);
-        return 1;
+        return -1;
     }
     yaml_parser_set_input_string(&parser, source, strlen(source));
     return config_parse_main(conf, &parser, sourcename);

@@ -30,17 +30,17 @@ void config_destroy(struct Config* conf) {
 int opt_add_value_int(struct ConfigOption *opt, long value) {
     struct ConfigValue *cv;
     if (opt->type != PARAM_BOOL && opt->type != PARAM_INT) {
-        return 1;
+        return -1;
     }
     if (opt->multivalued == 0 && opt->num_values > 0) {
-        return 1;
+        return -1;
     }
     if (opt->range_set == 1 && (opt->value_min > value || opt->value_max < value)) {
-            return 1;
+            return -1;
     }
     cv = (struct ConfigValue*) malloc(sizeof(struct ConfigValue));
     if (!cv)
-        return 1;
+        return -1;
     cv->value.intvalue = value;
     opt->num_values++;
     TAILQ_INSERT_TAIL(&opt->values, cv, entries);
@@ -50,17 +50,17 @@ int opt_add_value_int(struct ConfigOption *opt, long value) {
 int opt_add_value_string(struct ConfigOption *opt, const char *value) {
     struct ConfigValue *cv;
     if (opt->multivalued == 0 && opt->num_values > 0) {
-        return 1;
+        return -1;
     }
     if (!value || opt->type != PARAM_STRING)
-        return 1;
+        return -1;
     cv = (struct ConfigValue*) malloc(sizeof(struct ConfigValue));
     if (!cv)
-        return 1;
+        return -1;
     cv->value.strvalue = strdup(value);
     if (!cv->value.strvalue) {
         free(cv);
-        return 1;
+        return -1;
     }
     opt->num_values++;
     TAILQ_INSERT_TAIL(&opt->values, cv, entries);
@@ -72,7 +72,7 @@ int config_add_value_int(struct Config *conf, const char *section,
     struct ConfigOption *opt;
     GET_OPTION(opt, conf, section, name);
     if (opt_add_value_int(opt, value) != 0)
-        return 1;
+        return -1;
     DEBUG(conf, "Added value '%s.%s' = %d", section, name, value);
     return 0;
 }
@@ -82,7 +82,7 @@ int config_add_value_string(struct Config *conf, const char *section,
     struct ConfigOption *opt;
     GET_OPTION(opt, conf, section, name);
     if (opt_add_value_string(opt, value) != 0) {
-        return 1;
+        return -1;
     }
     DEBUG(conf, "Added value '%s.%s' = '%s'", section, name, value);
     return 0;

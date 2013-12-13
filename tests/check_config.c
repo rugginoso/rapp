@@ -10,7 +10,7 @@
 #define PS PARAM_STRING
 
 #define ck_assert_call_ok(fun, ...) ck_assert_int_eq(fun(__VA_ARGS__), 0);
-#define ck_assert_call_fail(fun, ...) ck_assert_int_eq(fun(__VA_ARGS__), 1);
+#define ck_assert_call_fail(fun, ...) ck_assert_int_ne(fun(__VA_ARGS__), 0);
 
 
 struct Config *conf;
