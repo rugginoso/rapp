@@ -127,7 +127,7 @@ int config_get_nth_int(struct Config *conf, const char *section,
     return 0;
 }
 
-int config_get_nth_bool(struct Config *conf, const char *name, const char *section,
+int config_get_nth_bool(struct Config *conf, const char *section, const char *name,
                         int position, int *value) {
     return config_get_nth_int(conf, section, name, position, (long*) value);
 }
