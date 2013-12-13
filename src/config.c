@@ -47,6 +47,8 @@ int config_opt_add(struct Config *conf,
             opt->range_set = 1;
             break;
         case PARAM_INT:
+            opt->value_min = LONG_MIN;
+            opt->value_max = LONG_MAX;
             opt->default_value.intvalue = 0;
             break;
         case PARAM_STRING:
