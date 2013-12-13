@@ -80,6 +80,7 @@ if(ENABLE_TESTS)
     # config
     add_executable(check_config
         check_config.c
+        ${rapp_SOURCE_DIR}/tests/test_utils.c
         ${rapp_SOURCE_DIR}/src/logger.c
         ${rapp_SOURCE_DIR}/src/config_yaml_parser.c
         ${rapp_SOURCE_DIR}/src/config_private.c

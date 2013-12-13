@@ -5,23 +5,10 @@
 #include <config_private.h>
 #include <logger.h>
 
+#include "test_utils.h"
 #define S "sectname"
 #define N "optname"
 #define PS PARAM_STRING
-
-int ck_call_res;
-#define ck_call(fun, eq, expected, ...)             \
-do {                                                \
-    ck_call_res = 10;                               \
-    ck_call_res = fun(__VA_ARGS__);                 \
-    if (eq == 1)                                    \
-        ck_assert_int_eq(ck_call_res, expected);    \
-    else                                            \
-        ck_assert_int_ne(ck_call_res, expected);    \
-} while(0)
-
-#define ck_assert_call_ok(fun, ...) ck_call(fun, 1, 0, __VA_ARGS__)
-#define ck_assert_call_fail(fun, ...) ck_call(fun, 0, 0, __VA_ARGS__)
 
 
 struct Config *conf;
