@@ -8,7 +8,6 @@
 int ck_call_res;
 #define ck_call(fun, eq, expected, ...)             \
 do {                                                \
-    ck_call_res = 10;                               \
     ck_call_res = fun(__VA_ARGS__);                 \
     if (eq == 1)                                    \
         ck_assert_int_eq(ck_call_res, expected);    \
