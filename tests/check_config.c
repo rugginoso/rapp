@@ -12,8 +12,9 @@
 int ck_call_res;
 #define ck_call(fun, eq, expected, ...)             \
 do {                                                \
+    ck_call_res = 10;                               \
     ck_call_res = fun(__VA_ARGS__);                 \
-    if (eq)                                         \
+    if (eq == 1)                                    \
         ck_assert_int_eq(ck_call_res, expected);    \
     else                                            \
         ck_assert_int_ne(ck_call_res, expected);    \
@@ -55,11 +56,15 @@ START_TEST(test_config_create)
 {
     char *value;
     long v;
+    config_destroy(conf);
+    setup();
     ck_assert(conf != NULL);
     // missing required arguments
     ck_assert_call_fail(config_opt_add, NULL, S, N, PS, NULL);
     ck_assert_call_fail(config_opt_add, conf, NULL, N, PS, NULL);
     ck_assert_call_fail(config_opt_add, conf, S, NULL, PS, NULL);
+    struct ConfigSection *sect = get_section(conf, NULL);
+    ck_assert(sect == NULL);
 
     // setting properties on non-existing option
     ck_assert_call_fail(config_opt_set_range_int, conf, S, N, 0, 1);
@@ -89,6 +94,7 @@ START_TEST(test_config_opt_string)
     ck_assert_str_eq(value, "default");
     free(value);
 
+    ck_assert_call_fail(config_add_value_int, conf, S, N, 4);
     ck_assert_call_ok(config_add_value_string, conf, S, N, "value");
     // multivalued is off
     ck_assert_call_fail(config_add_value_string, conf, S, N, "value");
@@ -105,10 +111,70 @@ START_TEST(test_config_opt_string)
     ck_assert_call_ok(config_get_nth_string, conf, S, N, 1, &value);
     ck_assert_str_eq(value, "value2");
     free(value);
-
+    ck_assert_call_fail(config_get_nth_string, conf, S, N, -1, &value);
+    ck_assert_call_fail(config_get_nth_string, conf, S, N, 2, &value);
+    return;
 }
 END_TEST
 
+START_TEST(test_config_opt_int)
+{
+    struct ConfigOption *opt;
+    long res;
+    int ires;
+    ck_assert_call_ok(config_opt_add, conf, S, N, PARAM_INT, "tests");
+    opt = get_test_option();
+    ck_assert_call_ok(config_opt_set_default_int, conf, S, N, 3);
+    ck_assert_int_eq(opt->default_value.intvalue, 3);
+    ck_assert_call_ok(config_get_nth_int, conf, S, N, 0, &res);
+    ck_assert_int_eq(res, 3);
+
+    ck_assert_call_fail(config_add_value_string, conf, S, N, "value");
+    ck_assert_call_ok(config_add_value_int, conf, S, N, 2);
+    // multivalued is off
+    ck_assert_call_fail(config_add_value_int, conf, S, N, 1);
+    ck_assert_call_ok(config_get_nth_int, conf, S, N, 0, &res);
+    ck_assert_int_eq(res, 2);
+
+    ck_assert_call_fail(config_opt_set_range_int, conf, S, N, 1, 1);
+    ck_assert_call_fail(config_opt_set_range_int, conf, S, N, 1, 0);
+    ck_assert_call_ok(config_opt_set_range_int, conf, S, N, 0, 10);
+
+    ck_assert_call_ok(config_opt_set_multivalued, conf, S, N, 1);
+    ck_assert_call_fail(config_add_value_int, conf, S, N, -1);
+    ck_assert_call_fail(config_add_value_int, conf, S, N, 11);
+    ck_assert_call_ok(config_add_value_int, conf, S, N, 0);
+    ck_assert_call_ok(config_add_value_int, conf, S, N, 10);
+    ck_assert_call_ok(config_get_num_values, conf, S, N, &ires);
+    ck_assert_int_eq(ires, 3);
+    ck_assert_call_ok(config_get_nth_int, conf, S, N, 1, &res);
+    ck_assert_int_eq(res, 0);
+    ck_assert_call_ok(config_get_nth_int, conf, S, N, 2, &res);
+    ck_assert_int_eq(res, 10);
+    ck_assert_call_fail(config_get_nth_int, conf, S, N, -1, &res);
+    ck_assert_call_fail(config_get_nth_int, conf, S, N, 3, &res);
+    return;
+}
+END_TEST
+
+START_TEST(test_config_opt_bool)
+{
+    int b;
+    long l;
+    ck_assert_call_ok(config_opt_add, conf, S, N, PARAM_BOOL, "tests");
+    // autorange for booleans
+    ck_assert_call_fail(config_add_value_int, conf, S, N, -1);
+    ck_assert_call_fail(config_add_value_int, conf, S, N, 2);
+    ck_assert_call_fail(config_opt_set_default_bool, conf, S, N, 2);
+    ck_assert_call_fail(config_opt_set_default_bool, conf, S, N, -1);
+    ck_assert_call_ok(config_opt_set_default_bool, conf, S, N, 1);
+//    ck_assert_call_ok(config_get_nth_bool, conf, S, N, 0, &b);
+//    ck_assert_int_eq(b, 1);
+//    ck_assert_call_ok(config_get_nth_int, conf, S, N, 0, &l);
+//    ck_assert_int_eq(b, l);
+    return;
+}
+END_TEST
 
 static Suite *
 config_suite(void)
@@ -119,6 +185,8 @@ config_suite(void)
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_config_create);
   tcase_add_test(tc, test_config_opt_string);
+  tcase_add_test(tc, test_config_opt_int);
+  tcase_add_test(tc, test_config_opt_bool);
   suite_add_tcase(s, tc);
 
   return s;
