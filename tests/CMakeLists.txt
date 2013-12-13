@@ -77,5 +77,17 @@ if(ENABLE_TESTS)
     target_link_libraries(check_tcpconnection ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_tcpconnection ${EXECUTABLE_OUTPUT_PATH}/check_tcpconnection)
 
+    # config
+    add_executable(check_config
+        check_config.c
+        ${rapp_SOURCE_DIR}/tests/test_utils.c
+        ${rapp_SOURCE_DIR}/src/logger.c
+        ${rapp_SOURCE_DIR}/src/config_yaml_parser.c
+        ${rapp_SOURCE_DIR}/src/config_private.c
+        ${rapp_SOURCE_DIR}/src/config.c
+    )
+    target_link_libraries(check_config ${LIBCHECK_LIBRARY} m rt pthread yaml)
+    add_test(test_config ${EXECUTABLE_OUTPUT_PATH}/check_config)
+
 endif(ENABLE_TESTS)
 
