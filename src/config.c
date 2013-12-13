@@ -44,10 +44,9 @@ int config_opt_add(struct Config *conf,
             opt->value_min = 0;
             opt->value_max = 1;
             opt->default_value.intvalue = 0;
+            opt->range_set = 1;
             break;
         case PARAM_INT:
-            opt->value_min = LONG_MIN;
-            opt->value_max = LONG_MAX;
             opt->default_value.intvalue = 0;
             break;
         case PARAM_STRING:
@@ -73,7 +72,7 @@ int config_opt_set_range_int(struct Config *conf,
     GET_OPTION(opt, conf, section, name);
     if (!opt || opt->type != PARAM_INT)
         return -1;
-    if (conf->freezed == 1 || value_min > value_max)
+    if (conf->freezed == 1 || value_min >= value_max)
         return -1;
     opt->value_min = value_min;
     opt->value_max = value_max;
@@ -117,6 +116,8 @@ int config_get_nth_int(struct Config *conf, const char *section,
         // position > 0, return error, even if default is set
         return -1;
     }
+    if(position >= opt->num_values)
+        return -1;
     cv = opt->values.tqh_first;
     while(i < position) {
         cv = cv->entries.tqe_next;
@@ -152,6 +153,8 @@ int config_get_nth_string(struct Config *conf, const char *section,
         // position > 0, return error, even if default is set
         return -1;
     }
+    if(position >= opt->num_values)
+        return -1;
     cv = opt->values.tqh_first;
     while(i < position) {
         cv = cv->entries.tqe_next;
@@ -163,9 +166,6 @@ int config_get_nth_string(struct Config *conf, const char *section,
 
 int config_get_num_values(struct Config *conf, const char *section,
                           const char *name, int *num_values) {
-    if (!conf || !section || !name)
-        return -1;
-
     struct ConfigOption *opt;
     GET_OPTION(opt, conf, section, name);
     *num_values = opt->num_values;
