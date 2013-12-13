@@ -109,15 +109,20 @@ int config_get_nth_int(struct Config *conf, const char *section,
         return -1;
     if(opt->multivalued == 0 && position != 0)
         return -1;
-    for(cv=opt->values.tqh_first; cv != NULL && i < position; cv=cv->entries.tqe_next);
-    if (!cv) {
-        if (opt->default_set)
+    if (opt->num_values == 0 && opt->default_set) {
+        if (position == 0) {
             *value = opt->default_value.intvalue;
-        else
-            return -1;
-    } else {
-        *value = cv->value.intvalue;
+            return 0;
+        }
+        // position > 0, return error, even if default is set
+        return -1;
     }
+    cv = opt->values.tqh_first;
+    while(i < position) {
+        cv = cv->entries.tqe_next;
+        i++;
+    }
+    *value = cv->value.intvalue;
     return 0;
 }
 
@@ -138,15 +143,20 @@ int config_get_nth_string(struct Config *conf, const char *section,
     GET_OPTION(opt, conf, section, name);
     if (opt->type != PARAM_STRING || (opt->multivalued == 0 && position != 0))
         return -1;
-    for(cv=opt->values.tqh_first; cv != NULL && i < position; cv=cv->entries.tqe_next);
-    if (!cv) {
-        if (opt->default_set)
+    if (opt->num_values == 0 && opt->default_set) {
+        if (position == 0) {
             *value = strdup(opt->default_value.strvalue);
-        else
-            return -1;
-    } else {
-        *value = strdup(cv->value.strvalue);
+            return 0;
+        }
+        // position > 0, return error, even if default is set
+        return -1;
     }
+    cv = opt->values.tqh_first;
+    while(i < position) {
+        cv = cv->entries.tqe_next;
+        i++;
+    }
+    *value = strdup(cv->value.strvalue);
     return 0;
 }
 
