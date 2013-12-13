@@ -88,8 +88,12 @@ START_TEST(test_config_opt_string)
     int res;
     ck_assert_call_ok(config_opt_add, conf, S, N, PARAM_STRING, "tests");
     opt = get_test_option();
+    ck_assert_call_fail(config_opt_set_default_string, conf, S, N, NULL);
     ck_assert_call_ok(config_opt_set_default_string, conf, S, N, "default");
+    ck_assert_call_fail(config_opt_set_range_int, conf, S, N, 0, 1);
     ck_assert_str_eq(opt->default_value.strvalue, "default");
+    ck_assert_call_fail(config_get_nth_string, conf, S, N, 1, &value);
+    ck_assert_call_fail(config_get_nth_int, conf, S, N, 0, (long *)&res);
     ck_assert_call_ok(config_get_nth_string, conf, S, N, 0, &value);
     ck_assert_str_eq(value, "default");
     free(value);
@@ -128,9 +132,11 @@ START_TEST(test_config_opt_int)
     ck_assert_int_eq(opt->default_value.intvalue, 3);
     ck_assert_call_ok(config_get_nth_int, conf, S, N, 0, &res);
     ck_assert_int_eq(res, 3);
+    ck_assert_call_fail(config_get_nth_int, conf, S, N, 1, &res);
 
     ck_assert_call_fail(config_add_value_string, conf, S, N, "value");
     ck_assert_call_ok(config_add_value_int, conf, S, N, 2);
+    ck_assert_call_fail(config_get_nth_int, conf, S, N, 1, &res);
     // multivalued is off
     ck_assert_call_fail(config_add_value_int, conf, S, N, 1);
     ck_assert_call_ok(config_get_nth_int, conf, S, N, 0, &res);
@@ -168,10 +174,10 @@ START_TEST(test_config_opt_bool)
     ck_assert_call_fail(config_opt_set_default_bool, conf, S, N, 2);
     ck_assert_call_fail(config_opt_set_default_bool, conf, S, N, -1);
     ck_assert_call_ok(config_opt_set_default_bool, conf, S, N, 1);
-//    ck_assert_call_ok(config_get_nth_bool, conf, S, N, 0, &b);
-//    ck_assert_int_eq(b, 1);
-//    ck_assert_call_ok(config_get_nth_int, conf, S, N, 0, &l);
-//    ck_assert_int_eq(b, l);
+    ck_assert_call_ok(config_get_nth_int, conf, S, N, 0, &l);
+    ck_assert_int_eq(1, l);
+    ck_assert_call_ok(config_get_nth_bool, conf, S, N, 0, &b);
+    ck_assert_int_eq(b, 1);
     return;
 }
 END_TEST
