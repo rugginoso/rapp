@@ -10,26 +10,26 @@
 #define ERROR(conf, fmt, ...) LOG(conf, LOG_ERROR, fmt, __VA_ARGS__)
 #define CRITICAL(conf, fmt, ...) LOG(conf, LOG_CRITICAL, fmt, __VA_ARGS__)
 
-#define GET_OPTION_FROM_SECT(opt, conf, sect, name)                           \
+#define GET_OPTION_FROM_SECT(opt, conf, sect, optname)                        \
 do {                                                                          \
-  if (!(conf) || !(sect) || !(name)) {                                        \
+  if (!(conf) || !(sect) || !(optname)) {                                     \
     WARN(conf, "missing or unset parameter %p", conf);                        \
     return 1;                                                                 \
   }                                                                           \
   opt = NULL;                                                                 \
   for (opt=sect->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) { \
-    if (strcmp(opt->name, (name)) == 0)                                       \
+    if (strcmp(opt->name, (optname)) == 0)                                    \
       break;                                                                  \
   }                                                                           \
   if (!opt) {                                                                 \
-    WARN(conf, "No such option %s in section %s", (name), (sect->name));      \
+    WARN(conf, "No such option %s in section %s", (optname), (sect->name));   \
     return 1;                                                                 \
   }                                                                           \
 } while(0)
 
-#define GET_OPTION(opt, conf, section, name)                                  \
+#define GET_OPTION(opt, conf, section, optname)                               \
 do {                                                                          \
-  if (!(conf) || !(section) || !(name)) {                                     \
+  if (!(conf) || !(section) || !(optname)) {                                  \
     WARN(conf, "missing or unset parameter %p", conf);                        \
     return 1;                                                                 \
   }                                                                           \
@@ -38,7 +38,7 @@ do {                                                                          \
     WARN(conf, "No such section: %s", (section));                             \
     return 1;                                                                 \
   }                                                                           \
-  GET_OPTION_FROM_SECT(opt, conf, s, name);                                   \
+  GET_OPTION_FROM_SECT(opt, conf, s, optname);                                \
 } while(0)
 
 struct ConfigValue {
