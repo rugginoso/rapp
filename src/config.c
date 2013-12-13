@@ -137,6 +137,7 @@ int config_get_nth_string(struct Config *conf, const char *section,
 
     struct ConfigOption *opt;
     struct ConfigValue *cv;
+    *value = NULL;
     int i = 0;
     if (position < 0)
         return -1;
