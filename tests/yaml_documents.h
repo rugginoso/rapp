@@ -25,3 +25,4 @@ const char *yaml_wrong_int = "---\ncore: {intvalue: absderrg}";
 const char *yaml_wrong_int2 = "---\ncore: {intvalue: 100abc}";
 const char *yaml_wrong_bool = "---\ncore: {boolvalue: absderrg}";
 const char *yaml_wrong_string = "---\ncore: {strvalue: }";
+const char *yaml_wrong_multivalued = "---\ncore: {singlevalue: [1,2,3]}";

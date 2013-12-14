@@ -95,10 +95,12 @@ START_TEST(test_yaml_invalid_data)
     config_opt_add(conf, "core", "intvalue", PARAM_INT, NULL);
     config_opt_add(conf, "core", "boolvalue", PARAM_BOOL, NULL);
     config_opt_add(conf, "core", "strvalue", PARAM_STRING, NULL);
+    config_opt_add(conf, "core", "singlevalue", PARAM_INT, NULL);
     ck_assert_call_fail(config_parse_string, conf, yaml_wrong_int);
     ck_assert_call_fail(config_parse_string, conf, yaml_wrong_int2);
     ck_assert_call_fail(config_parse_string, conf, yaml_wrong_bool);
     ck_assert_call_fail(config_parse_string, conf, yaml_wrong_string);
+    ck_assert_call_fail(config_parse_string, conf, yaml_wrong_multivalued);
 
 }
 END_TEST
