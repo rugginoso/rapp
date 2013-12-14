@@ -152,9 +152,62 @@ struct ConfigSection* section_create(struct Config *conf, const char *name) {
 
 // Commandline
 //
-int generate_argp_for_section(struct Config *conf, struct ConfigSection *sect)
+int generate_argp_for_section(struct Config *conf, struct ConfigSection *sect, int *index, int group)
 {
+    struct ConfigOption *opt;
+    struct argp_option *ao;
+    char *prefix, *optname;
+    size_t prefix_length, optname_length;
+    int i = *index;
+    if (strcmp(sect->name, RAPP_CONFIG_SECTION) != 0) {
+        // +2: \0 and - as separator from optname
+        prefix_length = (strlen(sect->name) + 2) * sizeof(char);
+        prefix = (char*) malloc(prefix_length);
+        if (!prefix)
+            return -1;
+        snprintf(prefix, prefix_length, "%s-", sect->name);
+    } else {
+        prefix = NULL;
+        prefix_length = 0;
+    }
+
+    for (opt=sect->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {
+        ao = &(*conf->options)[*index];
+        memset(ao, 0, sizeof(struct argp_option));
+        optname_length = prefix_length + sizeof(char) * strlen(opt->name) + 1;
+        optname = (char *) malloc(optname_length);
+        if (!optname) {
+            goto cleanup_on_error;
+        }
+        if (prefix)
+            snprintf(optname, optname_length, "%s%s", prefix, opt->name);
+        else
+            snprintf(optname, optname_length, "%s", opt->name);
+        ao->name = optname;
+        if (opt->help) {
+            ao->doc = strdup(opt->help);
+            if (!ao->doc) {
+                free(optname);
+                goto cleanup_on_error;
+            }
+        }
+        ao->group = group;
+        DEBUG(conf, "Added commandline option '--%s', help: '%s'", ao->name, ao->doc);
+        *index++;
+    }
+
     return 0;
+
+cleanup_on_error:
+    for (i=0; i < *index; i++) {
+        ao = &(*conf->options)[i];
+        free((char *)ao->name);
+        if (ao->doc)
+            free((char *)ao->doc);
+    }
+    if (prefix)
+        free(prefix);
+    return -1;
 }
 
 int config_generate_commandline(struct Config *conf) {
@@ -162,6 +215,7 @@ int config_generate_commandline(struct Config *conf) {
     int options_array_size;
     size_t argp_option_size = sizeof(struct argp_option);
     struct ConfigSection *s;
+    int index, group;
     if (!conf)
         return -1;
 
@@ -175,26 +229,38 @@ int config_generate_commandline(struct Config *conf) {
     for (s=conf->sections.tqh_first; s != NULL; s=s->entries.tqe_next)
         num_total_options += s->num_opts;
 
+    DEBUG(conf, "Creating commandline for %d configured options",
+            num_total_options);
+
     /* array must be terminated by an entry with all zeros. Hence the +1
      * Plus, to allow grouping of args in the help output, we add an empty
      * entry for each section, except core. So num_sections - 1. Hence no
      * more +1 :) */
     options_array_size =  num_total_options + conf->num_sections;
-    conf->options = (struct argp_option**) malloc(
+    conf->options = malloc(
             argp_option_size * options_array_size);
     if (!conf->options)
         return -1;
 
     // now, add arguments for each sections
+    index = group = 0;
     for (s=conf->sections.tqh_first; s != NULL; s=s->entries.tqe_next) {
-        if (generate_argp_for_section(conf, s) != 0) {
+        DEBUG(conf, "Creating commandline for section '%s'", s->name);
+        // set the title for this group - if not the first one
+        if (index > 0)
+            (*conf->options)[index].doc = strdup(s->name);
+        if (generate_argp_for_section(conf, s, &index, group) != 0) {
             free(conf->options);
             return -1;
         }
+        // add the empty entry to separate groups/sections
+        memset(&(*conf->options)[index], 0, argp_option_size);
+        index++;
+        // increment the group index (for next section, if any)
+        group++;
     }
-    // add the last entry
+    // add the last entry, empty
+    memset(&(*conf->options)[index], 0, argp_option_size);
 
-    // freeze the config
-    conf->freezed = 1;
     return 0;
 }

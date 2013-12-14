@@ -2,6 +2,7 @@
 #define CONFIG_H
 #include "logger.h"
 
+#define RAPP_CONFIG_SECTION "core"
 typedef enum {
     PARAM_BOOL,
     PARAM_INT,

@@ -80,7 +80,7 @@ struct Config {
     int freezed;
     int num_sections;
     struct Logger *logger;
-    struct argp_option **options;
+    struct argp_option (*options)[];
     TAILQ_HEAD(ConfigSectionHead, ConfigSection) sections;
 };
 

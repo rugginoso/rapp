@@ -53,6 +53,7 @@ main(int argc, char *argv[])
   assert(config_opt_add(config, "core", "port", PARAM_INT, "Port") == 0);
   assert(config_opt_add(config, "core", "loglevel", PARAM_INT, "Verbosity level") == 0);
   assert(config_opt_add(config, "core", "test", PARAM_STRING, "Multi test") == 0);
+  assert(config_opt_add(config, "other", "test", PARAM_STRING, "Test option in different section") == 0);
 
   assert(config_opt_set_range_int(config, "core", "port", 0, 65535) == 0);
   assert(config_opt_set_multivalued(config, "core", "test", 1) == 0);
@@ -60,6 +61,7 @@ main(int argc, char *argv[])
   assert(config_opt_set_default_string(config, "core", "address", "127.0.0.1") == 0);
   assert(config_opt_set_default_int(config, "core", "loglevel", LOG_INFO) == 0);
 
+  assert(config_generate_commandline(config) == 0);
   assert(config_parse(config, "example.yaml") == 0);
 
   config_get_string(config, "core", "address", &address);
