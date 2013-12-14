@@ -48,7 +48,6 @@ START_TEST(test_config_yaml_parse)
     const char *yaml;
     int i;
 
-
     for (i=0; i<2; i++) {
         if (i == 0) {
             cp = conf;
@@ -76,6 +75,7 @@ START_TEST(test_config_yaml_parse)
         CHECK_INT(cp, c, "test_list_inline", vi, 2, 1);
         CHECK_INT(cp, c, "test_list_inline", vi, 3, 2);
     }
+    config_destroy(conf2);
     return;
 }
 END_TEST
@@ -91,6 +91,7 @@ START_TEST(test_yaml_empty)
     ck_assert_call_fail(config_parse_string, conf, yaml_no_section2);
     ck_assert_call_fail(config_parse_string, conf, yaml_no_section_name);
     ck_assert_call_fail(config_parse_string, conf, yaml_no_section_name2);
+    ck_assert_call_fail(config_parse_string, conf, yaml_malformed);
 }
 END_TEST
 
@@ -107,7 +108,6 @@ START_TEST(test_yaml_invalid_data)
     ck_assert_call_fail(config_parse_string, conf, yaml_wrong_bool);
     ck_assert_call_fail(config_parse_string, conf, yaml_wrong_string);
     ck_assert_call_fail(config_parse_string, conf, yaml_wrong_multivalued);
-
 }
 END_TEST
 
