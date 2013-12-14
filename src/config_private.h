@@ -1,5 +1,6 @@
 #ifndef CONFIG_PRIVATE_H
 #define CONFIG_PRIVATE_H
+#include <argp.h>
 #include <sys/queue.h>
 #include "config_api.h"
 
@@ -79,11 +80,13 @@ struct Config {
     int freezed;
     int num_sections;
     struct Logger *logger;
+    struct argp_option **options;
     TAILQ_HEAD(ConfigSectionHead, ConfigSection) sections;
 };
 
 struct Config *config_new(struct Logger *logger);
 void config_destroy(struct Config *conf);
+int config_generate_commandline(struct Config *conf);
 int config_parse(struct Config *conf, const char* filename);
 int config_parse_string(struct Config *conf, const char *source);
 

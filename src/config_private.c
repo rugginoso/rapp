@@ -12,6 +12,7 @@ struct Config *config_new(struct Logger *logger) {
     conf->num_sections = 0;
     conf->freezed = 0;
     conf->logger = logger;
+    conf->options = NULL;
     DEBUG(conf, "Successfully initialized empty config object %p", conf);
     return conf;
 }
@@ -147,4 +148,53 @@ struct ConfigSection* section_create(struct Config *conf, const char *name) {
     TAILQ_INSERT_TAIL(&conf->sections, sect, entries);
     DEBUG(conf, "Created section '%s'", name);
     return sect;
+}
+
+// Commandline
+//
+int generate_argp_for_section(struct Config *conf, struct ConfigSection *sect)
+{
+    return 0;
+}
+
+int config_generate_commandline(struct Config *conf) {
+    int num_total_options;
+    int options_array_size;
+    size_t argp_option_size = sizeof(struct argp_option);
+    struct ConfigSection *s;
+    if (!conf)
+        return -1;
+
+    // do not support being called twice
+    if (conf->options)
+        return -1;
+
+    /* ok here is the deal. For each section, for each option we have
+     * to create the array: so first "discover" the number of total options */
+    num_total_options = 0;
+    for (s=conf->sections.tqh_first; s != NULL; s=s->entries.tqe_next)
+        num_total_options += s->num_opts;
+
+    /* array must be terminated by an entry with all zeros. Hence the +1
+     * Plus, to allow grouping of args in the help output, we add an empty
+     * entry for each section, except core. So num_sections - 1. Hence no
+     * more +1 :) */
+    options_array_size =  num_total_options + conf->num_sections;
+    conf->options = (struct argp_option**) malloc(
+            argp_option_size * options_array_size);
+    if (!conf->options)
+        return -1;
+
+    // now, add arguments for each sections
+    for (s=conf->sections.tqh_first; s != NULL; s=s->entries.tqe_next) {
+        if (generate_argp_for_section(conf, s) != 0) {
+            free(conf->options);
+            return -1;
+        }
+    }
+    // add the last entry
+
+    // freeze the config
+    conf->freezed = 1;
+    return 0;
 }
