@@ -224,6 +224,8 @@ http_request_get_header_value_range(struct HTTPRequest *request,
       *range = request->headers_ranges[i].value;
       return 0;
     }
+
+    i++;
   }
 
   return -1;
