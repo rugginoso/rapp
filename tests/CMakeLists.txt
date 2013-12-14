@@ -11,6 +11,7 @@ if(ENABLE_TESTS)
     include_directories(${rapp_BINARY_DIR})
     include_directories(${rapp_SOURCE_DIR})
     include_directories(${rapp_SOURCE_DIR}/src)
+    include_directories(${rapp_SOURCE_DIR}/contrib/http-parser)
     # for the custom headers - if any
     include_directories(${rapp_SOURCE_DIR}/tests)
 
@@ -84,6 +85,14 @@ if(ENABLE_TESTS)
     )
     target_link_libraries(check_tcpconnection ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_tcpconnection ${EXECUTABLE_OUTPUT_PATH}/check_tcpconnection)
+
+    add_executable(check_httprequest
+        check_httprequest.c
+        ${rapp_SOURCE_DIR}/src/httprequest.c
+        ${rapp_SOURCE_DIR}/contrib/http-parser/http_parser.c
+    )
+    target_link_libraries(check_httprequest ${LIBCHECK_LIBRARY} m rt pthread)
+    add_test(test_httprequest ${EXECUTABLE_OUTPUT_PATH}/check_httprequest)
 
 endif(ENABLE_TESTS)
 

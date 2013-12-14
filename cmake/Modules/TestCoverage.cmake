@@ -32,7 +32,7 @@ ADD_CUSTOM_TARGET(coverage
   COMMAND make test # Workaround for add_dependencies because test is not a real target
   COMMAND mkdir -p coverage
   COMMAND ${LCOV_PATH} --directory . --capture --output-file coverage/coverage.info
-  COMMAND ${LCOV_PATH} --remove coverage/coverage.info 'tests/*' '/usr/*' --output-file coverage/coverage.info.cleaned
+  COMMAND ${LCOV_PATH} --remove coverage/coverage.info 'tests/*' '/usr/*' 'contrib/*' --output-file coverage/coverage.info.cleaned
   COMMAND ${GENHTML_PATH} -o coverage/ coverage/coverage.info.cleaned
   COMMAND ${CMAKE_COMMAND} -E remove coverage/coverage.info coverage/coverage.info.cleaned
 
