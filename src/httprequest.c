@@ -162,8 +162,13 @@ http_request_append_data(struct HTTPRequest *request,
 
   request->buffer_length += length;
 
-  if (parsed != length)
+  if (parsed != length) {
+    /*
+     * TODO: log parser error with http_errno_name(request->parser.http_errno) and
+     *       http_errno_description(request->parser.http_errno)
+     */
     return -1;
+  }
 
   return 0;
 }
