@@ -22,7 +22,8 @@ struct Container {
 };
 
 static int
-is_ABI_compatible(int core_abi, int plugin_abi)
+is_ABI_compatible(int core_abi,
+                  int plugin_abi)
 {
   return core_abi == plugin_abi;
 }
@@ -42,7 +43,7 @@ static int
 get_symbol(struct Logger *logger,
            void          *handle,
            const char    *name,
-           void **symbol)
+           void         **symbol)
 {
   char *error = NULL;
 
@@ -79,6 +80,8 @@ container_make(void          *plugin,
   struct RappContainer *handle = NULL;
   int error = 0;
 
+  assert(plugin != NULL);
+  /* the caller must ensure the other parameters are valid */
 
   if (get_symbol(logger, plugin, "rapp_create", (void *)&plugin_create) != 0)
     return NULL;
@@ -110,11 +113,17 @@ container_make(void          *plugin,
 typedef int (*PluginGetAbiVersionFunc)(void);
 
 struct Container *
-container_new(struct Logger *logger, const char *name, int ac, char **av)
+container_new(struct Logger *logger,
+              const char    *name,
+              int            ac,
+              char         **av)
 {
   void *plugin = NULL;
   PluginGetAbiVersionFunc plugin_get_abi_version = NULL;
   int plugin_abi = 0;
+
+  assert(logger != NULL);
+  assert(name != NULL);
 
   logger_trace(logger, LOG_INFO, "loader",
                "loading plugin[%s]", name);

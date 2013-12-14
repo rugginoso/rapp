@@ -24,5 +24,7 @@ int logger_trace(struct Logger *logger, LogLevel level, const char *tag, const c
 
 int logger_trace_va(struct Logger *logger, LogLevel level, const char *tag, const char *fmt, va_list args);
 
+int logger_flush(struct Logger *logger);
+
 #endif /* RAPP_LOGGER_H */
 
