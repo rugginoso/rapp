@@ -1,7 +1,11 @@
 #ifndef RAPP_HTTPREQUEST_H
 #define RAPP_HTTPREQUEST_H
 
-#define HTTP_REQUEST_MAX_HEADERS 1024 // FIXME: choose an appropriate size
+/*
+ * Same limit as apache:
+ * http://httpd.apache.org/docs/current/mod/core.html#limitrequestfields
+ */
+#define HTTP_REQUEST_MAX_HEADERS 100
 
 #define EXTRACT_MEMORY_RANGE(dest, buffer, range)       \
 do {                                                    \
