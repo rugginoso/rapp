@@ -1,7 +1,12 @@
 #include <errno.h>
 #include <limits.h>
+#include <regex.h>
 #include <yaml.h>
 #include "config_private.h"
+
+// shamelessly stolen from pyyaml - http://bit.ly/Jhm0C0
+const char *regex_bool_str = "^(?:yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF)$";
+const char *regex_bool_true_str = "^(?:yes|Yes|YES|true|True|TRUE|on|On|ON)$";
 
 int yaml_parse_init(struct Config *conf, const char *filename,
                     yaml_parser_t *parser) {
@@ -38,6 +43,8 @@ int config_set_value_from_yaml_scalar(struct Config *conf,
                                      yaml_token_t *token) {
     long val;
     char *endptr;
+    int reti;
+    regex_t regex_bool;
     switch(opt->type) {
         case PARAM_STRING:
             if (opt_add_value_string(opt, token->data.scalar.value) != 0) {
@@ -47,7 +54,36 @@ int config_set_value_from_yaml_scalar(struct Config *conf,
             }
             DEBUG(conf, "Added %s.%s = %s", opt->section->name, opt->name, token->data.scalar.value);
             break;
+
         case PARAM_BOOL:
+            reti = regcomp(&regex_bool, regex_bool_str, 0);
+            if (reti) {
+                ERROR(conf, "Cannot compile regex for bool parsing (error: %d)", reti);
+                regfree(&regex_bool);
+                return -1;
+            }
+            reti = regexec(&regex_bool, token->data.scalar.value, 0, NULL, 0);
+            if (reti) {  // MATCH
+                DEBUG(conf, "MATCH %s.%s as boolean : %s", opt->section->name, opt->name, token->data.scalar.value);
+                reti = regcomp(&regex_bool, regex_bool_true_str, 0);
+                val = reti ? 0 : 1;
+                if (opt_add_value_int(opt, val) != 0) {
+                    ERROR(conf, "Cannot set value for %s.%s to %d", opt->section->name,
+                          opt->name, val);
+                    regfree(&regex_bool);
+                    return -1;
+                }
+                DEBUG(conf, "Added %s.%s = %d", opt->section->name, opt->name, val);
+                break;
+
+            } else {
+                ERROR(conf, "Invalid boolean value %s", token->data.scalar.value);
+                regfree(&regex_bool);
+                return -1;
+            }
+            regfree(&regex_bool);
+            break;
+
         case PARAM_INT:
             errno = 0;
             val = strtol(token->data.scalar.value, &endptr, 10);
