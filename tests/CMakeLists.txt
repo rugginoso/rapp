@@ -44,6 +44,14 @@ if(ENABLE_TESTS)
     target_link_libraries(check_eloop ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_eloop ${EXECUTABLE_OUTPUT_PATH}/check_eloop)
 
+    # logger
+    add_executable(check_logger
+        check_logger.c
+        ${rapp_SOURCE_DIR}/src/logger.c
+    )
+    target_link_libraries(check_logger ${LIBCHECK_LIBRARY} m rt pthread)
+    add_test(test_logger ${EXECUTABLE_OUTPUT_PATH}/check_logger)
+
     # signal handler
     add_executable(check_signalhandler
         check_signalhandler.c
