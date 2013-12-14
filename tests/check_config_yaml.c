@@ -90,8 +90,8 @@ END_TEST
 static Suite *
 config_yaml_parse_suite(void)
 {
-  Suite *s = suite_create("rapp.core.config.yaml");
-  TCase *tc = tcase_create("rapp.core.config.yaml");
+  Suite *s = suite_create("rapp.core.config_yaml");
+  TCase *tc = tcase_create("rapp.core.config_yaml");
 
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_config_yaml_parse);

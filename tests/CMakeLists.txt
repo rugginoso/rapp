@@ -76,6 +76,16 @@ if(ENABLE_TESTS)
     )
     target_link_libraries(check_tcpconnection ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_tcpconnection ${EXECUTABLE_OUTPUT_PATH}/check_tcpconnection)
+    add_executable(check_config_yaml_parser
+        check_config_yaml.c
+        ${rapp_SOURCE_DIR}/tests/test_utils.c
+        ${rapp_SOURCE_DIR}/src/logger.c
+        ${rapp_SOURCE_DIR}/src/config_yaml_parser.c
+        ${rapp_SOURCE_DIR}/src/config_private.c
+        ${rapp_SOURCE_DIR}/src/config.c
+    )
+    target_link_libraries(check_config_yaml_parser ${LIBCHECK_LIBRARY} m rt pthread yaml)
+    add_test(test_config_yaml ${EXECUTABLE_OUTPUT_PATH}/check_config_yaml_parser)
 
     # config
     add_executable(check_config
@@ -89,16 +99,6 @@ if(ENABLE_TESTS)
     target_link_libraries(check_config ${LIBCHECK_LIBRARY} m rt pthread yaml)
     add_test(test_config ${EXECUTABLE_OUTPUT_PATH}/check_config)
 
-    add_executable(check_config_yaml_parser
-        check_config_yaml.c
-        ${rapp_SOURCE_DIR}/tests/test_utils.c
-        ${rapp_SOURCE_DIR}/src/logger.c
-        ${rapp_SOURCE_DIR}/src/config_yaml_parser.c
-        ${rapp_SOURCE_DIR}/src/config_private.c
-        ${rapp_SOURCE_DIR}/src/config.c
-    )
-    target_link_libraries(check_config_yaml_parser ${LIBCHECK_LIBRARY} m rt pthread yaml)
-    add_test(test_config ${EXECUTABLE_OUTPUT_PATH}/check_config_yaml_parser)
 
 endif(ENABLE_TESTS)
 
