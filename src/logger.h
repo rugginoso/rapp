@@ -15,8 +15,6 @@ struct Logger *logger_open_custom(LogLevel max_level, LogHandlerCallback log_han
 
 void logger_destroy(struct Logger *logger);
 
-int logger_flush(struct Logger *logger);
-
 int logger_panic(const char *msg);
 
 #endif  /* LOGGER_H */
