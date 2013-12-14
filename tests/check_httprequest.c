@@ -57,7 +57,7 @@ START_TEST(test_httprequest_gets_the_right_url)
   request_buffer = http_request_get_buffer(http_request);
 
   http_request_get_url_range(http_request, &url_range);
-  ck_assert_int_gt(url_range.length, 0);
+  ck_assert(url_range.length > 0);
 
   EXTRACT_MEMORY_RANGE(url, request_buffer, url_range);
   ck_assert_str_eq(url, "/hello/world/");
@@ -102,7 +102,7 @@ START_TEST(test_httprequest_gets_a_specific_header)
 
   ck_assert_int_eq(http_request_get_header_value_range(http_request, "host", &header_range), 0);
 
-  ck_assert_int_gt(header_range.length, 0);
+  ck_assert(header_range.length > 0);
 
   EXTRACT_MEMORY_RANGE(host_header, request_buffer, header_range);
   ck_assert_str_eq(host_header, "someserver");
@@ -155,7 +155,7 @@ START_TEST(test_httprequest_gets_the_body)
   request_buffer = http_request_get_buffer(http_request);
 
   http_request_get_body_range(http_request, &body_range);
-  ck_assert_int_gt(body_range.length, 0);
+  ck_assert(body_range.length > 0);
 
   EXTRACT_MEMORY_RANGE(body, request_buffer, body_range);
   ck_assert_str_eq(body, "Hello world!");
