@@ -38,10 +38,10 @@ struct Logger {
 #define COL_WHITE           COL(37)
 #define COL_GRAY            "\033[0m"
 
-enum {
-  LOG_BUF_SIZE     = 1024,
-  LOG_TEMPLATE_LEN = 32 /* upper bound, really */
-};
+#define LOG_BUF_SIZE        1024
+#define LOG_TEMPLATE_LEN    32
+/* upper bound, really */
+
 
 static const char *
 logger_template(LogLevel level)
@@ -53,7 +53,7 @@ logger_template(LogLevel level)
     COL_YELLOW"WRN [%s]"COL_GRAY": %s\n", /* LOG_WARNING  */
     COL_GREEN"INF [%s]"COL_GRAY": %s\n",  /* LOG_INFO     */
     COL_BLUE"DBG [%s]"COL_GRAY": %s\n",   /* LOG_DEBUG    */
-    "%s%s" /* LOG_MARK: the tag placeholder must be present but tag
+    "%s%s", /* LOG_MARK: the tag placeholder must be present but tag
               value will be ignored */
     "%s%s" /* LOG_LAST: only for safety */
   };
@@ -152,9 +152,10 @@ static int
 logger_destroy_file(struct Logger *logger)
 {
   assert(logger != NULL);
-  /* the file ownership isn't yours, so we just
-     want to make sure we delivered everything
-  */
+  /*
+   * the file ownership isn't ours, so we just
+   * want to make sure we delivered everything
+   */
   return logger_flush_file(logger);
 }
 
@@ -201,7 +202,7 @@ logger_open_fp(LogLevel max_level,
   logger->max_level = lev;
   logger->trace = (colored) ?logger_trace_console :logger_trace_file;
   logger->close = logger_destroy_file;
-  logger->close = logger_flush_file;
+  logger->flush = logger_flush_file;
 
   return logger;
 }
