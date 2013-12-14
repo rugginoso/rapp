@@ -87,6 +87,10 @@ START_TEST(test_yaml_empty)
     ck_assert_call_fail(config_parse_string, conf, yaml_empty_document);
     ck_assert_call_fail(config_parse_string, conf, yaml_document_no_mapping);
     ck_assert_call_fail(config_parse_string, conf, yaml_no_start_document);
+    ck_assert_call_fail(config_parse_string, conf, yaml_no_section);
+    ck_assert_call_fail(config_parse_string, conf, yaml_no_section2);
+    ck_assert_call_fail(config_parse_string, conf, yaml_no_section_name);
+    ck_assert_call_fail(config_parse_string, conf, yaml_no_section_name2);
 }
 END_TEST
 
@@ -96,6 +100,8 @@ START_TEST(test_yaml_invalid_data)
     config_opt_add(conf, "core", "boolvalue", PARAM_BOOL, NULL);
     config_opt_add(conf, "core", "strvalue", PARAM_STRING, NULL);
     config_opt_add(conf, "core", "singlevalue", PARAM_INT, NULL);
+    ck_assert_call_fail(config_parse_string, conf, NULL);
+    ck_assert_call_fail(config_parse_string, NULL, "");
     ck_assert_call_fail(config_parse_string, conf, yaml_wrong_int);
     ck_assert_call_fail(config_parse_string, conf, yaml_wrong_int2);
     ck_assert_call_fail(config_parse_string, conf, yaml_wrong_bool);
