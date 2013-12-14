@@ -300,7 +300,7 @@ logger_flush(struct Logger *logger)
   return logger->flush(logger);
 }
 
-int
+void
 logger_destroy(struct Logger *logger)
 {
   int err = -1;
@@ -310,7 +310,6 @@ logger_destroy(struct Logger *logger)
         free(logger);
      }
   }
-  return err;
 }
 
 /* vim: set sw=2 ts=2 et */
