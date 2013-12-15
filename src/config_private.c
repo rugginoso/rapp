@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/queue.h>
@@ -130,7 +129,6 @@ void config_argp_options_destroy(struct Config *conf) {
 
     for (i=0; i < conf->num_argp_options; i++) {
         ao = conf->options[i];
-        fprintf(stderr, "Index: %d, ao %p\n", i, ao);
         if (ao->name)
             free((char *)ao->name);
         free(ao);
