@@ -5,7 +5,7 @@
 #include "config_private.h"
 
 struct Config *config_new(struct Logger *logger) {
-    struct Config *conf = (struct Config*) malloc(sizeof(struct Config));
+    struct Config *conf = calloc(1, sizeof(struct Config));
     if (!conf)
         return NULL;
     TAILQ_INIT(&conf->sections);
@@ -40,7 +40,7 @@ int opt_add_value_int(struct ConfigOption *opt, long value) {
     if (opt->range_set == 1 && (opt->value_min > value || opt->value_max < value)) {
             return -1;
     }
-    cv = (struct ConfigValue*) malloc(sizeof(struct ConfigValue));
+    cv = calloc(1, sizeof(struct ConfigValue));
     if (!cv)
         return -1;
     cv->value.intvalue = value;
@@ -56,7 +56,7 @@ int opt_add_value_string(struct ConfigOption *opt, const char *value) {
     }
     if (!value || opt->type != PARAM_STRING)
         return -1;
-    cv = (struct ConfigValue*) malloc(sizeof(struct ConfigValue));
+    cv = calloc(1, sizeof(struct ConfigValue));
     if (!cv)
         return -1;
     cv->value.strvalue = strdup(value);
@@ -150,7 +150,7 @@ struct ConfigSection* get_section(struct Config *conf, const char *section) {
 
 struct ConfigSection* section_create(struct Config *conf, const char *name) {
     struct ConfigSection *sect;
-    sect = (struct ConfigSection*) malloc(sizeof(struct ConfigSection));
+    sect = calloc(1, sizeof(struct ConfigSection));
     if (!sect)
         return NULL;
     TAILQ_INIT(&sect->options);
@@ -232,7 +232,7 @@ int config_generate_commandline(struct Config *conf) {
          */
         num_options += s->num_opts + 1;
     }
-    conf->options = malloc(num_options * (sizeof(struct argp_option*)));
+    conf->options = calloc(num_options, (sizeof(struct argp_option*)));
 
     // now, add arguments for each sections
     index = group = 0;
