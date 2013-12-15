@@ -80,7 +80,8 @@ struct Config {
     int freezed;
     int num_sections;
     struct Logger *logger;
-    struct argp_option (*options)[];
+    struct argp_option **options;
+    int num_argp_options;
     TAILQ_HEAD(ConfigSectionHead, ConfigSection) sections;
 };
 
@@ -100,4 +101,5 @@ int config_add_value_int(struct Config *conf, const char *section,
                          const char *name, long value);
 void config_option_remove_all_values(struct ConfigOption *opt);
 void config_option_destroy(struct ConfigOption *opt);
+void config_argp_options_destroy(struct Config *conf);
 #endif /* CONFIG_PRIVATE_H */
