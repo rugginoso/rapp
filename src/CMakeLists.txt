@@ -8,6 +8,7 @@ add_executable(rapp
 				container.c
                 config.c
                 config_yaml_parser.c
+                config_commandline.c
                 config_private.c
 				eloop.c
 				httpconnection.c

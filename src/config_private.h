@@ -3,6 +3,7 @@
 #include <argp.h>
 #include <sys/queue.h>
 #include "config_api.h"
+#include <rapp/rapp_version.h>
 
 #define LOG(conf, level, fmt, ...) logger_trace(conf->logger, level, "config", fmt, __VA_ARGS__)
 #define INFO(conf, fmt, ...) LOG(conf, LOG_INFO, fmt, __VA_ARGS__)
