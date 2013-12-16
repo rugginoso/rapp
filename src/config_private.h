@@ -1,9 +1,7 @@
 #ifndef CONFIG_PRIVATE_H
 #define CONFIG_PRIVATE_H
-#include <argp.h>
 #include <sys/queue.h>
 #include "config_api.h"
-#include <rapp/rapp_version.h>
 
 #define LOG(conf, level, fmt, ...) logger_trace(conf->logger, level, "config", fmt, __VA_ARGS__)
 #define INFO(conf, fmt, ...) LOG(conf, LOG_INFO, fmt, __VA_ARGS__)
@@ -81,6 +79,7 @@ struct Config {
     int freezed;
     int num_sections;
     struct Logger *logger;
+    struct ConfigOption **options_map;
     struct argp_option **options;
     int num_argp_options;
     TAILQ_HEAD(ConfigSectionHead, ConfigSection) sections;
@@ -88,7 +87,6 @@ struct Config {
 
 struct Config *config_new(struct Logger *logger);
 void config_destroy(struct Config *conf);
-int config_generate_commandline(struct Config *conf);
 int config_parse(struct Config *conf, const char* filename);
 int config_parse_string(struct Config *conf, const char *source);
 
@@ -102,5 +100,8 @@ int config_add_value_int(struct Config *conf, const char *section,
                          const char *name, long value);
 void config_option_remove_all_values(struct ConfigOption *opt);
 void config_option_destroy(struct ConfigOption *opt);
+
 void config_argp_options_destroy(struct Config *conf);
+int config_generate_commandline(struct Config *conf);
+int config_parse_commandline(struct Config *conf, int argc, char *argv[]);
 #endif /* CONFIG_PRIVATE_H */

@@ -1,3 +1,4 @@
+#include <argp.h>
 #include <string.h>
 #include <stdlib.h>
 #include "config_private.h"
@@ -13,8 +14,10 @@ config_argp_options_destroy(struct Config *conf)
         if (ao->name)
             free((char *)ao->name);
         free(ao);
+
     }
     free(conf->options);
+    free(conf->options_map);
 }
 
 int
@@ -41,6 +44,8 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
     for (opt=sect->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {
         conf->options[*index] = calloc(1, sizeof(struct argp_option));
         ao = conf->options[*index];
+        if (!ao)
+            return -1;
         optname_length = prefix_length + sizeof(char) * strlen(opt->name) + 1;
         optname = (char *) malloc(optname_length);
         if (!optname) {
@@ -50,9 +55,13 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
             snprintf(optname, optname_length, "%s%s", prefix, opt->name);
         else
             snprintf(optname, optname_length, "%s", opt->name);
+
+        ao->key = *index;
         ao->name = optname;
         ao->doc = opt->help;
         ao->group = group;
+        conf->options_map[*index] = opt;
+
         DEBUG(conf, "Added commandline option '--%s', help: '%s' at index %d",
                 ao->name, ao->doc, *index);
         (*index)++;
@@ -86,6 +95,7 @@ config_generate_commandline(struct Config *conf)
         num_options += s->num_opts + 1;
     }
     conf->options = calloc(num_options, (sizeof(struct argp_option*)));
+    conf->options_map = calloc(num_options, (sizeof(struct OptionsMap*)));
 
     // now, add arguments for each sections
     for (s=conf->sections.tqh_first; s != NULL; s=s->entries.tqe_next) {
@@ -118,8 +128,45 @@ config_generate_commandline(struct Config *conf)
     return 0;
 }
 
-int
-config_parse_commandline(struct Config *conf)
+error_t
+parse_commandline_opt(int key, char *arg, struct argp_state *state)
 {
+    struct Config *conf = state->input;
+    struct ConfigOption *opt = NULL;
+    if (key == ARGP_KEY_NO_ARGS) {
+        argp_usage(state);
+        return -1;
+    }
+    if (key < 0 || key > conf->num_argp_options)
+        return ARGP_ERR_UNKNOWN;
+
+    opt = conf->options_map[key];
+    if (!opt) {
+        CRITICAL(conf, "Key %d received but mapping is NULL", key);
+        return ARGP_ERR_UNKNOWN;
+    }
+    // set the value for opt using '*arg'
+    DEBUG(conf, "Setting value for %s.%s = %s from commanline",
+            opt->section->name, opt->name, arg);
+    return 0;
+}
+
+int
+config_parse_commandline(struct Config *conf, int argc, char* argv[])
+{
+    const char *doc = NULL;
+    struct argp *argp_conf = calloc(1, sizeof(struct argp));
+    if (!argp_conf)
+        return -1;
+    doc = strdup("Documentation for Rapp goes here");
+    if (!doc)
+        return -1;
+    if (config_generate_commandline(conf) != 0)
+        return -1;
+    argp_conf->options = *conf->options;
+    argp_conf->parser = parse_commandline_opt;
+    argp_conf->args_doc = "TODO";
+    argp_conf->doc = doc;
+    argp_parse (argp_conf, argc, argv, 0, 0, conf);
     return 0;
 }

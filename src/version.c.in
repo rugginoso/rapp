@@ -5,6 +5,7 @@
 #define GIT_TAG "@GIT_TAG@"
 #define FULL_VERSION VERSION "." GIT_SHA1
 
+
 const char*
 rapp_get_version_full(void)
 {

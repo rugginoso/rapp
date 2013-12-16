@@ -61,7 +61,7 @@ main(int argc, char *argv[])
   assert(config_opt_set_default_string(config, "core", "address", "127.0.0.1") == 0);
   assert(config_opt_set_default_int(config, "core", "loglevel", LOG_INFO) == 0);
 
-  assert(config_generate_commandline(config) == 0);
+  assert(config_parse_commandline(config, argc, argv) == 0);
   assert(config_parse(config, "example.yaml") == 0);
 
   config_get_string(config, "core", "address", &address);
