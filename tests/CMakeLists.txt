@@ -94,5 +94,16 @@ if(ENABLE_TESTS)
     target_link_libraries(check_httprequest ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_httprequest ${EXECUTABLE_OUTPUT_PATH}/check_httprequest)
 
+    add_executable(check_httpresponsewriter
+        check_httpresponsewriter.c
+        ${rapp_SOURCE_DIR}/tests/test_utils.c
+        ${rapp_SOURCE_DIR}/src/httpresponsewriter.c
+        ${rapp_SOURCE_DIR}/src/tcpconnection.c
+        ${rapp_SOURCE_DIR}/src/eloop.c
+        ${rapp_SOURCE_DIR}/src/collector.c
+    )
+    target_link_libraries(check_httpresponsewriter ${LIBCHECK_LIBRARY} m rt pthread)
+    add_test(test_httpresponsewriter ${EXECUTABLE_OUTPUT_PATH}/check_httpresponsewriter)
+
 endif(ENABLE_TESTS)
 
