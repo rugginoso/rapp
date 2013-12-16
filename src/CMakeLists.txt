@@ -1,6 +1,7 @@
 
 set(HTTP_PARSER_DIR ${PROJECT_SOURCE_DIR}/contrib/http-parser)
 set(HTTP_PARSER_SOURCES ${HTTP_PARSER_DIR}/http_parser.c)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.c.in" "${CMAKE_CURRENT_SOURCE_DIR}/version.c" @ONLY)
 
 add_executable(rapp
 				collector.c
@@ -15,6 +16,7 @@ add_executable(rapp
 				tcpconnection.c
 				tcpserver.c
 				logger.c
+                version.c
 				${HTTP_PARSER_SOURCES})
 
 set_target_properties(rapp

@@ -43,10 +43,11 @@ main(int argc, char *argv[])
   if (!container) {
     exit(1);
   }
- 
+
   logger_trace(logger, LOG_INFO, "rapp",
-               "rapp starting... (PID=%li)",
-               getpid());
+               "rapp %s (rev %s - tag: %s) starting... (PID=%li)",
+               rapp_get_version(), rapp_get_version_sha1(),
+               rapp_get_version_tag(), getpid());
 
   eloop = event_loop_new();
 
@@ -68,7 +69,7 @@ main(int argc, char *argv[])
 
   logger_trace(logger, LOG_INFO, "rapp",
                "%s", "rapp finished!");
-  
+
   logger_destroy(logger);
 
   return 0;
