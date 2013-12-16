@@ -4,13 +4,9 @@
 #include "rapp_httprequest.h"
 #include "rapp_httpresponse.h"
 #include "rapp_logger.h"
-
-// Increment this on introdution of ABI incompatibilities.
-#define ABI_VERSION 1
+#include "rapp_version.h"
 
 struct RappContainer;
-
-int rapp_get_abi_version(void);
 
 // FIXME until we settle on the configuration handling
 struct RappContainer *rapp_create(void *cookie, int ac, char **av, int *err);

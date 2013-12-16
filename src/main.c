@@ -78,8 +78,9 @@ main(int argc, char *argv[])
   }
 
   logger_trace(logger, LOG_INFO, "rapp",
-               "rapp starting... (PID=%li)",
-               getpid());
+               "rapp %s (rev %s - tag: %s) starting... (PID=%li)",
+               rapp_get_version(), rapp_get_version_sha1(),
+               rapp_get_version_tag(), getpid());
 
   eloop = event_loop_new();
 
