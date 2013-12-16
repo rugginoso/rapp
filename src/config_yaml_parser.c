@@ -8,8 +8,10 @@
 const char *regex_bool_str = "^yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF$";
 const char *regex_bool_true_str = "^yes|Yes|YES|true|True|TRUE|on|On|ON$";
 
-int yaml_parse_init(struct Config *conf, const char *filename,
-                    yaml_parser_t *parser) {
+int
+yaml_parse_init(struct Config *conf, const char *filename,
+                yaml_parser_t *parser)
+{
     yaml_token_t token;
     // we should get the STREAM_START first
     yaml_parser_scan(parser, &token);
@@ -38,9 +40,11 @@ int yaml_parse_init(struct Config *conf, const char *filename,
     return 0;
 }
 
-int config_set_value_from_yaml_scalar(struct Config *conf,
-                                     struct ConfigOption *opt,
-                                     yaml_token_t *token) {
+int
+config_set_value_from_yaml_scalar(struct Config *conf,
+                                  struct ConfigOption *opt,
+                                  yaml_token_t *token)
+{
     long val;
     char *endptr;
     int reti;
@@ -110,10 +114,12 @@ int config_set_value_from_yaml_scalar(struct Config *conf,
     return 0;
 }
 
-int config_set_value_from_yaml_list(struct Config *conf,
-                                    struct ConfigOption *opt,
-                                    yaml_parser_t *parser,
-                                    yaml_token_t *token) {
+int
+config_set_value_from_yaml_list(struct Config *conf,
+                                struct ConfigOption *opt,
+                                yaml_parser_t *parser,
+                                yaml_token_t *token)
+{
     if (opt->multivalued == 0 ) {
         ERROR(conf, "Option %s.%s does not support multiple values.",
               opt->section->name, opt->name);
@@ -152,13 +158,16 @@ int config_set_value_from_yaml_list(struct Config *conf,
 }
 
 
-int yaml_parse_key_value(struct Config *conf,
-                         struct ConfigSection *section,
-                         yaml_parser_t *parser,
-                         int *last) {
-    struct ConfigOption *opt;
-    char *name;
+int
+yaml_parse_key_value(struct Config *conf,
+                     struct ConfigSection *section,
+                     yaml_parser_t *parser,
+                     int *last)
+{
+    struct ConfigOption *opt = NULL;
+    char *name = NULL;
     yaml_token_t token;
+
     yaml_parser_scan(parser, &token);
     *last = 0;
     if (token.type != YAML_KEY_TOKEN &&
@@ -247,7 +256,9 @@ int yaml_parse_key_value(struct Config *conf,
     return 0;
 }
 
-int yaml_skip_section(yaml_parser_t *parser) {
+int
+yaml_skip_section(yaml_parser_t *parser)
+{
     yaml_token_t token;
     int type;
     do {
@@ -259,10 +270,12 @@ int yaml_skip_section(yaml_parser_t *parser) {
 }
 
 
-int yaml_parse_section(struct Config *conf,
-                       const char *filename,
-                       const char *sectionname,
-                       yaml_parser_t *parser) {
+int
+yaml_parse_section(struct Config *conf,
+                   const char *filename,
+                   const char *sectionname,
+                   yaml_parser_t *parser)
+{
 
     yaml_token_t token;
     int last;
@@ -300,8 +313,10 @@ int yaml_parse_section(struct Config *conf,
     return 0;
 }
 
-int config_parse_main(struct Config *conf, yaml_parser_t *parser,
-                      const char *sourcename) {
+int
+config_parse_main(struct Config *conf, yaml_parser_t *parser,
+                  const char *sourcename)
+{
     yaml_token_t token;
     int done, ret = 0;
     if (yaml_parse_init(conf, sourcename, parser) != 0) {
@@ -344,11 +359,13 @@ cleanup:
 
 }
 
-int config_parse(struct Config *conf, const char* filename) {
+int
+config_parse(struct Config *conf, const char* filename)
+{
     yaml_parser_t parser;
     char *err;
-    FILE *fh = fopen(filename, "r");
     int res;
+    FILE *fh = fopen(filename, "r");
     if (!fh) {
         err = strerror(errno);
         CRITICAL(conf, "Cannot open file '%s': %s", filename, err);
@@ -367,7 +384,9 @@ int config_parse(struct Config *conf, const char* filename) {
     return res;
 }
 
-int config_parse_string(struct Config *conf, const char *source) {
+int
+config_parse_string(struct Config *conf, const char *source)
+{
     const char *sourcename = "<string>";
     yaml_parser_t parser;
 

@@ -4,21 +4,26 @@
 #include <sys/queue.h>
 #include "config_private.h"
 
-int config_opt_add(struct Config *conf,
-                   const char *section,
-                   const char *name,
-                   ConfigParamType type,
-                   const char *help) {
+int
+config_opt_add(struct Config *conf,
+               const char *section,
+               const char *name,
+               ConfigParamType type,
+               const char *help)
+{
+    struct ConfigSection *sect = NULL;
+    size_t size = sizeof(struct ConfigOption);
+    struct ConfigOption *opt = NULL;
+
     if (!conf || conf->freezed == 1 || !section || !name)
         return -1;
-    struct ConfigSection *sect = get_section(conf, section);
+    sect = get_section(conf, section);
     if (!sect) {
         sect = section_create(conf, section);
         if (!sect)
             return -1;
     }
-    size_t size = sizeof(struct ConfigOption);
-    struct ConfigOption *opt = (struct ConfigOption*) calloc(1, size);
+    opt = (struct ConfigOption*) calloc(1, size);
     if (!opt) {
         return -1;
     }
@@ -65,12 +70,14 @@ int config_opt_add(struct Config *conf,
     return 0;
 }
 
-int config_opt_set_range_int(struct Config *conf,
-                             const char *section,
-                             const char *name,
-                             long value_min,
-                             long value_max) {
-    struct ConfigOption *opt;
+int
+config_opt_set_range_int(struct Config *conf,
+                         const char *section,
+                         const char *name,
+                         long value_min,
+                         long value_max)
+{
+    struct ConfigOption *opt = NULL;
     GET_OPTION(opt, conf, section, name);
     if (!opt || opt->type != PARAM_INT)
         return -1;
@@ -83,11 +90,13 @@ int config_opt_set_range_int(struct Config *conf,
     return 0;
 }
 
-int config_opt_set_multivalued(struct Config *conf,
-                               const char *section,
-                               const char *name,
-                               int flag) {
-    struct ConfigOption *opt;
+int
+config_opt_set_multivalued(struct Config *conf,
+                           const char *section,
+                           const char *name,
+                           int flag)
+{
+    struct ConfigOption *opt = NULL;
     GET_OPTION(opt, conf, section, name);
     if (conf->freezed == 1)
         return -1;
@@ -96,12 +105,13 @@ int config_opt_set_multivalued(struct Config *conf,
     return 0;
 }
 
-int config_get_nth_int(struct Config *conf, const char *section,
-                       const char *name, int position,
-                       long *value) {
-
-    struct ConfigOption *opt;
-    struct ConfigValue *cv;
+int
+config_get_nth_int(struct Config *conf, const char *section,
+                   const char *name, int position,
+                   long *value)
+{
+    struct ConfigOption *opt = NULL;
+    struct ConfigValue *cv = NULL;
     int i = 0;
     if (position < 0)
         return -1;
@@ -129,19 +139,22 @@ int config_get_nth_int(struct Config *conf, const char *section,
     return 0;
 }
 
-int config_get_nth_bool(struct Config *conf, const char *section, const char *name,
-                        int position, int *value) {
+int
+config_get_nth_bool(struct Config *conf, const char *section,
+                    const char *name, int position, int *value)
+{
     return config_get_nth_int(conf, section, name, position, (long*) value);
 }
 
-int config_get_nth_string(struct Config *conf, const char *section,
-                          const char *name, int position,
-                          char **value) {
-
-    struct ConfigOption *opt;
-    struct ConfigValue *cv;
-    *value = NULL;
+int
+config_get_nth_string(struct Config *conf, const char *section,
+                      const char *name, int position,
+                      char **value)
+{
+    struct ConfigOption *opt = NULL;
+    struct ConfigValue *cv = NULL;
     int i = 0;
+    *value = NULL;
     if (position < 0)
         return -1;
     GET_OPTION(opt, conf, section, name);
@@ -166,17 +179,21 @@ int config_get_nth_string(struct Config *conf, const char *section,
     return 0;
 }
 
-int config_get_num_values(struct Config *conf, const char *section,
-                          const char *name, int *num_values) {
-    struct ConfigOption *opt;
+int
+config_get_num_values(struct Config *conf, const char *section,
+                      const char *name, int *num_values)
+{
+    struct ConfigOption *opt = NULL;
     GET_OPTION(opt, conf, section, name);
     *num_values = opt->num_values;
     return 0;
 }
 
-int config_opt_set_default_string(struct Config *conf, const char *section,
-                                  const char *name, const char *value) {
-    struct ConfigOption *opt;
+int
+config_opt_set_default_string(struct Config *conf, const char *section,
+                              const char *name, const char *value)
+{
+    struct ConfigOption *opt = NULL;
     if (!value)
         return -1;
     GET_OPTION(opt, conf, section, name);
@@ -188,9 +205,11 @@ int config_opt_set_default_string(struct Config *conf, const char *section,
     return 0;
 }
 
-int config_opt_set_default_int(struct Config *conf, const char *section,
-                               const char *name, long value) {
-    struct ConfigOption *opt;
+int
+config_opt_set_default_int(struct Config *conf, const char *section,
+                           const char *name, long value)
+{
+    struct ConfigOption *opt = NULL;
     GET_OPTION(opt, conf, section, name);
     opt->default_value.intvalue = value;
     opt->default_set = 1;
@@ -198,8 +217,10 @@ int config_opt_set_default_int(struct Config *conf, const char *section,
     return 0;
 }
 
-int config_opt_set_default_bool(struct Config *conf, const char *section,
-                                const char *name, int value) {
+int
+config_opt_set_default_bool(struct Config *conf, const char *section,
+                            const char *name, int value)
+{
     if (value < 0 || value > 1)
         return -1;
     return config_opt_set_default_int(conf, section, name, value);

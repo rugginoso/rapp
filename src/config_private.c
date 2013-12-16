@@ -4,7 +4,9 @@
 #include <sys/queue.h>
 #include "config_private.h"
 
-struct Config *config_new(struct Logger *logger) {
+struct Config
+*config_new(struct Logger *logger)
+{
     struct Config *conf = calloc(1, sizeof(struct Config));
     if (!conf)
         return NULL;
@@ -17,9 +19,11 @@ struct Config *config_new(struct Logger *logger) {
     return conf;
 }
 
-void config_destroy(struct Config* conf) {
+void
+config_destroy(struct Config* conf)
+{
+    struct ConfigSection *sect = NULL;
     assert(conf != NULL);
-    struct ConfigSection *sect;
     while (conf->sections.tqh_first != NULL) {
         sect = conf->sections.tqh_first;
         TAILQ_REMOVE(&conf->sections, conf->sections.tqh_first, entries);
@@ -29,8 +33,10 @@ void config_destroy(struct Config* conf) {
     free(conf);
 }
 
-int opt_add_value_int(struct ConfigOption *opt, long value) {
-    struct ConfigValue *cv;
+int
+opt_add_value_int(struct ConfigOption *opt, long value)
+{
+    struct ConfigValue *cv = NULL;
     if (opt->type != PARAM_BOOL && opt->type != PARAM_INT) {
         return -1;
     }
@@ -49,8 +55,10 @@ int opt_add_value_int(struct ConfigOption *opt, long value) {
     return 0;
 }
 
-int opt_add_value_string(struct ConfigOption *opt, const char *value) {
-    struct ConfigValue *cv;
+int
+opt_add_value_string(struct ConfigOption *opt, const char *value)
+{
+    struct ConfigValue *cv = NULL;
     if (opt->multivalued == 0 && opt->num_values > 0) {
         return -1;
     }
@@ -69,9 +77,10 @@ int opt_add_value_string(struct ConfigOption *opt, const char *value) {
     return 0;
 }
 
-int config_add_value_int(struct Config *conf, const char *section,
-                         const char *name, long value) {
-    struct ConfigOption *opt;
+int
+config_add_value_int(struct Config *conf, const char *section,
+                     const char *name, long value) {
+    struct ConfigOption *opt = NULL;
     GET_OPTION(opt, conf, section, name);
     if (opt_add_value_int(opt, value) != 0)
         return -1;
@@ -79,9 +88,10 @@ int config_add_value_int(struct Config *conf, const char *section,
     return 0;
 }
 
-int config_add_value_string(struct Config *conf, const char *section,
-                            const char *name, const char *value) {
-    struct ConfigOption *opt;
+int
+config_add_value_string(struct Config *conf, const char *section,
+                        const char *name, const char *value) {
+    struct ConfigOption *opt = NULL;
     GET_OPTION(opt, conf, section, name);
     if (opt_add_value_string(opt, value) != 0) {
         return -1;
@@ -90,8 +100,10 @@ int config_add_value_string(struct Config *conf, const char *section,
     return 0;
 }
 
-void config_option_remove_all_values(struct ConfigOption *opt) {
-    struct ConfigValue *cv;
+void
+config_option_remove_all_values(struct ConfigOption *opt)
+{
+    struct ConfigValue *cv = NULL;
     while (opt->values.tqh_first != NULL) {
         cv = opt->values.tqh_first;
         TAILQ_REMOVE(&opt->values, opt->values.tqh_first, entries);
@@ -102,7 +114,9 @@ void config_option_remove_all_values(struct ConfigOption *opt) {
     }
 }
 
-void config_option_destroy(struct ConfigOption *opt) {
+void
+config_option_destroy(struct ConfigOption *opt)
+{
     config_option_remove_all_values(opt);
     free(opt->name);
     if (opt->default_set && opt->type == PARAM_STRING)
@@ -112,8 +126,10 @@ void config_option_destroy(struct ConfigOption *opt) {
     free(opt);
 }
 
-void config_section_destroy(struct ConfigSection *sect) {
-    struct ConfigOption *opt;
+void
+config_section_destroy(struct ConfigSection *sect)
+{
+    struct ConfigOption *opt = NULL;
     while (sect->options.tqh_first != NULL) {
         opt = sect->options.tqh_first;
         TAILQ_REMOVE(&sect->options, sect->options.tqh_first, entries);
@@ -123,9 +139,11 @@ void config_section_destroy(struct ConfigSection *sect) {
     free(sect);
 }
 
-void config_argp_options_destroy(struct Config *conf) {
+void
+config_argp_options_destroy(struct Config *conf)
+{
     int i=0;
-    struct argp_option *ao;
+    struct argp_option *ao = NULL;
 
     for (i=0; i < conf->num_argp_options; i++) {
         ao = conf->options[i];
@@ -136,8 +154,10 @@ void config_argp_options_destroy(struct Config *conf) {
     free(conf->options);
 }
 
-struct ConfigSection* get_section(struct Config *conf, const char *section) {
-    struct ConfigSection *sect;
+struct ConfigSection*
+get_section(struct Config *conf, const char *section)
+{
+    struct ConfigSection *sect = NULL;
     if(!section)
         return NULL;
 
@@ -149,8 +169,7 @@ struct ConfigSection* get_section(struct Config *conf, const char *section) {
 }
 
 struct ConfigSection* section_create(struct Config *conf, const char *name) {
-    struct ConfigSection *sect;
-    sect = calloc(1, sizeof(struct ConfigSection));
+    struct ConfigSection *sect = calloc(1, sizeof(struct ConfigSection));
     if (!sect)
         return NULL;
     TAILQ_INIT(&sect->options);
@@ -166,15 +185,16 @@ struct ConfigSection* section_create(struct Config *conf, const char *name) {
 
 // Commandline
 //
-int generate_argp_for_section(struct Config *conf, struct ConfigSection *sect, int *index, int group)
+int
+generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
+                          int *index, int group)
 {
-    struct ConfigOption *opt;
-    struct argp_option *ao;
-    char *prefix, *optname;
-    size_t prefix_length, optname_length;
+    struct ConfigOption *opt = NULL;
+    struct argp_option *ao = NULL;
+    char *prefix = NULL;
+    char *optname = NULL;
+    size_t prefix_length = 0, optname_length = 0;
     int i = *index;
-    prefix = NULL;
-    prefix_length = 0;
 
     if (strcmp(sect->name, RAPP_CONFIG_SECTION) != 0) {
         // not in core section, we need to prefix options
@@ -211,11 +231,13 @@ int generate_argp_for_section(struct Config *conf, struct ConfigSection *sect, i
     return 0;
 }
 
-int config_generate_commandline(struct Config *conf) {
+int
+config_generate_commandline(struct Config *conf)
+{
     size_t argp_option_size = sizeof(struct argp_option);
-    struct ConfigSection *s;
-    struct argp_option *ao;
-    int index, group, num_options;
+    struct ConfigSection *s = NULL;
+    struct argp_option *ao = NULL;
+    int index = 0, group = 0, num_options = 0;
     if (!conf)
         return -1;
 
@@ -223,7 +245,6 @@ int config_generate_commandline(struct Config *conf) {
     if (conf->options)
         return -1;
 
-    num_options = 0;
     for(s=conf->sections.tqh_first; s != NULL; s = s->entries.tqe_next) {
         /* We need an empty entry at the start of each section to allow grouping
          * in argp help, except for the first once. Since we need an entry after
@@ -235,7 +256,6 @@ int config_generate_commandline(struct Config *conf) {
     conf->options = calloc(num_options, (sizeof(struct argp_option*)));
 
     // now, add arguments for each sections
-    index = group = 0;
     for (s=conf->sections.tqh_first; s != NULL; s=s->entries.tqe_next) {
         DEBUG(conf, "Creating commandline for section '%s'", s->name);
         // set the title for this group - if not the first one.
