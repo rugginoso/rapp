@@ -39,7 +39,7 @@ START_TEST(test_httprequest_calls_callback_when_finish_to_parse_request)
 
   http_request_set_parse_finish_callback(http_request, finish_func, NULL);
 
-  ck_assert_int_eq(http_request_append_data(http_request, request, strlen(request)), 0);
+  http_request_append_data(http_request, request, strlen(request));
 
   ck_assert(finish_called == 1);
 }
@@ -52,7 +52,7 @@ START_TEST(test_httprequest_gets_the_right_url)
   struct MemoryRange url_range;
   char *url = NULL;
 
-  ck_assert_int_eq(http_request_append_data(http_request, request, strlen(request)), 0);
+  http_request_append_data(http_request, request, strlen(request));
 
   request_buffer = http_request_get_buffer(http_request);
 
@@ -73,7 +73,7 @@ START_TEST(test_httprequest_gets_all_the_headers)
   char *host_header = NULL;
   char *accept_header = NULL;
 
-  ck_assert_int_eq(http_request_append_data(http_request, request, strlen(request)), 0);
+  http_request_append_data(http_request, request, strlen(request));
 
   request_buffer = http_request_get_buffer(http_request);
 
@@ -96,7 +96,7 @@ START_TEST(test_httprequest_gets_a_specific_header)
   struct MemoryRange header_range;
   char *host_header = NULL;
 
-  ck_assert_int_eq(http_request_append_data(http_request, request, strlen(request)), 0);
+  http_request_append_data(http_request, request, strlen(request));
 
   request_buffer = http_request_get_buffer(http_request);
 
@@ -115,7 +115,7 @@ START_TEST(test_httprequest_error_on_not_existent_header)
   const char *request_buffer = NULL;
   struct MemoryRange header_range;
 
-  ck_assert_int_eq(http_request_append_data(http_request, request, strlen(request)), 0);
+  http_request_append_data(http_request, request, strlen(request));
 
   request_buffer = http_request_get_buffer(http_request);
 
@@ -128,6 +128,7 @@ START_TEST(test_httprequest_returns_error_on_too_many_headers)
   char *request = strdup("GET /hello/world/ HTTP/1.1\r\n");
   char *header = NULL;
   int i = 0;
+  int append_data_return = 0;
 
   while (i < (HTTP_REQUEST_MAX_HEADERS + 1)) {
     asprintf(&header, "X-HTTP-FOO%d: bar\r\n", i);
@@ -137,7 +138,9 @@ START_TEST(test_httprequest_returns_error_on_too_many_headers)
     i++;
   }
 
-  ck_assert_int_eq(http_request_append_data(http_request, request, strlen(request)), -1);
+  append_data_return = http_request_append_data(http_request, request, strlen(request));
+
+  ck_assert_int_eq(append_data_return, -1);
 
   free(request);
 }
