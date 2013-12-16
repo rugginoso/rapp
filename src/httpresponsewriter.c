@@ -3,6 +3,10 @@
 #include <stdarg.h>
 #include <assert.h>
 
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/sendfile.h>
+
 #include "tcpconnection.h"
 #include "httpresponsewriter.h"
 
@@ -74,9 +78,29 @@ ssize_t
 http_response_writer_sendfile(struct HTTPResponseWriter *response_writer,
                               const char                *path)
 {
-  assert(response_writer != NULL);
+  int file_fd = -1;
+  struct stat file_stat = {0,};
 
-  return tcp_connection_sendfile(response_writer->tcp_connection, path);
+  assert(response_writer != NULL);
+  assert(path != NULL);
+
+  if (lstat(path, &file_stat) < 0) {
+    /*
+     * TODO: respond with 404
+     */
+    perror("lstat");
+    return -1;
+  }
+
+  if ((file_fd = open(path, O_RDONLY)) < 0) {
+    /*
+     * TODO: respond with 403
+     */
+    perror("open");
+    return -1;
+  }
+
+  return tcp_connection_sendfile(response_writer->tcp_connection, file_fd, file_stat.st_size);
 }
 
 // FIXME arbitrary
