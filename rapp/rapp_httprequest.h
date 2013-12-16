@@ -24,11 +24,41 @@ struct HeaderMemoryRange {
   struct MemoryRange value;
 };
 
+enum HTTPMethod {
+  HTTP_METHOD_DELETE,
+  HTTP_METHOD_GET,
+  HTTP_METHOD_HEAD,
+  HTTP_METHOD_POST,
+  HTTP_METHOD_PUT,
+  HTTP_METHOD_CONNECT,
+  HTTP_METHOD_OPTIONS,
+  HTTP_METHOD_TRACE,
+  HTTP_METHOD_COPY,
+  HTTP_METHOD_LOCK,
+  HTTP_METHOD_MKCOL,
+  HTTP_METHOD_MOVE,
+  HTTP_METHOD_PROPFIND,
+  HTTP_METHOD_PROPPATCH,
+  HTTP_METHOD_SEARCH,
+  HTTP_METHOD_UNLOCK,
+  HTTP_METHOD_REPORT,
+  HTTP_METHOD_MKACTIVITY,
+  HTTP_METHOD_CHECKOUT,
+  HTTP_METHOD_MERGE,
+  HTTP_METHOD_MSEARCH,
+  HTTP_METHOD_NOTIFY,
+  HTTP_METHOD_SUBSCRIBE,
+  HTTP_METHOD_UNSUBSCRIBE,
+  HTTP_METHOD_PATCH,
+  HTTP_METHOD_PURGE,
+  HTTP_METHOD_MAX
+};
+
 struct HTTPRequest;
 
 const char *http_request_get_buffer(struct HTTPRequest *request);
 
-enum http_method http_request_get_method(struct HTTPRequest *request);
+enum HTTPMethod http_request_get_method(struct HTTPRequest *request);
 
 void http_request_get_url_range(struct HTTPRequest *request, struct MemoryRange *range);
 

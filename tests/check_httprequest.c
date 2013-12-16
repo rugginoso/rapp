@@ -7,6 +7,34 @@
 
 struct HTTPRequest *http_request = NULL;
 static int finish_called = 0;
+static const char *HTTP_METHODS_FIXTURES[HTTP_METHOD_MAX] = {
+  "DELETE",
+  "GET",
+  "HEAD",
+  "POST",
+  "PUT",
+  "CONNECT",
+  "OPTIONS",
+  "TRACE",
+  "COPY",
+  "LOCK",
+  "MKCOL",
+  "MOVE",
+  "PROPFIND",
+  "PROPPATCH",
+  "SEARCH",
+  "UNLOCK",
+  "REPORT",
+  "MKACTIVITY",
+  "CHECKOUT",
+  "MERGE",
+  "M-SEARCH",
+  "NOTIFY",
+  "SUBSCRIBE",
+  "UNSUBSCRIBE",
+  "PATCH",
+  "PURGE"
+};
 
 
 void finish_func(struct HTTPRequest *request, void *data)
@@ -42,6 +70,28 @@ START_TEST(test_httprequest_calls_callback_when_finish_to_parse_request)
   http_request_append_data(http_request, request, strlen(request));
 
   ck_assert(finish_called == 1);
+}
+END_TEST
+
+START_TEST(test_httprequest_gets_the_right_method)
+{
+  char *request = NULL;
+  int i = 0;
+  int append_data_return = 0;
+
+  while (i < HTTP_METHOD_MAX) {
+    http_request_destroy(http_request);
+    http_request = http_request_new();
+
+    asprintf(&request, "%s /hello/world/ HTTP/1.1\r\n\r\n", HTTP_METHODS_FIXTURES[i]);
+    append_data_return = http_request_append_data(http_request, request, strlen(request));
+    free(request);
+
+    ck_assert_int_eq(append_data_return, 0);
+    ck_assert_int_eq(http_request_get_method(http_request), i);
+
+    i++;
+  }
 }
 END_TEST
 
@@ -174,6 +224,7 @@ httprequest_suite(void)
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_httprequest_error_on_invalid_request);
   tcase_add_test(tc, test_httprequest_calls_callback_when_finish_to_parse_request);
+  tcase_add_test(tc, test_httprequest_gets_the_right_method);
   tcase_add_test(tc, test_httprequest_gets_the_right_url);
   tcase_add_test(tc, test_httprequest_gets_all_the_headers);
   tcase_add_test(tc, test_httprequest_gets_a_specific_header);
