@@ -34,6 +34,10 @@ main(int argc, char *argv[])
   struct SignalHandler *signal_handler = NULL;
   struct Container *container = NULL;
   struct Config *config = NULL;
+  char *address;
+  long port;
+  int num_config, i, res;
+  char *confpath;
 
   logger = logger_open_console(LOG_LAST, stderr);
   if (logger == NULL) {
@@ -47,23 +51,30 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  char *address;
-  long port;
   assert(config_opt_add(config, "core", "address", PARAM_STRING, "Address to listen to", NULL) == 0);
   assert(config_opt_add(config, "core", "port", PARAM_INT, "Port", NULL) == 0);
+  assert(config_opt_add(config, "core", "config", PARAM_STRING, "Path to yaml config", "FILE") == 0);
+  assert(config_opt_add(config, "core", "confd", PARAM_STRING, "Path to directory to scan for config", "DIR") == 0);
   assert(config_opt_add(config, "core", "loglevel", PARAM_INT, "Verbosity level", NULL) == 0);
-  assert(config_opt_add(config, "core", "test", PARAM_STRING, "Multi test", NULL) == 0);
-  assert(config_opt_add(config, "other", "test", PARAM_STRING, "Test option in different section", "TESTOPT") == 0);
-  assert(config_opt_add(config, "other", "testbool", PARAM_BOOL, "This is a test boolean", NULL) == 0);
 
   assert(config_opt_set_range_int(config, "core", "port", 0, 65535) == 0);
-  assert(config_opt_set_multivalued(config, "core", "test", 1) == 0);
-  assert(config_opt_set_default_int(config, "core", "port", 8080) == 0);
   assert(config_opt_set_default_string(config, "core", "address", "127.0.0.1") == 0);
+  assert(config_opt_set_default_int(config, "core", "port", 8080) == 0);
   assert(config_opt_set_default_int(config, "core", "loglevel", LOG_INFO) == 0);
+  assert(config_opt_set_multivalued(config, "core", "config", 1) == 0);
+  assert(config_opt_set_multivalued(config, "core", "confd", 1) == 0);
 
   assert(config_parse_commandline(config, argc, argv) == 0);
-  assert(config_parse(config, "example.yaml") == 0);
+  config_get_num_values(config, "core", "config", &num_config);
+  for (i = 0; i < num_config; i++) {
+    if (config_get_nth_string(config, "core", "config", i, &confpath) != 0)
+        exit(1);
+    res = config_parse(config, confpath);
+    free(confpath);
+    if (res != 0)
+        exit(1);
+  }
+  // TODO: parse confd
 
   config_get_string(config, "core", "address", &address);
   config_get_int(config, "core", "port", &port);

@@ -178,12 +178,10 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
 
         case ARGP_KEY_ERROR:
             CRITICAL(conf, "Error during argument parsing: %d", key);
-            return EINVAL;
+            return 0;
             break;
     }
 
-
-    DEBUG(conf, "key: %x, arg: %s", key, arg);
     index = key - ARG_INDEX_OFFSET;
 
     if (index < 0 || index > conf->num_argp_options) {
@@ -207,6 +205,15 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
     // set the value for opt using '*arg'
     DEBUG(conf, "Setting value for %s.%s = %s from commanline",
             opt->section->name, opt->name, arg);
+
+    if (config_add_value_from_string(conf, opt, arg) != 0) {
+        CRITICAL(conf, "Cannot set value %s from for %s.%s",
+                arg, opt->section->name, opt->name);
+        return EINVAL;
+    }
+
+    // Do not override the value in case it's present in config
+    opt->set_from_commandline = 1;
     return 0;
 }
 
