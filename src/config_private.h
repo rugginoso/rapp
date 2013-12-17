@@ -63,7 +63,6 @@ struct ConfigOption {
         char *strvalue;
     } default_value;
     int default_set;
-    char *cmdline_value;
     char *metavar;
     struct ConfigSection *section;
     TAILQ_ENTRY(ConfigOption) entries;
@@ -100,6 +99,8 @@ int config_add_value_string(struct Config *conf, const char *section,
                             const char *name, const char* value);
 int config_add_value_int(struct Config *conf, const char *section,
                          const char *name, long value);
+int config_add_value_from_string(struct Config *conf, struct ConfigOption *opt,
+                                 const char *value);
 void config_option_remove_all_values(struct ConfigOption *opt);
 void config_option_destroy(struct ConfigOption *opt);
 
