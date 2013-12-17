@@ -80,7 +80,7 @@ struct Config {
     int num_sections;
     struct Logger *logger;
     struct ConfigOption **options_map;
-    struct argp_option **options;
+    struct argp_option *options;
     int num_argp_options;
     TAILQ_HEAD(ConfigSectionHead, ConfigSection) sections;
 };

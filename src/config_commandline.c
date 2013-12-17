@@ -7,19 +7,15 @@
 void
 config_argp_options_destroy(struct Config *conf)
 {
-    int i=0;
-    struct argp_option *ao = NULL;
+    int i = 0;
 
-    for (i=0; i < conf->num_argp_options; i++) {
-        ao = conf->options[i];
-        if (ao->name)
-            free((char *)ao->name);
-        if (ao->arg)
-            free((char *)ao->arg);
-        if (ao->doc)
-            free((char *)ao->doc);
-        free(ao);
-
+    for (i = 0; i < conf->num_argp_options; i++) {
+        if (conf->options[i].name)
+            free((char *)conf->options[i].name);
+        if (conf->options[i].arg)
+            free((char *)conf->options[i].arg);
+        if (conf->options[i].doc)
+            free((char *)conf->options[i].doc);
     }
     free(conf->options);
     free(conf->options_map);
@@ -39,7 +35,6 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
                           int *index, int group)
 {
     struct ConfigOption *opt = NULL;
-    struct argp_option *ao = NULL;
     char *prefix = NULL;
     char *optname = NULL, *argname = NULL;
     size_t prefix_length = 0, optname_length = 0;
@@ -56,11 +51,6 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
     }
 
     for (opt=sect->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {
-        conf->options[*index] = calloc(1, sizeof(struct argp_option));
-        ao = conf->options[*index];
-        if (!ao)
-            return -1;
-
         optname_length = prefix_length + sizeof(char) * strlen(opt->name) + 1;
         optname = (char *) malloc(optname_length);
         if (!optname) {
@@ -74,9 +64,9 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
         // FIXME: 65 is an arbitrary value, it's meant to move key into the
         // range of uppercase ASCII chars, since values near 0 are "taken"
         // by argp constants.
-        ao->key = (*index) + 65;
-        ao->group = group;
-        ao->name = optname;
+        conf->options[*index].key = (*index) + 65;
+        conf->options[*index].group = group;
+        conf->options[*index].name = optname;
 
         // TODO check if opt is bool, if it is do not set ao->arg;
         // For now, we set arg to the uppercase of the option name,
@@ -84,15 +74,15 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
         // TODO: provide an api to set this value as well, like help/doc
         argname = strdup(opt->name);
         uppercase(argname);
-        ao->arg = argname;
+        conf->options[*index].arg = argname;
 
         if (opt->help)
-            ao->doc = strdup(opt->help);
+            conf->options[*index].doc = strdup(opt->help);
 
         conf->options_map[*index] = opt;
 
         DEBUG(conf, "Added commandline option '--%s', help: '%s', arg: %s, index %d, group %d, key %d",
-                ao->name, ao->doc, ao->arg, *index, ao->group, ao->key);
+                conf->options[*index].name, conf->options[*index].doc, conf->options[*index].arg, *index, conf->options[*index].group, conf->options[*index].key);
         (*index)++;
     }
 
@@ -107,7 +97,6 @@ config_generate_commandline(struct Config *conf)
 {
     size_t argp_option_size = sizeof(struct argp_option);
     struct ConfigSection *s = NULL;
-    struct argp_option *ao = NULL;
     int index = 0, group = 0, num_options = 0;
     if (!conf)
         return -1;
@@ -124,7 +113,8 @@ config_generate_commandline(struct Config *conf)
          */
         num_options += s->num_opts + 1;
     }
-    conf->options = calloc(num_options, (sizeof(struct argp_option*)));
+    // One empty slot for the empty ending structure
+    conf->options = calloc(num_options + 1, (sizeof(struct argp_option)));
     conf->options_map = calloc(num_options, (sizeof(struct OptionsMap*)));
 
     // now, add arguments for each sections
@@ -132,8 +122,8 @@ config_generate_commandline(struct Config *conf)
         DEBUG(conf, "Creating commandline for section '%s'", s->name);
         // set the title for this group - if not the first one.
         // the pointer is already on the last allocated structure.
-        if (index > 0 && ao->doc)
-            ao->doc = s->name;
+        if (index > 0 && conf->options[index].doc)
+            conf->options[index].doc = s->name;
 
         if (generate_argp_for_section(conf, s, &index, group) != 0) {
             return -1;
@@ -145,15 +135,14 @@ config_generate_commandline(struct Config *conf)
          * index is already pointing to the next available slot as it has
          * been incremented in generate_argp_for_section
          */
-        conf->options[index] = calloc(1, argp_option_size);
-        if (!conf->options[index])
-            return -1;
-        ao = conf->options[index];
         index++;
 
         // increment the group index (for next section, if any)
         group++;
     }
+
+    // Last entry, 0
+    memset(&(conf->options[index]), 0, sizeof(struct argp_option));
 
     conf->num_argp_options = index;
     return 0;
@@ -205,12 +194,10 @@ config_parse_commandline(struct Config *conf, int argc, char* argv[])
     if (config_generate_commandline(conf) != 0)
         return -1;
 
-    argp_conf->options = *(conf->options);
+    argp_conf->options = conf->options;
     argp_conf->parser = parse_commandline_opt;
-    argp_conf->args_doc = strdup("TODO");
-    argp_conf->doc = strdup("Documentation for Rapp goes here");
-    argp_parse(argp_conf, argc, argv, 0, 0, conf);
-    free((char *) argp_conf->args_doc);
-    free((char *) argp_conf->doc);
+    argp_conf->args_doc = "TODO";
+    argp_conf->doc = "Documentation for Rapp goes here";
+    argp_parse(argp_conf, argc, argv, 0, NULL, conf);
     return 0;
 }
