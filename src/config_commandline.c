@@ -61,10 +61,8 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
         else
             snprintf(optname, optname_length, "%s", opt->name);
 
-        // FIXME: 65 is an arbitrary value, it's meant to move key into the
-        // range of uppercase ASCII chars, since values near 0 are "taken"
-        // by argp constants.
-        conf->options[*index].key = (*index) + 65;
+        // FIXME add constant
+        conf->options[*index].key = (*index) + 128;
         conf->options[*index].group = group;
         conf->options[*index].name = optname;
 
@@ -107,7 +105,7 @@ config_generate_commandline(struct Config *conf)
 
     for(s=conf->sections.tqh_first; s != NULL; s = s->entries.tqe_next) {
         /* We need an empty entry at the start of each section to allow grouping
-         * in argp help, except for the first once. Since we need an entry after
+         * in argp help, except for the first one. Since we need an entry after
          * the last section to mark the end of the array, we just increment after
          * each section and we are ok
          */
@@ -122,8 +120,10 @@ config_generate_commandline(struct Config *conf)
         DEBUG(conf, "Creating commandline for section '%s'", s->name);
         // set the title for this group - if not the first one.
         // the pointer is already on the last allocated structure.
-        if (index > 0 && conf->options[index].doc)
-            conf->options[index].doc = s->name;
+        if (index > 0 && conf->options[index].doc) {
+            assert(conf->options[index-1].name == NULL);
+            conf->options[index-1].doc = s->name;
+        }
 
         if (generate_argp_for_section(conf, s, &index, group) != 0) {
             return -1;
@@ -141,9 +141,6 @@ config_generate_commandline(struct Config *conf)
         group++;
     }
 
-    // Last entry, 0
-    memset(&(conf->options[index]), 0, sizeof(struct argp_option));
-
     conf->num_argp_options = index;
     return 0;
 }
@@ -157,14 +154,13 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
         argp_usage(state);
 
     DEBUG(conf, "key: %d, arg: %s", key, arg);
-    if (key == ARGP_KEY_ARG) {
+    if (key == ARGP_KEY_INIT || key == ARGP_KEY_FINI)
         return 0;
-    }
 
     // FIXME
-    key = key - 65;
+    key = key - 128;
 
-    if (key > conf->num_argp_options) {
+    if (key < 0 || key > conf->num_argp_options) {
         WARN(conf, "WUT? %d", conf->num_argp_options);
         return 0;
     }
