@@ -36,6 +36,16 @@ if(ENABLE_TESTS)
     target_link_libraries(check_collector ${LIBCHECK_LIBRARY} m rt pthread)
     add_test(test_collector ${EXECUTABLE_OUTPUT_PATH}/check_collector)
 
+    # container
+    add_executable(check_container
+        check_container.c
+        ${rapp_SOURCE_DIR}/src/container.c
+        ${rapp_SOURCE_DIR}/src/logger.c
+        ${rapp_SOURCE_DIR}/tests/test_dlstubs.c
+    )
+    target_link_libraries(check_container ${LIBCHECK_LIBRARY} m rt pthread)
+    add_test(test_container ${EXECUTABLE_OUTPUT_PATH}/check_container)
+
     # event loop
     add_executable(check_eloop
         check_eloop.c
