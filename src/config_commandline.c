@@ -161,29 +161,47 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
     struct ConfigOption *opt = NULL;
     int index = 0;
 
-    if (key == ARGP_KEY_NO_ARGS)
-        argp_usage(state);  // FIXME
+    switch (key) {
+        case ARGP_KEY_NO_ARGS:
+            return 0;
+            break;
 
-    DEBUG(conf, "key: %d, arg: %s", key, arg);
-    if (key == ARGP_KEY_INIT || key == ARGP_KEY_FINI)
-        return 0;
+        case ARGP_KEY_INIT:
+        case ARGP_KEY_FINI:
+        case ARGP_KEY_END:
+            return 0;
+            break;
 
+        case ARGP_KEY_SUCCESS:
+            return 0;
+            break;
+
+        case ARGP_KEY_ERROR:
+            CRITICAL(conf, "Error during argument parsing: %d", key);
+            return EINVAL;
+            break;
+    }
+
+
+    DEBUG(conf, "key: %x, arg: %s", key, arg);
     index = key - ARG_INDEX_OFFSET;
 
     if (index < 0 || index > conf->num_argp_options) {
-        WARN(conf, "WUT? %d", conf->num_argp_options);
-        return 0;
+        CRITICAL(conf, "key %x maps to index %d which is not in [0. %d]",
+                key, index, conf->num_argp_options);
+        return ARGP_ERR_UNKNOWN;
     }
 
     opt = conf->options_map[index];
     if (!opt) {
-        CRITICAL(conf, "Key %d received but mapping is NULL", key);
+        CRITICAL(conf, "Key %x - index %d received but mapping is NULL", key,
+                index);
         return EINVAL;
     }
 
     if (!arg) {
         WARN(conf, "Key %s.%s NULL value", opt->section->name, opt->name);
-        return 0;
+        return EINVAL;
     }
 
     // set the value for opt using '*arg'
