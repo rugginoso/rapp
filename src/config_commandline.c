@@ -104,13 +104,9 @@ config_generate_commandline(struct Config *conf)
         return -1;
 
     for(s=conf->sections.tqh_first; s != NULL; s = s->entries.tqe_next) {
-        /* We need an empty entry at the start of each section to allow grouping
-         * in argp help, except for the first one. Since we need an entry after
-         * the last section to mark the end of the array, we just increment after
-         * each section and we are ok
-         */
-        num_options += s->num_opts + 1;
+        num_options += s->num_opts;
     }
+
     // One empty slot for the empty ending structure
     conf->options = calloc(num_options + 1, (sizeof(struct argp_option)));
     conf->options_map = calloc(num_options, (sizeof(struct OptionsMap*)));
@@ -118,24 +114,9 @@ config_generate_commandline(struct Config *conf)
     // now, add arguments for each sections
     for (s=conf->sections.tqh_first; s != NULL; s=s->entries.tqe_next) {
         DEBUG(conf, "Creating commandline for section '%s'", s->name);
-        // set the title for this group - if not the first one.
-        // the pointer is already on the last allocated structure.
-        if (index > 0 && conf->options[index].doc) {
-            assert(conf->options[index-1].name == NULL);
-            conf->options[index-1].doc = s->name;
-        }
-
         if (generate_argp_for_section(conf, s, &index, group) != 0) {
             return -1;
         }
-
-        /* Adding an empty line to separate sections. The "doc" field
-         * will be set on the next iteration (if any); Otherwise the empty
-         * struct is used to mark the end of the array.
-         * index is already pointing to the next available slot as it has
-         * been incremented in generate_argp_for_section
-         */
-        index++;
 
         // increment the group index (for next section, if any)
         group++;
