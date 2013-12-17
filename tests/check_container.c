@@ -10,13 +10,56 @@
 #include "logger.h"
 #include "container.h"
 
+#include "test_dlstubs.h"
 
-START_TEST(test_container_dlopen_fail)
+
+START_TEST(test_container_new_dlopen_fail)
 {
-  struct Logger *logger = logger_new_null();
-  /* TODO: check logger output! */
-  struct Container *container = container_new(logger, "NULL", 0, NULL);
+  struct Logger *logger = NULL;
+  struct Container *container = NULL;
+   struct Symbol syms[] = {
+    { NULL, 0 }
+  };
+  dlstub_setup(DLSTUB_ERR_DLOPEN, syms);
+  logger = logger_new_null();
+  container = container_new(logger, "dummy", 0, NULL);
   ck_assert(container == NULL);
+  ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 0);
+  logger_destroy(logger);
+}
+END_TEST
+
+START_TEST(test_container_new_dlsym_fail_get_abi_version)
+{
+  struct Logger *logger = NULL;
+  struct Container *container = NULL;
+  struct Symbol syms[] = {
+    { "rapp_get_abi_version", DLSTUB_ERR_DLSYM },
+    { NULL, 0 }
+  };
+  dlstub_setup(DLSTUB_ERR_NONE, syms);
+  logger = logger_new_null();
+  container = container_new(logger, "dummy", 0, NULL);
+  ck_assert(container == NULL);
+  ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 0);
+  logger_destroy(logger);
+}
+END_TEST
+
+START_TEST(test_container_new_abi_version_mismatch)
+{
+  struct Logger *logger = NULL;
+  struct Container *container = NULL;
+  struct Symbol syms[] = {
+    { "rapp_get_abi_version", DLSTUB_ERR_PLUGIN },
+    { NULL, 0 }
+  };
+  dlstub_setup(DLSTUB_ERR_NONE, syms);
+  logger = logger_new_null();
+  container = container_new(logger, "dummy", 0, NULL);
+  ck_assert(container == NULL);
+  ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 1);
+  ck_assert_int_eq(dlstub_get_invoke_count("rapp_create"), 0);
   logger_destroy(logger);
 }
 END_TEST
@@ -28,7 +71,9 @@ container_suite(void)
   Suite *s = suite_create("rapp.core.container");
   TCase *tc = tcase_create("rapp.core.container");
 
-  tcase_add_test(tc, test_container_dlopen_fail);
+  tcase_add_test(tc, test_container_new_dlopen_fail);
+  tcase_add_test(tc, test_container_new_dlsym_fail_get_abi_version);
+  tcase_add_test(tc, test_container_new_abi_version_mismatch);
   suite_add_tcase(s, tc);
 
   return s;
