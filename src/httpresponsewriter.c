@@ -80,6 +80,7 @@ http_response_writer_sendfile(struct HTTPResponseWriter *response_writer,
 {
   int file_fd = -1;
   struct stat file_stat = {0,};
+  ssize_t ret = 0;
 
   assert(response_writer != NULL);
   assert(path != NULL);
@@ -100,7 +101,11 @@ http_response_writer_sendfile(struct HTTPResponseWriter *response_writer,
     return -1;
   }
 
-  return tcp_connection_sendfile(response_writer->tcp_connection, file_fd, file_stat.st_size);
+  ret = tcp_connection_sendfile(response_writer->tcp_connection, file_fd, file_stat.st_size);
+
+  close(file_fd);
+
+  return ret;
 }
 
 // FIXME arbitrary
