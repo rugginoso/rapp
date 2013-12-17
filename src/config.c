@@ -9,7 +9,8 @@ config_opt_add(struct Config *conf,
                const char *section,
                const char *name,
                ConfigParamType type,
-               const char *help)
+               const char *help,
+               const char *metavar)
 {
     struct ConfigSection *sect = NULL;
     size_t size = sizeof(struct ConfigOption);
@@ -17,6 +18,7 @@ config_opt_add(struct Config *conf,
 
     if (!conf || conf->freezed == 1 || !section || !name)
         return -1;
+
     sect = get_section(conf, section);
     if (!sect) {
         sect = section_create(conf, section);
@@ -61,6 +63,8 @@ config_opt_add(struct Config *conf,
             opt->value_min = opt->value_max = 0;
             break;
     }
+    if (metavar && type != PARAM_BOOL)
+        opt->metavar = strdup(metavar);
     opt->multivalued = 0;
     opt->num_values = 0;
     opt->default_set = 0;

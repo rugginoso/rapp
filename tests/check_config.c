@@ -47,9 +47,9 @@ START_TEST(test_config_create)
     setup();
     ck_assert(conf != NULL);
     // missing required arguments
-    ck_assert_call_fail(config_opt_add, NULL, S, N, PS, NULL);
-    ck_assert_call_fail(config_opt_add, conf, NULL, N, PS, NULL);
-    ck_assert_call_fail(config_opt_add, conf, S, NULL, PS, NULL);
+    ck_assert_call_fail(config_opt_add, NULL, S, N, PS, NULL, NULL);
+    ck_assert_call_fail(config_opt_add, conf, NULL, N, PS, NULL, NULL);
+    ck_assert_call_fail(config_opt_add, conf, S, NULL, PS, NULL, NULL);
     struct ConfigSection *sect = get_section(conf, NULL);
     ck_assert(sect == NULL);
 
@@ -73,8 +73,9 @@ START_TEST(test_config_opt_string)
     struct ConfigOption *opt;
     char *value;
     int res;
-    ck_assert_call_ok(config_opt_add, conf, S, N, PARAM_STRING, "tests");
+    ck_assert_call_ok(config_opt_add, conf, S, N, PARAM_STRING, "tests", "META");
     opt = get_test_option();
+    ck_assert_str_eq(opt->metavar, "META");
     ck_assert_call_fail(config_opt_set_default_string, conf, S, N, NULL);
     ck_assert_call_ok(config_opt_set_default_string, conf, S, N, "default");
     ck_assert_call_fail(config_opt_set_range_int, conf, S, N, 0, 1);
@@ -113,7 +114,7 @@ START_TEST(test_config_opt_int)
     struct ConfigOption *opt;
     long res;
     int ires;
-    ck_assert_call_ok(config_opt_add, conf, S, N, PARAM_INT, "tests");
+    ck_assert_call_ok(config_opt_add, conf, S, N, PARAM_INT, "tests", NULL);
     opt = get_test_option();
     ck_assert_call_ok(config_opt_set_default_int, conf, S, N, 3);
     ck_assert_int_eq(opt->default_value.intvalue, 3);
@@ -154,7 +155,10 @@ START_TEST(test_config_opt_bool)
 {
     int b;
     long l;
-    ck_assert_call_ok(config_opt_add, conf, S, N, PARAM_BOOL, "tests");
+    struct ConfigOption *opt;
+    ck_assert_call_ok(config_opt_add, conf, S, N, PARAM_BOOL, "tests", "META");
+    opt = get_test_option();
+    ck_assert(opt->metavar == NULL);
     // autorange for booleans
     ck_assert_call_fail(config_add_value_int, conf, S, N, -1);
     ck_assert_call_fail(config_add_value_int, conf, S, N, 2);

@@ -123,6 +123,10 @@ config_option_destroy(struct ConfigOption *opt)
         free(opt->default_value.strvalue);
     if (opt->help)
         free(opt->help);
+    if (opt->cmdline_value)
+        free(opt->cmdline_value);
+    if (opt->metavar)
+        free(opt->metavar);
     free(opt);
 }
 

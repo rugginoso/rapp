@@ -14,7 +14,7 @@ struct Config;
 // PUBLIC
 int config_opt_add(struct Config *conf, const char *section,
                    const char *name, ConfigParamType type,
-                   const char *help);
+                   const char *help, const char* metavar);
 int config_opt_set_range_int(struct Config *conf, const char *section,
                              const char *name, long value_min,
                              long value_max);

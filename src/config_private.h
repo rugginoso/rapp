@@ -63,6 +63,8 @@ struct ConfigOption {
         char *strvalue;
     } default_value;
     int default_set;
+    char *cmdline_value;
+    char *metavar;
     struct ConfigSection *section;
     TAILQ_ENTRY(ConfigOption) entries;
     TAILQ_HEAD(ConfigValuesHead, ConfigValue) values;

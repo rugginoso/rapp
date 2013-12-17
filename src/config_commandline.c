@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include "config_private.h"
 
+#define ARG_INDEX_OFFSET 128
+
 void
 config_argp_options_destroy(struct Config *conf)
 {
@@ -36,7 +38,7 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
 {
     struct ConfigOption *opt = NULL;
     char *prefix = NULL;
-    char *optname = NULL, *argname = NULL;
+    char *optname = NULL, *metavar = NULL;
     size_t prefix_length = 0, optname_length = 0;
     int i = *index;
 
@@ -61,26 +63,31 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
         else
             snprintf(optname, optname_length, "%s", opt->name);
 
-        // FIXME add constant
-        conf->options[*index].key = (*index) + 128;
-        conf->options[*index].group = group;
+        conf->options[*index].key = (*index) + ARG_INDEX_OFFSET;
         conf->options[*index].name = optname;
 
-        // TODO check if opt is bool, if it is do not set ao->arg;
-        // For now, we set arg to the uppercase of the option name,
-        // without section.
-        // TODO: provide an api to set this value as well, like help/doc
-        argname = strdup(opt->name);
-        uppercase(argname);
-        conf->options[*index].arg = argname;
+        // Do not set arg for bools
+        if (opt->type != PARAM_BOOL) {
+            if (!opt->metavar) {
+                metavar = strdup(opt->name);
+                uppercase(metavar);
+                conf->options[*index].arg = metavar;
+            } else {
+                conf->options[*index].arg = strdup(opt->metavar);
+            }
+        }
+        conf->options[*index].group = group;
 
         if (opt->help)
             conf->options[*index].doc = strdup(opt->help);
 
         conf->options_map[*index] = opt;
 
-        DEBUG(conf, "Added commandline option '--%s', help: '%s', arg: %s, index %d, group %d, key %d",
-                conf->options[*index].name, conf->options[*index].doc, conf->options[*index].arg, *index, conf->options[*index].group, conf->options[*index].key);
+        DEBUG(conf, "Added commandline option '--%s', help: '%s', "
+                "arg: %s, index %d, group %d, key %d",
+                conf->options[*index].name, conf->options[*index].doc,
+                conf->options[*index].arg, *index,
+                conf->options[*index].group, conf->options[*index].key);
         (*index)++;
     }
 
@@ -95,24 +102,45 @@ config_generate_commandline(struct Config *conf)
 {
     size_t argp_option_size = sizeof(struct argp_option);
     struct ConfigSection *s = NULL;
-    int index = 0, group = 0, num_options = 0;
+    int index = 0, group = 1, num_options = 0;
+    const char *titlebase = "Options for ";
+    char *title;
+    int title_len, titlebase_len;
+
     if (!conf)
         return -1;
+
+    titlebase_len = strlen(titlebase);
 
     // do not support being called twice
     if (conf->options)
         return -1;
 
+    /* Number of options:
+     * for each section, 1 for the "title" and 1 for each option
+     * one empty entry at the end of the array to mark the end of it
+     */
+    num_options = 1;
     for(s=conf->sections.tqh_first; s != NULL; s = s->entries.tqe_next) {
-        num_options += s->num_opts;
+        num_options = num_options + s->num_opts + 1;
     }
 
     // One empty slot for the empty ending structure
-    conf->options = calloc(num_options + 1, (sizeof(struct argp_option)));
-    conf->options_map = calloc(num_options, (sizeof(struct OptionsMap*)));
+    conf->options = calloc(num_options, (sizeof(struct argp_option)));
+    conf->options_map = calloc(num_options, (sizeof(struct ConfigOption*)));
 
     // now, add arguments for each sections
     for (s=conf->sections.tqh_first; s != NULL; s=s->entries.tqe_next) {
+        // set the section title for help formatting
+        conf->options[index].group = group;
+        conf->options[index].flags = OPTION_DOC;
+        // +4: '\0', '' and :
+        title_len = strlen(s->name) + titlebase_len + 4;
+        conf->options[index].doc = malloc(title_len * sizeof(char));
+        snprintf((char *)conf->options[index].doc, title_len, "%s'%s':",
+                titlebase, s->name);
+        index++;
+
         DEBUG(conf, "Creating commandline for section '%s'", s->name);
         if (generate_argp_for_section(conf, s, &index, group) != 0) {
             return -1;
@@ -131,29 +159,32 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
 {
     struct Config *conf = state->input;
     struct ConfigOption *opt = NULL;
+    int index = 0;
+
     if (key == ARGP_KEY_NO_ARGS)
-        argp_usage(state);
+        argp_usage(state);  // FIXME
 
     DEBUG(conf, "key: %d, arg: %s", key, arg);
     if (key == ARGP_KEY_INIT || key == ARGP_KEY_FINI)
         return 0;
 
-    // FIXME
-    key = key - 128;
+    index = key - ARG_INDEX_OFFSET;
 
-    if (key < 0 || key > conf->num_argp_options) {
+    if (index < 0 || index > conf->num_argp_options) {
         WARN(conf, "WUT? %d", conf->num_argp_options);
         return 0;
     }
 
-    opt = conf->options_map[key];
+    opt = conf->options_map[index];
     if (!opt) {
         CRITICAL(conf, "Key %d received but mapping is NULL", key);
-        return ARGP_ERR_UNKNOWN;
+        return EINVAL;
     }
 
-    if (!arg)
+    if (!arg) {
         WARN(conf, "Key %s.%s NULL value", opt->section->name, opt->name);
+        return 0;
+    }
 
     // set the value for opt using '*arg'
     DEBUG(conf, "Setting value for %s.%s = %s from commanline",

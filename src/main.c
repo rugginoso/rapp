@@ -49,11 +49,12 @@ main(int argc, char *argv[])
 
   char *address;
   long port;
-  assert(config_opt_add(config, "core", "address", PARAM_STRING, "Address to listen to") == 0);
-  assert(config_opt_add(config, "core", "port", PARAM_INT, "Port") == 0);
-  assert(config_opt_add(config, "core", "loglevel", PARAM_INT, "Verbosity level") == 0);
-  assert(config_opt_add(config, "core", "test", PARAM_STRING, "Multi test") == 0);
-  assert(config_opt_add(config, "other", "test", PARAM_STRING, "Test option in different section") == 0);
+  assert(config_opt_add(config, "core", "address", PARAM_STRING, "Address to listen to", NULL) == 0);
+  assert(config_opt_add(config, "core", "port", PARAM_INT, "Port", NULL) == 0);
+  assert(config_opt_add(config, "core", "loglevel", PARAM_INT, "Verbosity level", NULL) == 0);
+  assert(config_opt_add(config, "core", "test", PARAM_STRING, "Multi test", NULL) == 0);
+  assert(config_opt_add(config, "other", "test", PARAM_STRING, "Test option in different section", "TESTOPT") == 0);
+  assert(config_opt_add(config, "other", "testbool", PARAM_BOOL, "This is a test boolean", NULL) == 0);
 
   assert(config_opt_set_range_int(config, "core", "port", 0, 65535) == 0);
   assert(config_opt_set_multivalued(config, "core", "test", 1) == 0);
