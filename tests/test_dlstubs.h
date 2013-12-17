@@ -3,6 +3,8 @@
 
 #include <inttypes.h>
 
+#include "rapp/rapp_logger.h"
+
 #define DLSTUB_ERR_NONE   0x00
 #define DLSTUB_ERR_DLOPEN 0x01
 #define DLSTUB_ERR_DLSYM  0x02
@@ -19,6 +21,8 @@ struct Symbol {
 void dlstub_setup(uint32_t flags, struct Symbol *syms);
 int dlstub_get_invoke_count(const char *sym);
 void dlstub_debug(const char *tag);
+
+struct Logger *dlstub_logger_get(void);
 
 #endif /* TEST_DLSTUBS_H */
 

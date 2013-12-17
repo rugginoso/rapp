@@ -33,13 +33,27 @@ dlstub_debug(const char *tag)
 }
 
 static int
+has_flag(const char *sym, uint32_t flag)
+{
+  int i = 0;
+  for (i = 0; i < DLSTUB_MAX_SYMS && dummy.syms[i].name != NULL; i++) {
+    if (!strcmp(dummy.syms[i].name, sym)) {
+      return (dummy.syms[i].flags & flag);
+    }
+  }
+  return 0;
+}
+
+
+static int
 is_enabled(const char *sym, uint32_t flag)
 {
   int i = 0;
   for (i = 0; i < DLSTUB_MAX_SYMS && dummy.syms[i].name != NULL; i++) {
-    if (!(dummy.syms[i].flags & flag)
-     && !strcmp(dummy.syms[i].name, sym)) {
-      return 1;
+    if (!strcmp(dummy.syms[i].name, sym)) {
+      if (!(dummy.syms[i].flags & flag)) {
+        return 1;
+      }
     }
   }
   return 0;
@@ -76,10 +90,10 @@ static int
 dummy_get_abi_version(void)
 {
   mark_invoked("rapp_get_abi_version");
-  if (is_enabled("rapp_get_abi_version", DLSTUB_ERR_PLUGIN)) {
-    return ABI_VERSION;
+  if (has_flag("rapp_get_abi_version", DLSTUB_ERR_PLUGIN)) {
+    return 0;
   }
-  return 0;
+  return ABI_VERSION;
 }
 
 static void *
@@ -93,6 +107,28 @@ dummy_create(void *cookie, int ac, char **av, int *err)
   return NULL;
 }
 
+static int
+dummy_destroy(void *handle)
+{
+  mark_invoked("rapp_destroy");
+  if (has_flag("rapp_destroy", DLSTUB_ERR_PLUGIN)) {
+    return -1;
+  }
+  return 0;
+}
+
+static int
+dummy_serve(void *handle,
+            void *http_request,
+            void *response_writer)
+{
+  mark_invoked("rapp_serve");
+  if (has_flag("rapp_serve", DLSTUB_ERR_PLUGIN)) {
+    return -1;
+  }
+  return 0;
+}
+
 static void *
 lookup_sym(const char *sym)
 {
@@ -101,6 +137,10 @@ lookup_sym(const char *sym)
     return &dummy_get_abi_version;
   } else if (!strcmp(sym, "rapp_create")) {
     return &dummy_create;
+  } else if (!strcmp(sym, "rapp_destroy")) {
+    return &dummy_destroy;
+  } else if (!strcmp(sym, "rapp_serve")) {
+    return &dummy_serve;
   }
   return NULL;
 }
@@ -180,5 +220,11 @@ dlstub_get_lookup_count(const char *sym)
     }
   }
   return 0;
+}
+
+struct Logger *
+dlstub_logger_get(void)
+{
+  return logger_get(dummy.cookie);
 }
 
