@@ -13,7 +13,7 @@
 
 START_TEST(test_container_dlopen_fail)
 {
-  struct Logger *logger = logger_open_null();
+  struct Logger *logger = logger_new_null();
   /* TODO: check logger output! */
   struct Container *container = container_new(logger, "NULL", 0, NULL);
   ck_assert(container == NULL);

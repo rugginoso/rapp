@@ -33,7 +33,7 @@ main(int argc, char *argv[])
   struct SignalHandler *signal_handler = NULL;
   struct Container *container = NULL;
 
-  logger = logger_open_console(LOG_LAST, stderr);
+  logger = logger_new_console(LOG_LAST, stderr);
   if (logger == NULL) {
     logger_panic("failed to initialize the logger!");
     exit(1);
