@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <assert.h>
-
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -60,12 +59,10 @@ main(int argc, char *argv[])
   config_opt_add(config, "core", "port", PARAM_INT, "Port", NULL);
   config_opt_add(config, "core", "config", PARAM_STRING, "Path to yaml config", "FILE");
   config_opt_add(config, "core", "confd", PARAM_STRING, "Path to directory to scan for config", "DIR");
-  config_opt_add(config, "core", "loglevel", PARAM_INT, "Verbosity level", NULL);
 
   config_opt_set_range_int(config, "core", "port", 0, 65535);
   config_opt_set_default_string(config, "core", "address", "127.0.0.1");
   config_opt_set_default_int(config, "core", "port", 8080);
-  config_opt_set_default_int(config, "core", "loglevel", LOG_INFO);
   config_opt_set_multivalued(config, "core", "config", 1);
   config_opt_set_multivalued(config, "core", "confd", 1);
 
@@ -120,6 +117,7 @@ main(int argc, char *argv[])
 
   http_server_start(http_server, address, port);
   free(address);
+  free(arguments.container);
 
   event_loop_run(eloop);
 

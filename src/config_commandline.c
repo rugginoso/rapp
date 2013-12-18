@@ -10,7 +10,7 @@
 #define ARG_LOGOUTPUT ARG_INDEX_BASE + 1
 #define ARG_LOGNOCOLOR ARG_INDEX_BASE + 2
 #define ARG_LOAD ARG_INDEX_BASE + 3
-#define ARG_INDEX_OFFSET 128 + 4
+#define ARG_INDEX_OFFSET 150
 
 static struct argp_option rappoptions[] = {
     {0, 0, 0, OPTION_DOC, "Logging:", -3},
@@ -24,6 +24,7 @@ static struct argp_option rappoptions[] = {
     {"load", ARG_LOAD, "PATH", 0, "Load container .so"},
     {0}
 };
+const int rappoptions_len = sizeof(rappoptions) / sizeof(rappoptions[0]);
 
 void
 config_argp_options_destroy(struct Config *conf)
@@ -144,9 +145,11 @@ config_generate_commandline(struct Config *conf)
         num_options = num_options + s->num_opts + 1;
     }
 
-    // One empty slot for the empty ending structure
-    conf->options = calloc(num_options, (sizeof(struct argp_option)));
-    conf->options_map = calloc(num_options, (sizeof(struct ConfigOption*)));
+    // Allocate space for static options as well
+    conf->options = calloc(num_options + rappoptions_len,
+            (sizeof(struct argp_option)));
+    conf->options_map = calloc(num_options + rappoptions_len,
+            (sizeof(struct ConfigOption*)));
 
     // now, add arguments for each sections
     for (s=conf->sections.tqh_first; s != NULL; s=s->entries.tqe_next) {
@@ -242,6 +245,7 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
 int
 config_parse_commandline(struct Config *conf, int argc, char* argv[])
 {
+    int i, index;
     struct argp *argp_conf = calloc(1, sizeof(struct argp));
     if (!argp_conf)
         return -1;
@@ -249,7 +253,16 @@ config_parse_commandline(struct Config *conf, int argc, char* argv[])
     if (config_generate_commandline(conf) != 0)
         return -1;
 
-    // TODO Add early options to get help and other.
+    // Add early options to print help and usage, and to avoid
+    // giving error as not recognized
+    for(i = 0; i < rappoptions_len; i++) {
+        index = i + conf->num_argp_options;
+        conf->options[index].name = rappoptions[i].name;
+        conf->options[index].arg = rappoptions[i].arg;
+        conf->options[index].key = rappoptions[i].key;
+        conf->options[index].group = rappoptions[i].group;
+        conf->options[index].doc = rappoptions[i].doc;
+    }
 
     argp_conf->options = conf->options;
     argp_conf->parser = parse_commandline_opt;
