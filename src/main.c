@@ -45,7 +45,7 @@ main(int argc, char *argv[])
   }
 
   logger_trace(logger, LOG_INFO, "rapp",
-               "rapp %s (rev %s - tag: %s) starting... (PID=%li)",
+               "rapp %s (rev %s - tag: %s) starting... (PID=%d)",
                rapp_get_version(), rapp_get_version_sha1(),
                rapp_get_version_tag(), getpid());
 
