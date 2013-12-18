@@ -41,6 +41,13 @@ do {                                                                          \
   GET_OPTION_FROM_SECT(opt, conf, s, optname);                                \
 } while(0)
 
+struct RappArguments {
+    int loglevel;
+    char *logoutput;
+    int lognocolor;
+    char *container;
+};
+
 struct ConfigValue {
     union {
         long intvalue;
@@ -110,4 +117,6 @@ void config_option_destroy(struct ConfigOption *opt);
 void config_argp_options_destroy(struct Config *conf);
 int config_generate_commandline(struct Config *conf);
 int config_parse_commandline(struct Config *conf, int argc, char *argv[]);
+int config_parse_early_commandline(struct RappArguments *arguments,
+                                   int argc, char* argv[]);
 #endif /* CONFIG_PRIVATE_H */

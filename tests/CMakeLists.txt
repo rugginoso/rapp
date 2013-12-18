@@ -105,6 +105,7 @@ if(ENABLE_TESTS)
         ${rapp_SOURCE_DIR}/src/config_private.c
         ${rapp_SOURCE_DIR}/src/config_commandline.c
         ${rapp_SOURCE_DIR}/src/config.c
+        ${rapp_SOURCE_DIR}/src/version.c
     )
     target_link_libraries(check_config_yaml_parser ${LIBCHECK_LIBRARY} m rt pthread yaml)
     add_test(test_config_yaml ${EXECUTABLE_OUTPUT_PATH}/check_config_yaml_parser)
@@ -118,6 +119,7 @@ if(ENABLE_TESTS)
         ${rapp_SOURCE_DIR}/src/config_private.c
         ${rapp_SOURCE_DIR}/src/config_commandline.c
         ${rapp_SOURCE_DIR}/src/config.c
+        ${rapp_SOURCE_DIR}/src/version.c
     )
     target_link_libraries(check_config ${LIBCHECK_LIBRARY} m rt pthread yaml)
     add_test(test_config ${EXECUTABLE_OUTPUT_PATH}/check_config)

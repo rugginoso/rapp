@@ -13,6 +13,8 @@
 #include "container.h"
 #include "config_private.h"
 
+const char *argp_program_version;
+
 static void
 on_signal(struct SignalHandler *signal_handler, void *data)
 {
@@ -38,8 +40,11 @@ main(int argc, char *argv[])
   long port;
   int num, i, res;
   char *confpath;
+  struct RappArguments arguments;
+  argp_program_version = rapp_get_version_full();
+  config_parse_early_commandline(&arguments, argc, argv);
 
-  logger = logger_new_console(LOG_LAST, stderr);
+  logger = logger_new_console(arguments.loglevel, stderr);
   if (logger == NULL) {
     logger_panic("failed to initialize the logger!");
     exit(1);
@@ -51,20 +56,20 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  assert(config_opt_add(config, "core", "address", PARAM_STRING, "Address to listen to", NULL) == 0);
-  assert(config_opt_add(config, "core", "port", PARAM_INT, "Port", NULL) == 0);
-  assert(config_opt_add(config, "core", "config", PARAM_STRING, "Path to yaml config", "FILE") == 0);
-  assert(config_opt_add(config, "core", "confd", PARAM_STRING, "Path to directory to scan for config", "DIR") == 0);
-  assert(config_opt_add(config, "core", "loglevel", PARAM_INT, "Verbosity level", NULL) == 0);
+  config_opt_add(config, "core", "address", PARAM_STRING, "Address to listen to", NULL);
+  config_opt_add(config, "core", "port", PARAM_INT, "Port", NULL);
+  config_opt_add(config, "core", "config", PARAM_STRING, "Path to yaml config", "FILE");
+  config_opt_add(config, "core", "confd", PARAM_STRING, "Path to directory to scan for config", "DIR");
+  config_opt_add(config, "core", "loglevel", PARAM_INT, "Verbosity level", NULL);
 
-  assert(config_opt_set_range_int(config, "core", "port", 0, 65535) == 0);
-  assert(config_opt_set_default_string(config, "core", "address", "127.0.0.1") == 0);
-  assert(config_opt_set_default_int(config, "core", "port", 8080) == 0);
-  assert(config_opt_set_default_int(config, "core", "loglevel", LOG_INFO) == 0);
-  assert(config_opt_set_multivalued(config, "core", "config", 1) == 0);
-  assert(config_opt_set_multivalued(config, "core", "confd", 1) == 0);
+  config_opt_set_range_int(config, "core", "port", 0, 65535);
+  config_opt_set_default_string(config, "core", "address", "127.0.0.1");
+  config_opt_set_default_int(config, "core", "port", 8080);
+  config_opt_set_default_int(config, "core", "loglevel", LOG_INFO);
+  config_opt_set_multivalued(config, "core", "config", 1);
+  config_opt_set_multivalued(config, "core", "confd", 1);
 
-  assert(config_parse_commandline(config, argc, argv) == 0);
+  config_parse_commandline(config, argc, argv);
 
   // Scan configuration directories
   config_get_num_values(config, "core", "confd", &num);
@@ -93,7 +98,7 @@ main(int argc, char *argv[])
   logger_trace(logger, LOG_INFO, "rapp", "listening on %s", address);
   logger_trace(logger, LOG_INFO, "rapp", "listening on %d", port);
 
-  container = container_new(logger, argv[1], 0, NULL); // FIXME
+  container = container_new(logger, arguments.container, 0, NULL); // FIXME
   if (!container) {
     config_destroy(config);
     logger_destroy(logger);
@@ -102,9 +107,8 @@ main(int argc, char *argv[])
   }
 
   logger_trace(logger, LOG_INFO, "rapp",
-               "rapp %s (rev %s - tag: %s) starting... (PID=%li)",
-               rapp_get_version(), rapp_get_version_sha1(),
-               rapp_get_version_tag(), getpid());
+               "rapp %s (rev %s) starting... (PID=%li)",
+               rapp_get_version(), rapp_get_version_sha1(), getpid());
 
   eloop = event_loop_new();
 

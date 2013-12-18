@@ -3,8 +3,27 @@
 #include <string.h>
 #include <stdlib.h>
 #include "config_private.h"
+#include <rapp/rapp_version.h>
 
-#define ARG_INDEX_OFFSET 128
+#define ARG_INDEX_BASE 128
+#define ARG_LOGLEVEL ARG_INDEX_BASE + 0
+#define ARG_LOGOUTPUT ARG_INDEX_BASE + 1
+#define ARG_LOGNOCOLOR ARG_INDEX_BASE + 2
+#define ARG_LOAD ARG_INDEX_BASE + 3
+#define ARG_INDEX_OFFSET 128 + 4
+
+static struct argp_option rappoptions[] = {
+    {0, 0, 0, OPTION_DOC, "Logging:", -3},
+    {"log-level", ARG_LOGLEVEL, "LOGLEVEL", 0,
+        "Log level, one of: {CRITICAL, ERROR, WARN, INFO, DEBUG}"},
+    {"log-output", ARG_LOGOUTPUT, "OUTPUT", 0,
+        "Log to file, defaults to <stderr>."},
+    {"log-nocolor", ARG_LOGNOCOLOR, 0, 0,
+        "Disable colors in logs"},
+    {0, 0, 0, OPTION_DOC, "Containers:", -2},
+    {"load", ARG_LOAD, "PATH", 0, "Load container .so"},
+    {0}
+};
 
 void
 config_argp_options_destroy(struct Config *conf)
@@ -181,7 +200,10 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
             return 0;
             break;
     }
-
+    if (key >= ARG_INDEX_BASE && key < ARG_INDEX_OFFSET) {
+        // early options were already parsed
+        return 0;
+    }
     index = key - ARG_INDEX_OFFSET;
 
     if (index < 0 || index > conf->num_argp_options) {
@@ -227,11 +249,75 @@ config_parse_commandline(struct Config *conf, int argc, char* argv[])
     if (config_generate_commandline(conf) != 0)
         return -1;
 
+    // TODO Add early options to get help and other.
+
     argp_conf->options = conf->options;
     argp_conf->parser = parse_commandline_opt;
-    argp_conf->args_doc = "TODO";
+    argp_conf->args_doc = "- TODO";
     argp_conf->doc = "Documentation for Rapp goes here";
     argp_parse(argp_conf, argc, argv, 0, NULL, conf);
     free(argp_conf);
+    return 0;
+}
+
+
+error_t
+parse_early_opt(int key, char *arg, struct argp_state *state) {
+    struct RappArguments *arguments = state->input;
+    int lvl;
+    switch(key) {
+        case ARG_LOGLEVEL:
+            uppercase(arg);
+            if (!strcmp(arg, "CRITICAL"))
+                lvl = LOG_CRITICAL;
+            else if (!strcmp(arg, "ERROR"))
+                lvl = LOG_ERROR;
+            else if (!strcmp(arg, "WARN"))
+                lvl = LOG_WARNING;
+            else if (!strcmp(arg, "INFO"))
+                lvl = LOG_INFO;
+            else if (!strcmp(arg, "DEBUG"))
+                lvl = LOG_DEBUG;
+            else
+                return 0;
+            arguments->loglevel = lvl;
+            break;
+
+        case ARG_LOGOUTPUT:
+            // TODO
+            return EINVAL;
+            break;
+
+        case ARG_LOGNOCOLOR:
+            arguments->lognocolor = 1;
+            break;
+
+        case ARG_LOAD:
+            if (!arg)
+                return EINVAL;
+            arguments->container = strdup(arg);
+            break;
+
+        default:
+            return 0;
+            break;
+    }
+    return 0;
+}
+
+int config_parse_early_commandline(struct RappArguments *arguments,
+                                   int argc, char* argv[])
+{
+    struct argp argp = {rappoptions, parse_early_opt, 0, 0};
+    int res;
+
+    // defaults;
+    arguments->loglevel = LOG_INFO;
+    arguments->logoutput = NULL;
+    arguments->lognocolor = 0;
+    arguments->container = NULL;
+
+    res = argp_parse(&argp, argc, argv, ARGP_SILENT, 0,
+                     arguments);
     return 0;
 }
