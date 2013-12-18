@@ -184,9 +184,9 @@ logger_flush_null(struct Logger *logger)
 }
 
 static struct Logger *
-logger_open_fp(LogLevel max_level,
-               FILE    *sink,
-               int      colored)
+logger_new_fp(LogLevel max_level,
+              FILE    *sink,
+              int      colored)
 {
   LogLevel lev = CLAMP(max_level, LOG_ERROR, LOG_MARK); /* TODO */
   struct Logger *logger = NULL;
@@ -209,18 +209,18 @@ logger_open_fp(LogLevel max_level,
 
 
 struct Logger *
-logger_open_file(LogLevel max_level,
-                 FILE    *sink)
+logger_new_file(LogLevel max_level,
+                FILE    *sink)
 {
-  return logger_open_fp(max_level, sink, 0);
+  return logger_new_fp(max_level, sink, 0);
 }
 
 
 struct Logger *
-logger_open_console(LogLevel max_level,
-                    FILE    *sink)
+logger_new_console(LogLevel max_level,
+                   FILE    *sink)
 {
-  return logger_open_fp(max_level, sink, 1);
+  return logger_new_fp(max_level, sink, 1);
 }
 
 static struct Logger *
@@ -248,16 +248,16 @@ logger_make(LogLevel           lev,
 }
 
 struct Logger *
-logger_open_custom(LogLevel           max_level,
-                   LogHandlerCallback logger_handler,
-                   void              *user_data)
+logger_new_custom(LogLevel           max_level,
+                  LogHandlerCallback logger_handler,
+                  void              *user_data)
 {
   LogLevel lev = CLAMP(max_level, LOG_ERROR, LOG_MARK); /* TODO */
   return logger_make(lev, logger_handler, user_data);
 }
 
 struct Logger *
-logger_open_null(void)
+logger_new_null(void)
 {
   return logger_make(-1, logger_trace_null, NULL);
 }

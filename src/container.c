@@ -66,7 +66,7 @@ get_symbol(struct Logger *logger,
 }
 
 
-typedef void *(*PluginCreateFunc)(void * cookie, int ac, char **av, int *err);
+typedef void *(*PluginCreateFunc)(void *cookie, int ac, char **av, int *err);
 
 static struct Container *
 container_make(void          *plugin,
@@ -140,12 +140,13 @@ container_new(struct Logger *logger,
 
   plugin_abi = plugin_get_abi_version();
 
-  if (is_ABI_compatible(ABI_VERSION, plugin_abi) == 0) {
+  if (!is_ABI_compatible(ABI_VERSION, plugin_abi)) {
     logger_trace(logger, LOG_ERROR, "loader", "ABI mismatch: core=%i plugin[%s]=%i", ABI_VERSION, name, plugin_abi);
     dlclose(plugin);
+    return NULL;
   }
 
-  return container_make(plugin, logger, name, ac, av);;
+  return container_make(plugin, logger, name, ac, av);
 }
 
 void

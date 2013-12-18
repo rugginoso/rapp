@@ -181,7 +181,7 @@ http_request_get_buffer(struct HTTPRequest *request)
   return request->buffer;
 }
 
-enum http_method
+enum HTTPMethod
 http_request_get_method(struct HTTPRequest *request)
 {
   assert(request != NULL);

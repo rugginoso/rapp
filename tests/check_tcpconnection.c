@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <check.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 
 #include <eloop.h>
 #include <tcpconnection.h>
@@ -104,6 +105,26 @@ START_TEST(test_tcp_connection_calls_close_callback_when_the_peer_disconnects)
 }
 END_TEST
 
+START_TEST(test_tcp_connection_sendfile)
+{
+  int file_fd = open("test_file.txt", O_WRONLY | O_CREAT, 0640);
+
+  write(file_fd, MESSAGE, MESSAGE_LEN);
+  close(file_fd);
+
+
+  file_fd = open("test_file.txt", O_RDONLY);
+
+  tcp_connection_sendfile(tcp_connection, file_fd, MESSAGE_LEN);
+
+  close(file_fd);
+  unlink("test_file.txt");
+
+  read(client_fd, buf, MESSAGE_LEN);
+
+  ck_assert_str_eq(buf, MESSAGE);
+}
+END_TEST
 
 static Suite *
 tcp_connection_suite(void)
@@ -115,6 +136,7 @@ tcp_connection_suite(void)
   tcase_add_test(tc, test_tcp_connection_calls_read_callback_when_there_are_incoming_data);
   tcase_add_test(tc, test_tcp_connection_calls_write_callback_when_can_read);
   tcase_add_test(tc, test_tcp_connection_calls_close_callback_when_the_peer_disconnects);
+  tcase_add_test(tc, test_tcp_connection_sendfile);
   suite_add_tcase(s, tc);
 
   return s;

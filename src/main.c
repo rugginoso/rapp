@@ -39,7 +39,7 @@ main(int argc, char *argv[])
   int num_config, i, res;
   char *confpath;
 
-  logger = logger_open_console(LOG_LAST, stderr);
+  logger = logger_new_console(LOG_LAST, stderr);
   if (logger == NULL) {
     logger_panic("failed to initialize the logger!");
     exit(1);

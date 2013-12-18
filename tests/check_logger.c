@@ -15,7 +15,7 @@
 START_TEST(test_logger_null)
 {
   int err = 0;
-  struct Logger *logger = logger_open_null();
+  struct Logger *logger = logger_new_null();
   ck_assert(logger != NULL);
   err = logger_trace(logger, LOG_CRITICAL, __FILE__, "this is going to be discarded!");
   ck_assert_int_eq(err, 0);
@@ -75,7 +75,7 @@ START_TEST(test_logger_file)
   sink = tmpfile();
   ck_assert(sink != NULL);
 
-  logger = logger_open_file(LOG_MARK, sink);
+  logger = logger_new_file(LOG_MARK, sink);
   ck_assert(logger != NULL);
   err = logger_trace(logger, LOG_CRITICAL, __FILE__, TEST_MSG);
   ck_assert_int_eq(err, 0);
@@ -115,7 +115,7 @@ START_TEST(test_logger_file_huge_msg)
   sink = tmpfile();
   ck_assert(sink != NULL);
 
-  logger = logger_open_file(LOG_MARK, sink);
+  logger = logger_new_file(LOG_MARK, sink);
   ck_assert(logger != NULL);
   err = logger_trace(logger, LOG_CRITICAL, __FILE__, huge);
   /*
@@ -148,7 +148,7 @@ START_TEST(test_logger_console_plain)
   sink = tmpfile();
   ck_assert(sink != NULL);
 
-  logger = logger_open_console(LOG_MARK, sink);
+  logger = logger_new_console(LOG_MARK, sink);
   ck_assert(logger != NULL);
   err = logger_trace(logger, LOG_MARK, __FILE__, TEST_MSG);
   ck_assert_int_eq(err, 0);
@@ -193,7 +193,7 @@ START_TEST(test_logger_custom)
   logbuf.data = buf;
   logbuf.size = sizeof(buf);
 
-  logger = logger_open_custom(LOG_MARK, buffer_logger, &logbuf);
+  logger = logger_new_custom(LOG_MARK, buffer_logger, &logbuf);
   ck_assert(logger != NULL);
   err = logger_trace(logger, LOG_MARK, "", TEST_MSG);
   ck_assert_int_eq(err, 0);
