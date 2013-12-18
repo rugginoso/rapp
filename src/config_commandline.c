@@ -232,5 +232,6 @@ config_parse_commandline(struct Config *conf, int argc, char* argv[])
     argp_conf->args_doc = "TODO";
     argp_conf->doc = "Documentation for Rapp goes here";
     argp_parse(argp_conf, argc, argv, 0, NULL, conf);
+    free(argp_conf);
     return 0;
 }
