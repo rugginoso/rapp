@@ -27,7 +27,7 @@ struct Config *conf;
 void
 setup(void)
 {
-   struct Logger *logger = logger_open_console(LOG_LAST, stderr);
+   struct Logger *logger = logger_new_console(LOG_LAST, stderr);
    conf = config_new(logger);
 }
 
@@ -42,7 +42,7 @@ START_TEST(test_config_yaml_parse)
     long vi;
     char *vs;
     const char *c = "core";
-    struct Logger *logger = logger_open_console(LOG_LAST, stderr);
+    struct Logger *logger = logger_new_console(LOG_LAST, stderr);
     struct Config *conf2 = config_new(logger);
     struct Config *cp;
     const char *yaml;

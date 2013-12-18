@@ -16,7 +16,7 @@ struct Config *conf;
 void
 setup(void)
 {
-   struct Logger *logger = logger_open_console(LOG_LAST, stderr);
+   struct Logger *logger = logger_new_console(LOG_LAST, stderr);
    conf = config_new(logger);
 }
 
