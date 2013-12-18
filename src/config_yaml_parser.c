@@ -390,6 +390,8 @@ config_scan_directory(struct Config *conf, const char* directory, const char* ex
                 res = -1;
                 break;
             }
+        } else {
+            DEBUG(conf, "Skipping %s as it does not match %s", namelist[i]->d_name, ext);
         }
         free(namelist[i]);
     }
