@@ -90,6 +90,8 @@ struct Config {
 struct Config *config_new(struct Logger *logger);
 void config_destroy(struct Config *conf);
 int config_parse(struct Config *conf, const char* filename);
+int config_scan_directory(struct Config *conf, const char* directory,
+                          const char *ext);
 int config_parse_string(struct Config *conf, const char *source);
 
 struct ConfigSection* get_section(struct Config *conf, const char *section);

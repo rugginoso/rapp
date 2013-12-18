@@ -1,6 +1,23 @@
+#include <dirent.h>
 #include <errno.h>
+#include <limits.h>
+#include <stdio.h>
+#include <sys/types.h>
 #include <yaml.h>
 #include "config_private.h"
+
+int
+endswith(const char *str, const char *suffix)
+{
+    size_t lenstr = strlen(str);
+    size_t lensuffix = strlen(suffix);
+    if (lensuffix >  lenstr)
+        return -1;
+    if (strncmp(str + lenstr - lensuffix, suffix, lensuffix) == 0)
+        return 0;
+    return -1;
+}
+
 
 int
 yaml_parse_init(struct Config *conf, const char *filename,
@@ -296,15 +313,24 @@ int
 config_parse(struct Config *conf, const char* filename)
 {
     yaml_parser_t parser;
-    char *err;
+    char *err, *cres;
     int res;
-    FILE *fh = fopen(filename, "r");
+    char buf[PATH_MAX];
+
+    cres = realpath(filename, buf);
+    if (!cres) {
+        err = strerror(errno);
+        CRITICAL(conf, "Cannot find path %s: %s", filename, err);
+        return -1;
+    }
+
+    FILE *fh = fopen(buf, "r");
     if (!fh) {
         err = strerror(errno);
         CRITICAL(conf, "Cannot open file '%s': %s", filename, err);
         return -1;
     }
-    DEBUG(conf, "Parsing file %s", filename);
+    DEBUG(conf, "Parsing file %s (%s)", filename, buf);
     memset(&parser, 0, sizeof(parser));
     if(!yaml_parser_initialize(&parser)) {
         CRITICAL(conf, "Cannot initialize YAML parser: %p", parser);
@@ -332,4 +358,41 @@ config_parse_string(struct Config *conf, const char *source)
     }
     yaml_parser_set_input_string(&parser, source, strlen(source));
     return config_parse_main(conf, &parser, sourcename);
+}
+
+int
+config_scan_directory(struct Config *conf, const char* directory, const char* ext)
+{
+    struct dirent **namelist;
+    char *err;
+    int i, n, res = 0;
+    char buf[PATH_MAX];
+    size_t len, dlen;
+    if (!directory || !conf)
+        return -1;
+
+    if (!ext)
+        ext = ".yaml";
+
+    n = scandir(directory, &namelist, 0, alphasort);
+    if (n < 0) {
+        err = strerror(errno);
+        CRITICAL(conf, "Cannot open directory: %s", err);
+        return -1;
+    }
+    DEBUG(conf, "Scanning directory %s for *%s", directory, ext);
+    dlen = strlen(directory);
+    for (i = 0; i < n; i++) {
+        if (endswith(namelist[i]->d_name, ext) == 0) {
+            len = dlen + strlen(namelist[i]->d_name) + 2; // '/' and '\0'
+            snprintf(buf, len, "%s/%s", directory, namelist[i]->d_name);
+            if (config_parse(conf, buf) != 0) {
+                res = -1;
+                break;
+            }
+        }
+        free(namelist[i]);
+    }
+    free(namelist);
+    return res;
 }

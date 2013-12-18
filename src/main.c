@@ -36,7 +36,7 @@ main(int argc, char *argv[])
   struct Config *config = NULL;
   char *address;
   long port;
-  int num_config, i, res;
+  int num, i, res;
   char *confpath;
 
   logger = logger_new_console(LOG_LAST, stderr);
@@ -65,8 +65,21 @@ main(int argc, char *argv[])
   assert(config_opt_set_multivalued(config, "core", "confd", 1) == 0);
 
   assert(config_parse_commandline(config, argc, argv) == 0);
-  config_get_num_values(config, "core", "config", &num_config);
-  for (i = 0; i < num_config; i++) {
+
+  // Scan configuration directories
+  config_get_num_values(config, "core", "confd", &num);
+  for (i = 0; i < num; i++) {
+    if (config_get_nth_string(config, "core", "confd", i, &confpath) != 0)
+        exit(1);
+    res = config_scan_directory(config, confpath, ".yaml");
+    free(confpath);
+    if (res != 0)
+        exit(1);
+  }
+
+  // Parsing individual configs
+  config_get_num_values(config, "core", "config", &num);
+  for (i = 0; i < num; i++) {
     if (config_get_nth_string(config, "core", "config", i, &confpath) != 0)
         exit(1);
     res = config_parse(config, confpath);
@@ -74,7 +87,6 @@ main(int argc, char *argv[])
     if (res != 0)
         exit(1);
   }
-  // TODO: parse confd
 
   config_get_string(config, "core", "address", &address);
   config_get_int(config, "core", "port", &port);
