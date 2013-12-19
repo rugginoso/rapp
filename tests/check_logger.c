@@ -1,7 +1,3 @@
-/*
- * RApp test logger. Use this as template for new tests.
- * Do not forget to add the new test to tests/CMakeLists.txt!
- */
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -166,11 +162,12 @@ struct Buffer {
   size_t size;
 };
 
-static int buffer_logger(void       *data,
-                         LogLevel    level,
-                         const char *tag,
-                         const char *fmt,
-                         va_list     args)
+static int
+buffer_logger(void       *data,
+              LogLevel    level,
+              const char *tag,
+              const char *fmt,
+              va_list     args)
 {
   struct Buffer *buf = data;
 

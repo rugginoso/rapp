@@ -1,7 +1,3 @@
-/*
- * RApp test container. Use this as template for new tests.
- * Do not forget to add the new test to tests/CMakeLists.txt!
- */
 
 #include <stdlib.h>
 
