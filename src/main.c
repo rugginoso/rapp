@@ -90,6 +90,10 @@ main(int argc, char *argv[])
         exit(1);
   }
 
+  if (!arguments.container) {
+    logger_trace(logger, LOG_CRITICAL, "rapp", "No container provided.");
+    exit(1);
+  }
   config_get_string(config, "core", "address", &address);
   config_get_int(config, "core", "port", &port);
   logger_trace(logger, LOG_INFO, "rapp", "listening on %s", address);
