@@ -14,6 +14,8 @@
 #include "httprequest.h"
 #include "httpresponsewriter.h"
 #include "httpconnection.h"
+#include "httprouter.h"
+
 
 #define RECV_BUFSIZE 80 * 1024
 
@@ -24,6 +26,7 @@ struct HTTPConnection {
   void *data;
 
   struct HTTPRequest *request;
+  struct HTTPRouter *router;
 };
 
 static void
@@ -67,16 +70,7 @@ on_parse_finish(struct HTTPRequest *request, void *data)
     return;
   }
 
-  /* Example code */
-  http_response_writer_write_data(response_writer, "HTTP/1.1 200 OK\r\n", 17);
-  http_response_writer_write_data(response_writer, "Content-Type: text/plain; charset=utf-8\r\n", 41);
-  http_response_writer_write_data(response_writer, "Content-Length: 12\r\n", 20);
-
-  http_response_writer_notify_headers_sent(response_writer);
-
-  http_response_writer_write_data(response_writer, "Hello world!", 12);
-  http_response_writer_notify_body_sent(response_writer);
-  /* end */
+  http_router_serve(http_connection->router, request, response_writer);
 
   http_response_writer_destroy(response_writer);
 }
@@ -119,7 +113,7 @@ on_close(struct TcpConnection *tcp_connection, const void *data)
 }
 
 struct HTTPConnection *
-http_connection_new(struct TcpConnection *tcp_connection)
+http_connection_new(struct TcpConnection *tcp_connection, struct HTTPRouter *router)
 {
   struct HTTPConnection *http_connection = NULL;
 
@@ -136,6 +130,7 @@ http_connection_new(struct TcpConnection *tcp_connection)
   }
   http_request_set_parse_finish_callback(http_connection->request, on_parse_finish, http_connection);
 
+  http_connection->router = router;
   http_connection->tcp_connection = tcp_connection;
   tcp_connection_set_callbacks(http_connection->tcp_connection, on_read, NULL, on_close, http_connection);
 

@@ -10,6 +10,7 @@ set(RAPP_CORE_SOURCES
     httpconnection.c
     httpresponsewriter.c
     httprequest.c
+    httprouter.c
     httpserver.c
     signalhandler.c
     tcpconnection.c

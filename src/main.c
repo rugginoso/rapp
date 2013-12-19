@@ -15,6 +15,7 @@
 
 #include "logger.h"
 #include "eloop.h"
+#include "httprouter.h"
 #include "httpserver.h"
 #include "signalhandler.h"
 #include "container.h"
@@ -36,9 +37,15 @@ main(int argc, char *argv[])
 {
   struct Logger *logger = NULL;
   struct ELoop *eloop = NULL;
+  struct HTTPRouter *http_router = NULL;
   struct HTTPServer *http_server = NULL;
   struct SignalHandler *signal_handler = NULL;
   struct Container *container = NULL;
+
+  if (argc != 2) {
+    logger_panic("usage: %s path_to_container");
+    exit(255);
+  }
 
   logger = logger_new_console(LOG_LAST, stderr);
   if (logger == NULL) {
@@ -62,13 +69,17 @@ main(int argc, char *argv[])
   signal_handler_add_signal_callback(signal_handler, SIGINT, on_signal, eloop);
   signal_handler_add_signal_callback(signal_handler, SIGTERM, on_signal, eloop);
 
-  http_server = http_server_new(eloop);
+  http_router = http_router_new(logger);
+  http_router_bind(http_router, "/", container);
+
+  http_server = http_server_new(eloop, http_router);
 
   http_server_start(http_server, "127.0.0.1", 8000);
 
   event_loop_run(eloop);
 
   http_server_destroy(http_server);
+  http_router_destroy(http_router);
   signal_handler_destroy(signal_handler);
   event_loop_destroy(eloop);
 
