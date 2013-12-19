@@ -22,15 +22,6 @@ if(ENABLE_TESTS)
 
     add_library(rapp_test STATIC test_utils.c test_dlstubs.c)
 
-    if(CMAKE_COMPILER_IS_GNUCC)
-        option(ENABLE_TESTS_COVERAGE "build test coverage report")
-        if (ENABLE_TESTS_COVERAGE)
-            message(STATUS "Enabling the code coverage support")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
-            include(TestCoverage)
-        endif(ENABLE_TESTS_COVERAGE)
-    endif(CMAKE_COMPILER_IS_GNUCC)
-
     add_executable(check_stub check_stub.c)
     target_link_libraries(check_stub ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS})
     add_test(test_stub ${EXECUTABLE_OUTPUT_PATH}/check_stub)
