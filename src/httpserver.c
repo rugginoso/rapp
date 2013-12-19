@@ -5,12 +5,14 @@
 #include "eloop.h"
 #include "tcpserver.h"
 #include "httpconnection.h"
+#include "httprouter.h"
 #include "httpserver.h"
 
 
 struct HTTPServer {
   struct TcpServer *tcp_server;
   struct ELoop *eloop;
+  struct HTTPRouter *router;
 };
 
 
@@ -36,7 +38,7 @@ on_accept(struct TcpConnection *tcp_connection, const void *data)
 
   http_server = (struct HTTPServer *)data;
 
-  if ((http_connection = http_connection_new(tcp_connection)) == NULL) {
+  if ((http_connection = http_connection_new(tcp_connection, http_server->router)) == NULL) {
     return;
   }
 
@@ -44,7 +46,7 @@ on_accept(struct TcpConnection *tcp_connection, const void *data)
 }
 
 struct HTTPServer *
-http_server_new(struct ELoop *eloop)
+http_server_new(struct ELoop *eloop, struct HTTPRouter *router)
 {
   struct HTTPServer *http_server = NULL;
 
@@ -61,6 +63,7 @@ http_server_new(struct ELoop *eloop)
   tcp_server_set_accept_callback(http_server->tcp_server, on_accept, http_server);
 
   http_server->eloop = eloop;
+  http_server->router = router;
 
   return http_server;
 }
