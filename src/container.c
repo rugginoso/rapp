@@ -164,15 +164,17 @@ container_destroy(struct Container *container)
   logger_trace(container->logger, LOG_INFO, "loader", "unloading plugin[%s] id=%p (%p)", container->name, container, container->plugin);
 
   if (container->destroy(container->handle) == 0) {
+    /* the `null` container doesn't have a handle */
+    if (container->plugin)
       dlclose(container->plugin);
 
-      logger_trace(container->logger, LOG_INFO, "loader", "unloaded plugin[%s]", container->name);
-      free(container->name);
-      free(container);  /* caveat emptor! */
+    logger_trace(container->logger, LOG_INFO, "loader", "unloaded plugin[%s]", container->name);
+    free(container->name);
+    free(container);  /* caveat emptor! */
   }
 }
 
-void
+int
 container_serve(struct Container          *container,
                 struct HTTPRequest        *http_request,
                 struct HTTPResponseWriter *response_writer)
@@ -181,7 +183,42 @@ container_serve(struct Container          *container,
   assert(http_request != NULL);
   assert(response_writer != NULL);
 
-  container->serve(container->handle, http_request, response_writer);
+  return container->serve(container->handle, http_request, response_writer);
+}
+
+
+struct RappContainer;
+
+static int
+null_serve(void                      *handle,
+           struct HTTPRequest        *request,
+           struct HTTPResponseWriter *response_writer)
+{
+  struct Container *container = handle;
+  logger_trace(container->logger, LOG_DEBUG, "null", "received request on unhandled route");
+  return 0;
+}
+
+static int
+null_destroy(void *handle)
+{
+  return 0;
+}
+
+struct Container *
+container_null(struct Logger *logger)
+{
+  struct Container *container = NULL;
+  if ((container = calloc(1, sizeof(struct Container))) == NULL)
+    return NULL;
+
+  container->plugin = NULL;
+  container->handle = (struct RappContainer *)container; /* FIXME */
+  container->logger = logger;
+  container->name = strdup("null container");
+  container->serve = null_serve;
+  container->destroy = null_destroy;
+  return container;
 }
 
 /*
