@@ -88,9 +88,7 @@ void teardown(void)
 
 START_TEST(test_eloop_calls_read_func_when_fd_has_pending_data)
 {
-  callbacks[ELOOP_CALLBACK_READ] = read_func;
-
-  event_loop_add_fd_watch(eloop, fds[WATCHED], callbacks, eloop);
+  event_loop_add_fd_watch(eloop, fds[WATCHED], ELOOP_CALLBACK_READ, read_func, eloop);
 
   write(fds[OTHER], MESSAGE, MESSAGE_LEN);
 
@@ -103,9 +101,7 @@ END_TEST
 
 START_TEST(test_eloop_calls_write_func_when_fd_becomes_writable)
 {
-  callbacks[ELOOP_CALLBACK_WRITE] = write_func;
-
-  event_loop_add_fd_watch(eloop, fds[WATCHED], callbacks, eloop);
+  event_loop_add_fd_watch(eloop, fds[WATCHED], ELOOP_CALLBACK_WRITE, write_func, eloop);
 
   event_loop_run(eloop);
 
@@ -118,9 +114,7 @@ END_TEST
 
 START_TEST(test_eloop_calls_close_func_when_fd_is_closed)
 {
-  callbacks[ELOOP_CALLBACK_CLOSE] = close_func;
-
-  event_loop_add_fd_watch(eloop, fds[WATCHED], callbacks, eloop);
+  event_loop_add_fd_watch(eloop, fds[WATCHED], ELOOP_CALLBACK_CLOSE, close_func, eloop);
 
   close(fds[OTHER]);
 
