@@ -24,22 +24,22 @@ rapp_get_abi_version()
 
 
 int
-rapp_serve(struct RappContainer      *handle,
-           struct HTTPRequest        *http_request,
-           struct HTTPResponseWriter *response_writer)
+rapp_serve(struct RappContainer *handle,
+           struct HTTPRequest   *http_request,
+           struct HTTPResponse  *response)
 {
   int err = -1;
   if (handle) {
     size_t len = strlen(handle->message);
 
-    http_response_writer_printf(response_writer, "HTTP/1.1 200 OK" HTTP_EOL);
-    http_response_writer_printf(response_writer, "Content-Type: text/plain; charset=utf-8" HTTP_EOL);
-    http_response_writer_printf(response_writer, "Content-Length: %d" HTTP_EOL, len);
+    http_response_printf(response, "HTTP/1.1 200 OK" HTTP_EOL);
+    http_response_printf(response, "Content-Type: text/plain; charset=utf-8" HTTP_EOL);
+    http_response_printf(response, "Content-Length: %d" HTTP_EOL, len);
 
-    http_response_writer_notify_headers_sent(response_writer);
+    http_response_notify_headers_sent(response);
 
-    http_response_writer_write_data(response_writer, handle->message, len);
-    http_response_writer_notify_body_sent(response_writer);
+    http_response_write_data(response, handle->message, len);
+    http_response_notify_body_sent(response);
     err = 0;
   }
   return err;

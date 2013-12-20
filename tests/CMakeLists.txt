@@ -80,14 +80,14 @@ if(ENABLE_TESTS)
     target_link_libraries(check_httprequest rapp_core ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS})
     add_test(test_httprequest ${EXECUTABLE_OUTPUT_PATH}/check_httprequest)
 
-    add_executable(check_httpresponsewriter check_httpresponsewriter.c)
-    target_link_libraries(check_httpresponsewriter
+    add_executable(check_httpresponse check_httpresponse.c)
+    target_link_libraries(check_httpresponse
          rapp_core
 	 rapp_test
 	 ${LIBCHECK_LIBRARY}
 	 ${LIBCHECK_DEPS}
     )
-    add_test(test_httpresponsewriter ${EXECUTABLE_OUTPUT_PATH}/check_httpresponsewriter)
+    add_test(test_httpresponse ${EXECUTABLE_OUTPUT_PATH}/check_httpresponse)
 
 endif(ENABLE_TESTS)
 

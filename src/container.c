@@ -23,7 +23,7 @@ struct Container {
   struct Logger *logger;
   char *name;
 
-  int (*serve)(void *, struct HTTPRequest *, struct HTTPResponseWriter *);
+  int (*serve)(void *, struct HTTPRequest *, struct HTTPResponse *);
 
   int (*destroy)(void *);
 };
@@ -173,15 +173,15 @@ container_destroy(struct Container *container)
 }
 
 void
-container_serve(struct Container          *container,
-                struct HTTPRequest        *http_request,
-                struct HTTPResponseWriter *response_writer)
+container_serve(struct Container    *container,
+                struct HTTPRequest  *http_request,
+                struct HTTPResponse *response)
 {
   assert(container != NULL);
   assert(http_request != NULL);
-  assert(response_writer != NULL);
+  assert(response != NULL);
 
-  container->serve(container->handle, http_request, response_writer);
+  container->serve(container->handle, http_request, response);
 }
 
 /*

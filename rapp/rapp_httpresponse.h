@@ -10,14 +10,14 @@
 
 #define HTTP_EOL "\r\n"
 
-struct HTTPResponseWriter;
+struct HTTPResponse;
 
-void http_response_writer_notify_headers_sent(struct HTTPResponseWriter *response_writer);
-void http_response_writer_notify_body_sent(struct HTTPResponseWriter *response_writer);
+void http_response_notify_headers_sent(struct HTTPResponse *response);
+void http_response_notify_body_sent(struct HTTPResponse *response);
 
-ssize_t http_response_writer_printf(struct HTTPResponseWriter *response_writer, const char *fmt, ...);
-ssize_t http_response_writer_write_data(struct HTTPResponseWriter *response_writer, const void *data, size_t length);
-ssize_t http_response_writer_sendfile(struct HTTPResponseWriter *response_writer, const char *path);
+ssize_t http_response_printf(struct HTTPResponse *response, const char *fmt, ...);
+ssize_t http_response_write_data(struct HTTPResponse *response, const void *data, size_t length);
+ssize_t http_response_sendfile(struct HTTPResponse *response, const char *path);
 
 #endif /* RAPP_HTTTPRESPONSE_H */
 /*

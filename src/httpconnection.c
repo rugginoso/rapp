@@ -12,7 +12,7 @@
 
 #include "tcpconnection.h"
 #include "httprequest.h"
-#include "httpresponsewriter.h"
+#include "httpresponse.h"
 #include "httpconnection.h"
 
 #define RECV_BUFSIZE 80 * 1024
@@ -27,7 +27,7 @@ struct HTTPConnection {
 };
 
 static void
-on_headers_sent(struct HTTPResponseWriter *response_writer, void *data)
+on_headers_sent(struct HTTPResponse *response, void *data)
 {
   struct HTTPConnection *http_connection = NULL;
 
@@ -35,12 +35,12 @@ on_headers_sent(struct HTTPResponseWriter *response_writer, void *data)
 
   http_connection = (struct HTTPConnection *)data;
 
-  http_response_writer_write_data(response_writer, "Server: RApp dev\r\n", 18);
-  http_response_writer_write_data(response_writer, "\r\n", 2);
+  http_response_write_data(response, "Server: RApp dev\r\n", 18);
+  http_response_write_data(response, "\r\n", 2);
 }
 
 static void
-on_body_sent(struct HTTPResponseWriter *response_writer, void *data)
+on_body_sent(struct HTTPResponse *response, void *data)
 {
   struct HTTPConnection *http_connection = NULL;
 
@@ -48,7 +48,7 @@ on_body_sent(struct HTTPResponseWriter *response_writer, void *data)
 
   http_connection = (struct HTTPConnection *)data;
 
-  http_response_writer_write_data(response_writer, "\r\n", 2);
+  http_response_write_data(response, "\r\n", 2);
   http_connection->finish_callback(http_connection, http_connection->data);
 }
 
@@ -56,29 +56,29 @@ static void
 on_parse_finish(struct HTTPRequest *request, void *data)
 {
   struct HTTPConnection *http_connection = NULL;
-  struct HTTPResponseWriter *response_writer = NULL;
+  struct HTTPResponse *response = NULL;
 
   assert(data != NULL);
 
   http_connection = (struct HTTPConnection *)data;
 
-  if ((response_writer = http_response_writer_new(http_connection->tcp_connection, on_headers_sent, on_body_sent, http_connection)) == NULL) {
+  if ((response = http_response_new(http_connection->tcp_connection, on_headers_sent, on_body_sent, http_connection)) == NULL) {
     http_connection->finish_callback(http_connection, http_connection->data);
     return;
   }
 
   /* Example code */
-  http_response_writer_write_data(response_writer, "HTTP/1.1 200 OK\r\n", 17);
-  http_response_writer_write_data(response_writer, "Content-Type: text/plain; charset=utf-8\r\n", 41);
-  http_response_writer_write_data(response_writer, "Content-Length: 12\r\n", 20);
+  http_response_write_data(response, "HTTP/1.1 200 OK\r\n", 17);
+  http_response_write_data(response, "Content-Type: text/plain; charset=utf-8\r\n", 41);
+  http_response_write_data(response, "Content-Length: 12\r\n", 20);
 
-  http_response_writer_notify_headers_sent(response_writer);
+  http_response_notify_headers_sent(response);
 
-  http_response_writer_write_data(response_writer, "Hello world!", 12);
-  http_response_writer_notify_body_sent(response_writer);
+  http_response_write_data(response, "Hello world!", 12);
+  http_response_notify_body_sent(response);
   /* end */
 
-  http_response_writer_destroy(response_writer);
+  http_response_destroy(response);
 }
 
 static void

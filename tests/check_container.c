@@ -110,7 +110,7 @@ START_TEST(test_container_serve_dummy)
   ck_assert(container != NULL);
   container_serve(container,
                   (struct HTTPRequest *)syms,
-                  (struct HTTPResponseWriter *)syms); /* FIXME */
+                  (struct HTTPResponse *)syms); /* FIXME */
   container_destroy(container);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_create"), 1);

@@ -22,7 +22,7 @@ int rapp_destroy(struct RappContainer *handle);
 
 int rapp_serve(struct RappContainer *handle,
                struct HTTPRequest *http_request,
-               struct HTTPResponseWriter *response_writer);
+               struct HTTPResponse *response);
 
 #endif /* RAPP_H */
 
