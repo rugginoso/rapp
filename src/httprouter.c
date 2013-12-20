@@ -32,6 +32,7 @@ struct HTTPRouter {
   struct RoutePack *last;
   struct Logger *logger;
   struct Container *null;
+  struct Container *starter; /* because `default` is a keyword. */
 };
 
 struct HTTPRouter *
@@ -42,7 +43,7 @@ http_router_new(struct Logger *logger)
 
   assert(logger);
 
-  if ((null = container_null(logger)) == NULL) {
+  if ((null = container_new_null(logger, "default")) == NULL) {
     /* TODO trace */
     return NULL;
   }
@@ -129,6 +130,18 @@ http_router_destroy(struct HTTPRouter *router)
 }
 
 int
+http_router_default_container(struct HTTPRouter *router,
+                              struct Container   *container)
+{
+  assert(router);
+  assert(container);
+
+  router->starter = container;
+
+  return 0;
+}
+
+int
 http_router_bind(struct HTTPRouter *router,
                  const char        *route,
                  struct Container  *container)
@@ -172,6 +185,12 @@ http_router_serve(struct HTTPRouter         *router,
   assert(router);
   assert(request);
   assert(response_writer);
+
+  if (router->starter) {
+    int ret = container_serve(router->starter, request, response_writer);
+    if (ret == 0)
+      return ret;
+  }
 
   container = router->null;
   raw_req = http_request_get_buffer(request);
