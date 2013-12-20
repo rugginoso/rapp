@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -7,7 +8,7 @@
 #include "container.h"
 
 #define ROUTE_BASE_LEN 16
-#define ROUTE_GROUP_LEN 32
+#define ROUTE_GROUP_LEN 30
 
 struct RouteBinding {
   char name[ROUTE_BASE_LEN];
@@ -15,10 +16,15 @@ struct RouteBinding {
   struct Container *container;
 };
 
+/*
+ * keep sizeof() <= 1024
+ * when tune constants, remember to optimize
+ * for a cacheline of 64 bytes
+ */
 struct RoutePack {
-  struct RoutePack *next;
   struct RouteBinding bindings[ROUTE_GROUP_LEN];
-  int binding_num;
+  struct RoutePack *next;
+  int32_t binding_num;
 };
 
 struct HTTPRouter {
@@ -66,7 +72,7 @@ route_pack_clean(struct RoutePack *pack)
       free(pack->bindings[i].route);
 }
 
-/* 
+/*
  * can be invoked against NULL packs,
  * so we need something lighter than an assert()
  */
@@ -77,7 +83,7 @@ route_pack_destroy(struct RoutePack *pack)
 
   if (pack == NULL)
     return;
-  
+
   next = pack->next;
   route_pack_clean(pack);
   free(pack);
