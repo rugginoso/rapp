@@ -187,14 +187,18 @@ container_serve(struct Container          *container,
 }
 
 
-struct RappContainer;
-
 static int
 null_serve(void                      *handle,
            struct HTTPRequest        *request,
            struct HTTPResponseWriter *response_writer)
 {
-  struct Container *container = handle;
+  struct Container *container = NULL;
+
+  assert(handle);
+  assert(request);
+  assert(response_writer);
+
+  container = handle;
   logger_trace(container->logger, LOG_DEBUG, "null", "received request on unhandled route");
   return 0;
 }
@@ -202,6 +206,7 @@ null_serve(void                      *handle,
 static int
 null_destroy(void *handle)
 {
+  assert(handle);
   return 0;
 }
 
