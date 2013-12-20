@@ -66,7 +66,10 @@ main(int argc, char *argv[])
   config_opt_set_multivalued(config, "core", "config", 1);
   config_opt_set_multivalued(config, "core", "confd", 1);
 
-  config_parse_commandline(config, argc, argv);
+  res = config_parse_commandline(config, argc, argv);
+  if (res != 0) {
+      exit(1);
+  }
 
   // Scan configuration directories
   config_get_num_values(config, "core", "confd", &num);

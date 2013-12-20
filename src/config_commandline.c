@@ -199,8 +199,7 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
             break;
 
         case ARGP_KEY_ERROR:
-            CRITICAL(conf, "Error during argument parsing: %d", key);
-            return 0;
+            return EINVAL;
             break;
     }
     if (key >= ARG_INDEX_BASE && key < ARG_INDEX_OFFSET) {
@@ -212,7 +211,7 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
     if (index < 0 || index > conf->num_argp_options) {
         CRITICAL(conf, "key %x maps to index %d which is not in [0. %d]",
                 key, index, conf->num_argp_options);
-        return ARGP_ERR_UNKNOWN;
+        return EINVAL;
     }
 
     opt = conf->options_map[index];
@@ -245,7 +244,7 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
 int
 config_parse_commandline(struct Config *conf, int argc, char* argv[])
 {
-    int i, index;
+    int i, index, res;
     struct argp *argp_conf = calloc(1, sizeof(struct argp));
     if (!argp_conf)
         return -1;
@@ -266,11 +265,11 @@ config_parse_commandline(struct Config *conf, int argc, char* argv[])
 
     argp_conf->options = conf->options;
     argp_conf->parser = parse_commandline_opt;
-    argp_conf->args_doc = "- TODO";
+    argp_conf->args_doc = "- Quick description for Rapp goes here";
     argp_conf->doc = "Documentation for Rapp goes here";
-    argp_parse(argp_conf, argc, argv, 0, NULL, conf);
+    res = argp_parse(argp_conf, argc, argv, 0, NULL, conf);
     free(argp_conf);
-    return 0;
+    return res;
 }
 
 
