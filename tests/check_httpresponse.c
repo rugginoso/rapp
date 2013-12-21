@@ -10,117 +10,90 @@
 
 #include <check.h>
 
-#include "eloop.h"
-#include "tcpconnection.h"
 #include "httpresponse.h"
-#include "test_utils.h"
 
-#define HOST "localhost"
-#define PORT 8000
-
-#define MESSAGE "Hello world!"
-#define MESSAGE_LEN STRLEN(MESSAGE)
-
-struct ELoop *eloop = NULL;
-struct TcpConnection *tcp_connection = NULL;
 struct HTTPResponse *response = NULL;
-int server_fd = -1;
-int client_fd = -1;
-int callback_called = 0;
-char buf[MESSAGE_LEN];
 
-
-static void
-on_headers_sent(struct HTTPResponse *response,
-                void                *data)
-{
-  callback_called = 1;
-}
-
-static void
-on_body_sent(struct HTTPResponse *response,
-             void                *data)
-{
-  callback_called = 1;
-}
 
 void
 setup()
 {
-  callback_called = 0;
-  eloop = event_loop_new();
-
-  server_fd = listen_to(HOST, PORT);
-  client_fd = connect_to(HOST, PORT);
-
-  tcp_connection = tcp_connection_with_fd(accept(server_fd, NULL, NULL), eloop);
-
-  response = http_response_new(tcp_connection, on_headers_sent, on_body_sent, NULL);
+  response = http_response_new();
 }
 
 void
 teardown()
 {
-  close(client_fd);
-  close(server_fd);
   http_response_destroy(response);
-  tcp_connection_destroy(tcp_connection);
-  event_loop_destroy(eloop);
 }
 
-START_TEST(test_httpresponse_headers_sent_callback_is_called_on_notify)
+START_TEST(test_httpresponse_append_data_writes_data)
 {
-  http_response_notify_headers_sent(response);
+  char *result = alloca(1024);
+  ssize_t len = 0;
 
-  ck_assert_int_eq(callback_called, 1);
+  http_response_append_data(response, "test", 4);
+
+  len = http_response_read_data(response, result, 1024);
+  result[len] = 0;
+
+  ck_assert_str_eq(result, "test");
 }
 END_TEST
 
-START_TEST(test_httpresponse_body_sent_callback_is_called_on_notify)
+START_TEST(test_httpresponse_write_header_correctly_formats_headers)
 {
-  http_response_notify_body_sent(response);
+  char *result = alloca(1024);
+  ssize_t len = 0;
 
-  ck_assert_int_eq(callback_called, 1);
+  http_response_write_header(response, "key", "value");
+
+  len = http_response_read_data(response, result, 1024);
+  result[len] = 0;
+
+  ck_assert_str_eq(result, "key: value" HTTP_EOL);
 }
 END_TEST
 
-START_TEST(test_httpresponse_write_data_writes_data)
+START_TEST(test_httpresponse_end_headers_adds_empty_header)
 {
-  http_response_write_data(response, MESSAGE, MESSAGE_LEN);
+  char *result = alloca(1024);
+  ssize_t len = 0;
 
-  read(client_fd, buf, MESSAGE_LEN);
+  http_response_end_headers(response);
 
-  ck_assert_str_eq(buf, MESSAGE);
+  len = http_response_read_data(response, result, 1024);
+  result[len] = 0;
+
+  ck_assert_str_eq(result, HTTP_EOL);
 }
 END_TEST
 
-START_TEST(test_httpresponse_sendfile_writes_data)
+START_TEST(test_httpresponse_read_data_supports_partials_reads)
 {
-  int file_fd = open("test_file.txt", O_WRONLY | O_CREAT, 0640);
+  char *result = alloca(1024);
+  ssize_t len = 0;
 
-  write(file_fd, MESSAGE, MESSAGE_LEN);
-  close(file_fd);
+  http_response_append_data(response, "firstsecond", 11);
 
-  http_response_sendfile(response, "test_file.txt");
+  len = http_response_read_data(response, result, 5);
+  result[len] = 0;
 
-  read(client_fd, buf, MESSAGE_LEN);
+  ck_assert_str_eq(result, "first");
 
-  ck_assert_str_eq(buf, MESSAGE);
+  len = http_response_read_data(response, result, 6);
+  result[len] = 0;
 
-  unlink("test_file.txt");
+  ck_assert_str_eq(result, "second");
 }
 END_TEST
 
-START_TEST(test_httpresponse_printf_writes_data)
+/* Coverage */
+START_TEST(test_httpresponse_frees_not_consumed_data_on_destroy)
 {
-  http_response_printf(response, "%s", MESSAGE);
-
-  read(client_fd, buf, MESSAGE_LEN);
-
-  ck_assert_str_eq(buf, MESSAGE);
+  http_response_append_data(response, "free me", 7);
 }
 END_TEST
-
 
 static Suite *
 httpresponse_suite(void)
@@ -129,11 +102,11 @@ httpresponse_suite(void)
   TCase *tc = tcase_create("rapp.core.httpresponse");
 
   tcase_add_checked_fixture(tc, setup, teardown);
-  tcase_add_test(tc, test_httpresponse_headers_sent_callback_is_called_on_notify);
-  tcase_add_test(tc, test_httpresponse_body_sent_callback_is_called_on_notify);
-  tcase_add_test(tc, test_httpresponse_write_data_writes_data);
-  tcase_add_test(tc, test_httpresponse_sendfile_writes_data);
-  tcase_add_test(tc, test_httpresponse_printf_writes_data);
+  tcase_add_test(tc, test_httpresponse_append_data_writes_data);
+  tcase_add_test(tc, test_httpresponse_write_header_correctly_formats_headers);
+  tcase_add_test(tc, test_httpresponse_end_headers_adds_empty_header);
+  tcase_add_test(tc, test_httpresponse_read_data_supports_partials_reads);
+  tcase_add_test(tc, test_httpresponse_frees_not_consumed_data_on_destroy);
   suite_add_tcase(s, tc);
 
   return s;

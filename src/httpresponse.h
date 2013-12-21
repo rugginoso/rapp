@@ -12,11 +12,10 @@
 
 struct TcpConnection;
 
-typedef void (*HTTPResponseNotifyCallback)(struct HTTPResponse *response, void *data);
-
-
-struct HTTPResponse* http_response_new(struct TcpConnection *tcp_connection, HTTPResponseNotifyCallback headers_sent_callback, HTTPResponseNotifyCallback body_sent_callback, void *data);
+struct HTTPResponse* http_response_new();
 void http_response_destroy(struct HTTPResponse *response);
+
+ssize_t http_response_read_data(struct HTTPResponse *response, void *data, size_t length);
 
 #endif /* HTTTPRESPONSE_H */
 /*

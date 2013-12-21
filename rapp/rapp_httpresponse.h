@@ -12,12 +12,12 @@
 
 struct HTTPResponse;
 
-void http_response_notify_headers_sent(struct HTTPResponse *response);
-void http_response_notify_body_sent(struct HTTPResponse *response);
+ssize_t http_response_write_header(struct HTTPResponse *response, const char *key, const char *value);
+void http_response_end_headers(struct HTTPResponse *response);
 
-ssize_t http_response_printf(struct HTTPResponse *response, const char *fmt, ...);
-ssize_t http_response_write_data(struct HTTPResponse *response, const void *data, size_t length);
-ssize_t http_response_sendfile(struct HTTPResponse *response, const char *path);
+ssize_t http_response_append_data(struct HTTPResponse *response, const void *data, size_t length);
+
+void http_response_flush(struct HTTPResponse *response);
 
 #endif /* RAPP_HTTTPRESPONSE_H */
 /*
