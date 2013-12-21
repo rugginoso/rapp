@@ -1,3 +1,10 @@
+/*
+ * main.c - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -143,4 +150,8 @@ main(int argc, char *argv[])
 
   return 0;
 }
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
 

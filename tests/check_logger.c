@@ -1,3 +1,9 @@
+/*
+ * check_logger.c - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -234,5 +240,7 @@ main (void)
  return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-/* vim: set ts=2 sw=2 et */
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
 

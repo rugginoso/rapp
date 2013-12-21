@@ -1,3 +1,10 @@
+/*
+ * rapp_httprequest.h - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #ifndef RAPP_HTTPREQUEST_H
 #define RAPP_HTTPREQUEST_H
 
@@ -68,3 +75,7 @@ void http_request_get_headers_ranges(struct HTTPRequest *request, struct HeaderM
 void http_request_get_body_range(struct HTTPRequest *request, struct MemoryRange *range);
 
 #endif /* RAPP_HTTPREQUEST_H */
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
+

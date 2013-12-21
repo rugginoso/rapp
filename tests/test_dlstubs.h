@@ -1,3 +1,10 @@
+/*
+ * test_dlstubs.h - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #ifndef TEST_DLSTUBS_H
 #define TEST_DLSTUBS_H
 
@@ -25,4 +32,8 @@ void dlstub_debug(const char *tag);
 struct Logger *dlstub_logger_get(void);
 
 #endif /* TEST_DLSTUBS_H */
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
 

@@ -1,3 +1,10 @@
+/*
+ * tcpserver.c - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -161,4 +168,8 @@ tcp_server_start_listen(struct TcpServer *server,
 
   return event_loop_add_fd_watch(server->eloop, server->listen_fd, callbacks, server);
 }
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
 

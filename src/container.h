@@ -1,3 +1,10 @@
+/*
+ * container.h - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #ifndef CONTAINER_H
 #define CONTAINER_H
 
@@ -14,3 +21,7 @@ void container_destroy(struct Container *container);
 void container_serve(struct Container *container, struct HTTPRequest *http_request, struct HTTPResponseWriter *response_writer);
 
 #endif /* CONTAINER_H */
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
+
