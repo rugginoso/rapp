@@ -1,3 +1,10 @@
+/*
+ * tcpconnection.h - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #ifndef TCPCONNECTION_H
 #define TCPCONNECTION_H
 
@@ -21,4 +28,8 @@ ssize_t tcp_connection_write_data(struct TcpConnection *connection, const void *
 ssize_t tcp_connection_sendfile(struct TcpConnection *connection, int file_fd, size_t length);
 
 #endif /* TCPCONNECTION_H */
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
 
