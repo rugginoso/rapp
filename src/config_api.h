@@ -1,3 +1,10 @@
+/*
+ * config_api.h - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #ifndef CONFIG_H
 #define CONFIG_H
 #include "logger.h"
@@ -46,3 +53,7 @@ int config_get_num_values(struct Config *conf, const char *section,
             config_get_nth_string(CONF, SECTION, NAME, 0, VALUE)
 
 #endif  /* CONFIG_H */
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */

@@ -1,3 +1,10 @@
+/*
+ * config_yaml_parser.c - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #include <dirent.h>
 #include <errno.h>
 #include <limits.h>
@@ -398,3 +405,8 @@ config_scan_directory(struct Config *conf, const char* directory, const char* ex
     free(namelist);
     return res;
 }
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
+

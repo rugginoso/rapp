@@ -1,3 +1,10 @@
+/*
+ * config_private.h - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #ifndef CONFIG_PRIVATE_H
 #define CONFIG_PRIVATE_H
 #include <sys/queue.h>
@@ -120,3 +127,8 @@ int config_parse_commandline(struct Config *conf, int argc, char *argv[]);
 int config_parse_early_commandline(struct RappArguments *arguments,
                                    int argc, char* argv[]);
 #endif /* CONFIG_PRIVATE_H */
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
+

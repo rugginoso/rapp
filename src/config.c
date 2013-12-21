@@ -1,3 +1,10 @@
+/*
+ * config.c - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
@@ -229,3 +236,8 @@ config_opt_set_default_bool(struct Config *conf, const char *section,
         return -1;
     return config_opt_set_default_int(conf, section, name, value);
 }
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
+
