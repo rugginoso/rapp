@@ -130,8 +130,8 @@ http_router_destroy(struct HTTPRouter *router)
 }
 
 int
-http_router_default_container(struct HTTPRouter *router,
-                              struct Container   *container)
+http_router_set_default_container(struct HTTPRouter *router,
+                                 struct Container   *container)
 {
   assert(router);
   assert(container);
