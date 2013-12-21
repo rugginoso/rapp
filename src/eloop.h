@@ -1,3 +1,10 @@
+/*
+ * eloop.h - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #ifndef ELOOP_H
 #define ELOOP_H
 
@@ -27,4 +34,8 @@ int event_loop_remove_fd_watch(struct ELoop *eloop, int fd, enum ELoopWatchFdCal
 void event_loop_schedule_free(struct ELoop *eloop, CollectorFreeFunc free_func, void *data);
 
 #endif /* ELOOP_H */
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
 

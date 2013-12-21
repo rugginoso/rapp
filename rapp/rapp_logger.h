@@ -1,3 +1,10 @@
+/*
+ * rapp_logger.h - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #ifndef RAPP_LOGGER_H
 #define RAPP_LOGGER_H
 
@@ -27,4 +34,8 @@ int logger_trace_va(struct Logger *logger, LogLevel level, const char *tag, cons
 int logger_flush(struct Logger *logger);
 
 #endif /* RAPP_LOGGER_H */
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
 

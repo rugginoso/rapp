@@ -1,3 +1,10 @@
+/*
+ * logger.c - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -325,5 +332,7 @@ logger_destroy(struct Logger *logger)
   }
 }
 
-/* vim: set sw=2 ts=2 et */
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
 

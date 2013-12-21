@@ -1,4 +1,11 @@
 /*
+ * check_stub.c - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
+/*
  * RApp test stub. Use this as template for new tests.
  * Do not forget to add the new test to tests/CMakeLists.txt!
  */
@@ -44,4 +51,8 @@ main (void)
 
  return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
 

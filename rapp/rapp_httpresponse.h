@@ -1,3 +1,10 @@
+/*
+ * rapp_httpresponse.h - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #ifndef RAPP_HTTPRESPONSE_H
 #define RAPP_HTTPRESPONSE_H
 
@@ -13,3 +20,7 @@ ssize_t http_response_writer_write_data(struct HTTPResponseWriter *response_writ
 ssize_t http_response_writer_sendfile(struct HTTPResponseWriter *response_writer, const char *path);
 
 #endif /* RAPP_HTTTPRESPONSE_H */
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
+
