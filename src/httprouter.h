@@ -1,3 +1,10 @@
+/*
+ * httprouter.h - is part of RApp.
+ * RApp is a modular web application container made for linux and for speed.
+ * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
+ *     see LICENSE for all the details.
+ */
+
 #ifndef HTTPROUTER_H
 #define HTTPROUTER_H
 
@@ -18,4 +25,8 @@ int http_router_bind(struct HTTPRouter *router, const char *route, struct Contai
 int http_router_serve(struct HTTPRouter *router, struct HTTPRequest *request, struct HTTPResponseWriter *response_writer);
 
 #endif /* HTTPROUTER_H */
+
+/*
+ * vim: expandtab shiftwidth=2 tabstop=2:
+ */
 
