@@ -13,13 +13,15 @@
 #include "httprouter.h"
 #include "container.h"
 
-#define ROUTE_BASE_LEN 16
+#define ROUTE_BASE_LEN 14
 #define ROUTE_GROUP_LEN 30
+#define ROUTE_MAX_LEN 1023
 
 struct RouteBinding {
-  char name[ROUTE_BASE_LEN];
   char *route;
   struct Container *container;
+  char name[ROUTE_BASE_LEN];
+  int16_t route_len; /* FIXME */
 };
 
 /*
@@ -110,9 +112,9 @@ route_pack_bind(struct RoutePack *pack,
     pack->next = calloc(1, sizeof(struct RoutePack));
     last = route_pack_bind(pack->next, route, container);
   } else {
-    size_t len = strlen(route);
     struct RouteBinding *binding = &(pack->bindings[pack->binding_num]);
-    if (len < ROUTE_BASE_LEN) {
+    binding->route_len = strlen(route);
+    if (binding->route_len < ROUTE_BASE_LEN) {
       strcpy(binding->name, route);
       binding->route = binding->name;
     } else {
@@ -153,9 +155,19 @@ http_router_bind(struct HTTPRouter *router,
                  const char        *route,
                  struct Container  *container)
 {
+  size_t len = 0;
+
   assert(router);
   assert(route);
   assert(container);
+
+  len = strlen(route);
+  if (len > ROUTE_MAX_LEN) {
+    logger_trace(router->logger, LOG_ERROR, "router",
+                 "binding failed: route too long: %s",
+                 route);
+    return -1;
+  }
 
   router->last = route_pack_bind(router->last, route, container);
 
@@ -206,7 +218,7 @@ http_router_serve(struct HTTPRouter         *router,
     int i = 0;
     for (i = 0; !found && i < pack->binding_num; i++) {
       int current = strmatch(pack->bindings[i].route, raw_req + uri_range.offset, uri_range.length);
-      if (current > 0) {
+      if (current >= pack->bindings[i].route_len) {
         container = pack->bindings[i].container;
         found = 1;
       }

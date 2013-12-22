@@ -139,6 +139,88 @@ START_TEST(test_httprouter_one_route_long)
 }
 END_TEST
 
+#define ROUTES_NUM_SMALL  12
+#define ROUTES_NUM_BIG    1024
+
+static void
+check_many_routes(const char *route_tmpl,
+                  int         routes_num)
+{
+  int i = 0;
+  int ret = 0;
+  char buf[128] = { '\0' };
+  struct Logger *logger = NULL;
+  struct HTTPRequest *request = NULL;
+  struct HTTPRouter *router = NULL;
+  struct Container **debug = NULL;
+  struct RappContainer *debug_data = NULL;
+
+  debug = calloc(routes_num, sizeof(struct Container *) * routes_num);
+  ck_assert(debug != NULL);
+  debug_data = calloc(routes_num, sizeof(struct RappContainer) * routes_num);
+  ck_assert(debug_data != NULL);
+
+  logger = logger_new_null();
+  router = http_router_new(logger);
+  ck_assert(router != NULL);
+
+  /* setup */
+  for (i = 0; i < routes_num; i++) {
+    snprintf(buf, sizeof(buf), "debug#%02i", i);
+    debug[i] = container_new_custom(logger, buf, debug_serve, debug_destroy, &(debug_data[i]));
+
+    snprintf(buf, sizeof(buf), route_tmpl, 5000+i);
+    ret = http_router_bind(router, buf, debug[i]);
+    ck_assert_int_eq(ret, 0);
+  }
+
+  /* exercise */
+  for (i = 0; i < routes_num; i++) {
+    snprintf(buf, sizeof(buf), route_tmpl, 5000+i);
+    request = http_request_new_fake_url(buf);
+
+    ret = http_router_serve(router, request,
+                            (struct HTTPResponseWriter *)request); /* FIXME */
+    ck_assert_int_eq(ret, 0);
+    http_request_destroy(request);
+  }
+
+  /* verify and clean */
+  for (i = 0; i < routes_num; i++) {
+    ck_assert_int_eq(debug_data[i].invoke_count, 1);
+    container_destroy(debug[i]);
+  }
+
+  http_router_destroy(router);
+  logger_destroy(logger);
+  free(debug_data);
+  free(debug);
+}
+
+START_TEST(test_httproter_many_small_routes_num_small)
+{
+  check_many_routes("/%02i", ROUTES_NUM_SMALL);
+}
+END_TEST
+
+START_TEST(test_httproter_many_small_routes_num_big)
+{
+  check_many_routes("/%02i", ROUTES_NUM_BIG);
+}
+END_TEST
+
+START_TEST(test_httproter_many_long_routes_num_small)
+{
+  check_many_routes("/very/long/route/name/number%02i/to/properlyexerciseall/the_code", ROUTES_NUM_SMALL);
+}
+END_TEST
+
+START_TEST(test_httproter_many_long_routes_num_big)
+{
+  check_many_routes("/very/long/route/name/number%02i/to/properlyexerciseall/the_code", ROUTES_NUM_BIG);
+}
+END_TEST
+
 static Suite *
 httprouter_suite(void)
 {
@@ -150,6 +232,10 @@ httprouter_suite(void)
   tcase_add_test(tc, test_httprouter_default_container_alone);
   tcase_add_test(tc, test_httprouter_one_route_short);
   tcase_add_test(tc, test_httprouter_one_route_long);
+  tcase_add_test(tc, test_httproter_many_small_routes_num_small);
+  tcase_add_test(tc, test_httproter_many_small_routes_num_big);
+  tcase_add_test(tc, test_httproter_many_long_routes_num_small);
+  tcase_add_test(tc, test_httproter_many_long_routes_num_big);
   suite_add_tcase(s, tc);
 
   return s;
