@@ -13,6 +13,7 @@
 #include "logger.h"
 #include "httprequest.h"
 #include "httprouter.h"
+#include "logger.h"
 
 
 START_TEST(test_httprouter_new_destroy)
