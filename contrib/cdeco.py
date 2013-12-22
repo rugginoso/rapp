@@ -1,6 +1,8 @@
 #!/usr/bin/python
 #
 # put in the public domain
+# usage:
+# $ cat files_to_decorate | /path/to/cdeco.py
 
 import os
 import os.path
