@@ -14,7 +14,7 @@ struct ELoop;
 
 typedef int (*ELoopWatchFdCallback)(int fd, const void *data);
 
-enum {
+enum ELoopWatchFdCallbackType {
   ELOOP_CALLBACK_READ = 0,
   ELOOP_CALLBACK_WRITE,
   ELOOP_CALLBACK_CLOSE,
@@ -27,8 +27,9 @@ void event_loop_destroy(struct ELoop *eloop);
 int event_loop_run(struct ELoop *eloop);
 void event_loop_stop(struct ELoop *eloop);
 
-int event_loop_add_fd_watch(struct ELoop *eloop, int fd, ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX], const void *data);
-int event_loop_remove_fd_watch(struct ELoop *loop, int fd);
+int event_loop_add_fd_watch(struct ELoop *eloop, int fd, enum ELoopWatchFdCallbackType callback_type, ELoopWatchFdCallback callback, const void *data);
+
+int event_loop_remove_fd_watch(struct ELoop *eloop, int fd, enum ELoopWatchFdCallbackType callback_type);
 
 void event_loop_schedule_free(struct ELoop *eloop, CollectorFreeFunc free_func, void *data);
 

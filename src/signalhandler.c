@@ -54,7 +54,6 @@ struct SignalHandler *
 signal_handler_new(struct ELoop *eloop)
 {
   struct SignalHandler *signal_handler = NULL;
-  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
 
   if ((signal_handler = calloc(1, sizeof(struct SignalHandler))) == NULL) {
     perror("calloc");
@@ -69,11 +68,7 @@ signal_handler_new(struct ELoop *eloop)
     return NULL;
   }
 
-  callbacks[ELOOP_CALLBACK_READ] = on_signal;
-  callbacks[ELOOP_CALLBACK_WRITE] = NULL;
-  callbacks[ELOOP_CALLBACK_CLOSE] = NULL;
-
-  if (event_loop_add_fd_watch(eloop, signal_handler->fd, callbacks, signal_handler) < 0) {
+  if (event_loop_add_fd_watch(eloop, signal_handler->fd, ELOOP_CALLBACK_READ, on_signal, signal_handler) < 0) {
     perror("epoll_ctl");
     close(signal_handler->fd);
     free(signal_handler);
@@ -91,7 +86,7 @@ signal_handler_destroy(struct SignalHandler *signal_handler)
   assert(signal_handler != NULL);
 
   if (signal_handler->fd > 0) {
-    event_loop_remove_fd_watch(signal_handler->eloop, signal_handler->fd);
+    event_loop_remove_fd_watch(signal_handler->eloop, signal_handler->fd, ELOOP_CALLBACK_READ);
     close(signal_handler->fd);
   }
 

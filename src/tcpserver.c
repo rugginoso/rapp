@@ -58,7 +58,7 @@ tcp_server_destroy(struct TcpServer *server)
   assert(server != NULL);
 
   if (server->listen_fd >= 0) {
-    event_loop_remove_fd_watch(server->eloop, server->listen_fd);
+    event_loop_remove_fd_watch(server->eloop, server->listen_fd, ELOOP_CALLBACK_READ);
     close(server->listen_fd);
   }
 
@@ -112,7 +112,6 @@ tcp_server_start_listen(struct TcpServer *server,
   struct addrinfo *addrinfos, hints = {0, };
   char *port_s = NULL;
   int addrinfo_ret = 0;
-  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
   int on = 1;
 
   assert(server != NULL);
@@ -162,11 +161,7 @@ tcp_server_start_listen(struct TcpServer *server,
     return -1;
   }
 
-  callbacks[ELOOP_CALLBACK_READ] = on_incoming_connection;
-  callbacks[ELOOP_CALLBACK_WRITE] = NULL;
-  callbacks[ELOOP_CALLBACK_CLOSE] = NULL;
-
-  return event_loop_add_fd_watch(server->eloop, server->listen_fd, callbacks, server);
+  return event_loop_add_fd_watch(server->eloop, server->listen_fd, ELOOP_CALLBACK_READ, on_incoming_connection, server);
 }
 
 /*

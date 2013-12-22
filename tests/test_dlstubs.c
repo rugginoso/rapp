@@ -126,7 +126,7 @@ dummy_destroy(void *handle)
 static int
 dummy_serve(void *handle,
             void *http_request,
-            void *response_writer)
+            void *response)
 {
   mark_invoked("rapp_serve");
   if (has_flag("rapp_serve", DLSTUB_ERR_PLUGIN)) {
