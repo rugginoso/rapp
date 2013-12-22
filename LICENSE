@@ -1,3 +1,27 @@
+PLUG-IN EXCEPTION
+
+RApp is distributed under the terms of the GNU General Public License v2,
+reported integrally below, with the following clarification and special
+exception.
+
+As a special exception, the copyright holders of RApp give to anyone the
+explicit permission to develop a plug-in using the RApp public interface
+under license terms of her/his choice.
+
+A third party RApp plugin which uses only the RApp public API must not be
+considered derived or combined work, so it is not required for that plug-in
+to use the same GPLv2 License as RApp is licensed under.
+
+The RApp public interface includes everything is provided and exported
+through the C headers found into the rapp/ subdirectory.
+
+This grant DOES NOT apply if you modify the RApp core, or one of the
+plug-ins distributed with it; for those cases, the full GPLv2 terms applies
+unchanged.
+
+---------------------------------------------------------------------------
+
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 2, June 1991
 
