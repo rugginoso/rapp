@@ -84,6 +84,10 @@ if(ENABLE_TESTS)
     target_link_libraries(check_config  rapp_core rapp_test ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS} yaml)
     add_test(test_config ${EXECUTABLE_OUTPUT_PATH}/check_config)
 
+    add_executable(check_config_commandline check_config_commandline.c)
+    target_link_libraries(check_config_commandline  rapp_core rapp_test ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS} yaml)
+    add_test(test_config_commandline ${EXECUTABLE_OUTPUT_PATH}/check_config_commandline)
+
     add_executable(check_httprequest check_httprequest.c)
     target_link_libraries(check_httprequest rapp_core ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS})
     add_test(test_httprequest ${EXECUTABLE_OUTPUT_PATH}/check_httprequest)
