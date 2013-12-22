@@ -21,6 +21,7 @@ void http_request_set_parse_finish_callback(struct HTTPRequest *request, HTTPReq
 
 int http_request_append_data(struct HTTPRequest *request, void *data, size_t length);
 
+struct HTTPRequest *http_request_new_fake_url(const char *url);
 
 #endif /* HTTPREQUEST_H */
 /*
