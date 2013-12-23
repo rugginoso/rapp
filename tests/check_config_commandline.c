@@ -20,6 +20,7 @@
 
 
 struct Config *conf;
+const char *argp_program_version;
 char *empty[] = {"rapp"};
 char *usage[] = {"rapp", "--usage"};
 char *version[] = {"rapp", "--version"};
@@ -194,6 +195,7 @@ START_TEST(test_config_commandline_version)
   struct Config *conf;
   struct Logger *logger = logger_new_null();
   conf = config_new(logger);
+  argp_program_version = rapp_get_version_full();
   config_parse_commandline(conf, 2, version);
 }
 END_TEST
