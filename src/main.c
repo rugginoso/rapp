@@ -20,8 +20,6 @@
 #include "container.h"
 #include "config_private.h"
 
-const char *argp_program_version;
-
 static void
 on_signal(struct SignalHandler *signal_handler,
           void                 *data)
@@ -51,7 +49,6 @@ main(int argc, char *argv[])
   char *confpath;
   struct RappArguments arguments;
 
-  argp_program_version = rapp_get_version_full();
   config_parse_early_commandline(&arguments, argc, argv);
 
   logger = logger_new_console(arguments.loglevel, stderr);
