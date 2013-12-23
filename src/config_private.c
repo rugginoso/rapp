@@ -125,11 +125,7 @@ config_add_value_from_string(struct Config *conf, struct ConfigOption *opt,
     regex_t regex_bool;
     switch(opt->type) {
         case PARAM_STRING:
-            if (opt_add_value_string(opt, value) != 0) {
-                ERROR(conf, "Cannot set value for %s.%s to %s", opt->section->name,
-                      opt->name, value);
-                return -1;
-            }
+            opt_add_value_string(opt, value);
             DEBUG(conf, "Added %s.%s = %s", opt->section->name, opt->name, value);
             break;
 
@@ -145,12 +141,7 @@ config_add_value_from_string(struct Config *conf, struct ConfigOption *opt,
                 DEBUG(conf, "MATCH %s.%s as boolean : %s", opt->section->name, opt->name, value);
                 reti = regcomp(&regex_bool, regex_bool_true_str, REG_EXTENDED);
                 val = reti ? 0 : 1;
-                if (opt_add_value_int(opt, val) != 0) {
-                    ERROR(conf, "Cannot set value for %s.%s to %d", opt->section->name,
-                          opt->name, val);
-                    regfree(&regex_bool);
-                    return -1;
-                }
+                opt_add_value_int(opt, val);
                 DEBUG(conf, "Added %s.%s = %d", opt->section->name, opt->name, val);
                 break;
 
@@ -176,11 +167,7 @@ config_add_value_from_string(struct Config *conf, struct ConfigOption *opt,
                         value, endptr, opt->value_min, opt->value_max);
                 return -1;
             }
-            if (opt_add_value_int(opt, val) != 0) {
-                ERROR(conf, "Cannot set value for %s.%s to %d", opt->section->name,
-                      opt->name, val);
-                return -1;
-            }
+            opt_add_value_int(opt, val);
             DEBUG(conf, "Added %s.%s = %d", opt->section->name, opt->name, val);
             break;
     }
