@@ -122,6 +122,41 @@ START_TEST(test_config_early_options)
 }
 END_TEST
 
+START_TEST(test_config_commandline)
+{
+  struct Config *conf;
+  struct Logger *logger = logger_new_null();
+  char *empty[] = {"rapp"};
+  char *withvalue[] = {"rapp", "--test-option", "value"};
+  char *value;
+  conf = config_new(logger);
+  config_opt_add(conf, "test", "option", PARAM_STRING, "doc", "meta");
+  config_opt_set_default_string(conf, "test", "option", "default");
+
+  ck_assert_call_ok(config_parse_commandline, conf, 1, empty);
+  config_get_string(conf, "test", "option", &value);
+  ck_assert_str_eq(value, "default");
+
+  // do not support being calling twice
+  ck_assert_call_fail(config_parse_commandline, conf, 1, empty);
+
+  config_destroy(conf);
+  conf = config_new(logger);
+
+  config_opt_add(conf, "test", "option", PARAM_STRING, "doc", "meta");
+  config_opt_set_default_string(conf, "test", "option", "default");
+
+  ck_assert_call_ok(config_parse_commandline, conf, 3, withvalue);
+  config_get_string(conf, "test", "option", &value);
+  ck_assert_str_eq(value, "value");
+
+
+
+
+
+}
+END_TEST
+
 static Suite *
 config_commandline_suite(void)
 {
@@ -130,6 +165,7 @@ config_commandline_suite(void)
 
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_config_early_options);
+  tcase_add_test(tc, test_config_commandline);
   suite_add_tcase(s, tc);
 
   return s;
