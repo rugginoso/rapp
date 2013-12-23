@@ -20,10 +20,10 @@
 
 
 struct Config *conf;
-char *empty[] = {"rapp", NULL};
-char *usage[] = {"rapp", "--usage", NULL};
-char *version[] = {"rapp", "--version", NULL};
-char *help[] = {"rapp", "--help", NULL};
+char *empty[] = {"rapp"};
+char *usage[] = {"rapp", "--usage"};
+char *version[] = {"rapp", "--version"};
+char *help[] = {"rapp", "--help"};
 
 char**
 copy_argv(int argc, char *argv[])
@@ -128,6 +128,8 @@ START_TEST(test_config_commandline)
   struct Logger *logger = logger_new_null();
   char *empty[] = {"rapp"};
   char *withvalue[] = {"rapp", "--test-option", "value"};
+  char *coreopt[] = {"rapp", "--option", "value"};
+  char *logoption[] = {"rapp", "--log-level", "debug"};
   char *value;
   conf = config_new(logger);
   config_opt_add(conf, "test", "option", PARAM_STRING, "doc", "meta");
@@ -139,21 +141,60 @@ START_TEST(test_config_commandline)
 
   // do not support being calling twice
   ck_assert_call_fail(config_parse_commandline, conf, 1, empty);
-
   config_destroy(conf);
+
+  // test core option has no prefix
   conf = config_new(logger);
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "option", PARAM_STRING, "doc", NULL);
+  config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "option", "default");
+  ck_assert_call_ok(config_parse_commandline, conf, 3, coreopt);
+  config_get_string(conf, RAPP_CONFIG_SECTION, "option", &value);
+  ck_assert_str_eq(value, "value");
+  config_destroy(conf);
 
-  config_opt_add(conf, "test", "option", PARAM_STRING, "doc", "meta");
+  // test normal option
+  conf = config_new(logger);
+  config_opt_add(conf, "test", "option", PARAM_STRING, NULL, "meta");
   config_opt_set_default_string(conf, "test", "option", "default");
-
   ck_assert_call_ok(config_parse_commandline, conf, 3, withvalue);
   config_get_string(conf, "test", "option", &value);
   ck_assert_str_eq(value, "value");
+  config_destroy(conf);
 
+  // early options are skipped
+  conf = config_new(logger);
+  ck_assert_call_ok(config_parse_commandline, conf, 3, logoption);
+  config_destroy(conf);
 
+  // help / usage / version support
 
+}
+END_TEST
 
+START_TEST(test_config_commandline_help)
+{
+  struct Config *conf;
+  struct Logger *logger = logger_new_null();
+  conf = config_new(logger);
+  config_parse_commandline(conf, 2, help);
+}
+END_TEST
 
+START_TEST(test_config_commandline_usage)
+{
+  struct Config *conf;
+  struct Logger *logger = logger_new_null();
+  conf = config_new(logger);
+  config_parse_commandline(conf, 2, usage);
+}
+END_TEST
+
+START_TEST(test_config_commandline_version)
+{
+  struct Config *conf;
+  struct Logger *logger = logger_new_null();
+  conf = config_new(logger);
+  config_parse_commandline(conf, 2, version);
 }
 END_TEST
 
@@ -166,6 +207,9 @@ config_commandline_suite(void)
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_config_early_options);
   tcase_add_test(tc, test_config_commandline);
+  tcase_add_exit_test(tc, test_config_commandline_help, 0);
+  tcase_add_exit_test(tc, test_config_commandline_version, 0);
+  tcase_add_exit_test(tc, test_config_commandline_usage, 0);
   suite_add_tcase(s, tc);
 
   return s;
