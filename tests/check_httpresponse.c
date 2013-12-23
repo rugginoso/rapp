@@ -32,6 +32,19 @@ teardown()
   logger_destroy(logger);
 }
 
+static char *
+http_datetime()
+{
+  time_t now;
+  char *datetime = malloc(32);
+
+  time(&now);
+
+  strftime(datetime, 32, "%a, %d %b %Y %H:%M:%S %z", gmtime(&now));
+
+  return datetime;
+}
+
 START_TEST(test_httpresponse_append_data_writes_data)
 {
   char *result = alloca(1024);
@@ -63,17 +76,16 @@ END_TEST
 START_TEST(test_httpresponse_end_headers_adds_server_date_empty_header)
 {
   char *result = alloca(1024);
-  time_t now;
-  char *datetime = alloca(32);
+  char *datetime = NULL;
   char *expected = NULL;
   ssize_t len = 0;
 
-  time(&now);
-  strftime(datetime, 32, "%a, %d %b %Y %H:%M:%S %z", gmtime(&now));
+  datetime = http_datetime();
 
   asprintf(&expected, "Server: test" HTTP_EOL
                       "Date: %s" HTTP_EOL
                       HTTP_EOL, datetime);
+  free(datetime);
 
   http_response_end_headers(response);
 
@@ -146,6 +158,42 @@ START_TEST(test_httpresponse_write_status_line_by_code_return_error_on_invalid_c
 }
 END_TEST
 
+START_TEST(test_httpresponse_write_error_by_code_appends_error_page)
+{
+  char *result = alloca(1024);
+  ssize_t len;
+  char *datetime = NULL;
+  char *expected = NULL;
+
+  datetime = http_datetime();
+
+  http_response_write_error_by_code(response, 404);
+
+  len = http_response_read_data(response, result, 1024);
+  result[len] = 0;
+
+  asprintf(&expected, "HTTP/1.1 404 Not Found"  HTTP_EOL \
+                      "Content-Type: text/html" HTTP_EOL \
+                      "Content-Length: 96"      HTTP_EOL \
+                      "Server: test"            HTTP_EOL \
+                      "Date: %s"                HTTP_EOL \
+                      HTTP_EOL                           \
+                      "<!DOCTYPE html>"                  \
+                      "<html>"                           \
+                        "<head>"                         \
+                          "<title>Not Found</title>"     \
+                        "</head>"                        \
+                        "<body>"                         \
+                          "<h1>Not Found</h1>"           \
+                        "</body>"                        \
+                      "</html>", datetime);
+  free(datetime);
+
+  ck_assert_str_eq(result, expected);
+  free(expected);
+}
+END_TEST
+
 static Suite *
 httpresponse_suite(void)
 {
@@ -161,6 +209,7 @@ httpresponse_suite(void)
   tcase_add_test(tc, test_httpresponse_write_status_line_appends_statusline);
   tcase_add_test(tc, test_httpresponse_write_status_line_by_code_appends_statusline);
   tcase_add_test(tc, test_httpresponse_write_status_line_by_code_return_error_on_invalid_code);
+  tcase_add_test(tc, test_httpresponse_write_error_by_code_appends_error_page);
   suite_add_tcase(s, tc);
 
   return s;

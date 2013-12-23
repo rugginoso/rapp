@@ -20,7 +20,7 @@ ssize_t http_response_end_headers(struct HTTPResponse *response);
 
 ssize_t http_response_append_data(struct HTTPResponse *response, const void *data, size_t length);
 
-void http_response_flush(struct HTTPResponse *response);
+ssize_t http_response_write_error_by_code(struct HTTPResponse *response, unsigned code);
 
 #endif /* RAPP_HTTTPRESPONSE_H */
 /*

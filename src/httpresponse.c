@@ -101,6 +101,18 @@ static const struct HTTPStatus http_statuses[] = {
   {0, NULL}
 };
 
+static const char *error_body = \
+"<!DOCTYPE html>"       \
+"<html>"                \
+  "<head>"              \
+    "<title>%s</title>" \
+  "</head>"             \
+  "<body>"              \
+    "<h1>%s</h1>"       \
+  "</body>"             \
+"</html>";
+
+
 struct HTTPResponse*
 http_response_new(struct Logger *logger, const char *server_name)
 {
@@ -167,7 +179,7 @@ ssize_t http_response_write_status_line(struct HTTPResponse *response,
 
   snprintf(status, status_len, "HTTP/1.1 %s" HTTP_EOL, status_line);
 
-  return http_response_append_data(response, status, status_len);
+  return http_response_append_data(response, status, status_len - 1);
 }
 
 ssize_t
@@ -277,6 +289,71 @@ http_response_read_data(struct HTTPResponse *response,
   }
 
   return avaiable_length;
+}
+
+ssize_t
+http_response_write_error_by_code(struct HTTPResponse *response,
+                                  unsigned             code)
+{
+  const char *message = NULL;
+  char *body = NULL;
+  char *len_s = NULL;
+  ssize_t total_length = 0;
+  ssize_t ret;
+
+  assert(response != NULL);
+
+  if ((message = status_message_by_code(code)) == NULL)
+    return -1;
+
+  if (asprintf(&body, error_body, message, message) < 0) {
+    logger_trace(response->logger, LOG_ERROR, "httpresponse", "asprintf: %s", strerror(errno));
+    return -1;
+  }
+
+  if (asprintf(&len_s, "%d", strlen(body)) < 0) {
+    logger_trace(response->logger, LOG_ERROR, "httpresponse", "asprintf: %s", strerror(errno));
+    free(body);
+    return -1;
+  }
+
+  if ((ret = http_response_write_status_line_by_code(response, code)) < 0) {
+    free(body);
+    free(len_s);
+    return -1;
+  }
+  total_length += ret;
+
+  if ((ret = http_response_write_header(response, "Content-Type", "text/html")) < 0) {
+    free(body);
+    free(len_s);
+    return -1;
+  }
+  total_length += ret;
+
+  if ((ret = http_response_write_header(response, "Content-Length", len_s)) < 0) {
+    free(body);
+    free(len_s);
+    return -1;
+  }
+  free(len_s);
+  total_length += ret;
+
+  if ((ret = http_response_end_headers(response)) < 0) {
+    free(body);
+    return -1;
+  }
+  total_length += ret;
+
+  if (ret = http_response_append_data(response, body, strlen(body)) < 0) {
+    free(body);
+    return -1;
+  }
+  total_length += ret;
+
+  free(body);
+
+  return total_length;
 }
 
 /*
