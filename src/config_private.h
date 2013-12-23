@@ -92,7 +92,6 @@ struct ConfigSection {
 };
 
 struct Config {
-    int freezed;
     int num_sections;
     struct Logger *logger;
     struct ConfigOption **options_map;

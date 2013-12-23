@@ -23,7 +23,7 @@ config_opt_add(struct Config *conf,
     size_t size = sizeof(struct ConfigOption);
     struct ConfigOption *opt = NULL;
 
-    if (!conf || conf->freezed == 1 || !section || !name)
+    if (!conf || !section || !name)
         return -1;
 
     sect = get_section(conf, section);
@@ -92,7 +92,7 @@ config_opt_set_range_int(struct Config *conf,
     GET_OPTION(opt, conf, section, name);
     if (!opt || opt->type != PARAM_INT)
         return -1;
-    if (conf->freezed == 1 || value_min >= value_max)
+    if (value_min >= value_max)
         return -1;
     opt->value_min = value_min;
     opt->value_max = value_max;
@@ -109,8 +109,6 @@ config_opt_set_multivalued(struct Config *conf,
 {
     struct ConfigOption *opt = NULL;
     GET_OPTION(opt, conf, section, name);
-    if (conf->freezed == 1)
-        return -1;
     opt->multivalued = flag;
     DEBUG(conf, "Set '%s.%s' as multivalued", section, name);
     return 0;

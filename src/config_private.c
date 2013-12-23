@@ -26,7 +26,6 @@ struct Config
         return NULL;
     TAILQ_INIT(&conf->sections);
     conf->num_sections = 0;
-    conf->freezed = 0;
     conf->logger = logger;
     conf->options = NULL;
     DEBUG(conf, "Successfully initialized empty config object %p", conf);
