@@ -9,10 +9,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include <assert.h>
 
 #include <sys/epoll.h>
-
+#include "logger.h"
 #include "eloop.h"
 
 #define MAX_EVENTS 10
@@ -21,36 +22,39 @@
 struct ELoop {
   int epollfd;
   struct Collector *collector;
+  struct Logger *logger;
   struct ELoopCallback *callbacks_list;
   int running;
 };
 
 struct ELoopCallback {
-  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
   int fd;
-  const void *data;
+  struct epoll_event ev;
+  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
+  const void *datas[ELOOP_CALLBACK_MAX];
 
   struct ELoopCallback *next;
 };
 
 
 struct ELoop *
-event_loop_new(void)
+event_loop_new(struct Logger *logger)
 {
   struct ELoop *eloop = NULL;
 
   if ((eloop = calloc(1, sizeof(struct ELoop))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "eloop", "calloc: %s", strerror(errno));
     return NULL;
   }
 
   if ((eloop->epollfd = epoll_create(1)) < 0) {
-    perror("epoll_create");
+    logger_trace(logger, LOG_ERROR, "eloop", "epoll_create: %s", strerror(errno));
     return NULL;
   }
 
-  eloop->collector = collector_new();
+  eloop->collector = collector_new(logger);
   eloop->callbacks_list = NULL;
+  eloop->logger = logger;
 
   return eloop;
 }
@@ -82,15 +86,15 @@ event_loop_run(struct ELoop *eloop)
       eloop_callback = events[i].data.ptr;
 
       if (events[i].events & EPOLLIN && eloop_callback->callbacks[ELOOP_CALLBACK_READ]) {
-        eloop_callback->callbacks[ELOOP_CALLBACK_READ](eloop_callback->fd, eloop_callback->data);
+        eloop_callback->callbacks[ELOOP_CALLBACK_READ](eloop_callback->fd, eloop_callback->datas[ELOOP_CALLBACK_READ]);
       }
 
       if (events[i].events & EPOLLOUT && eloop_callback->callbacks[ELOOP_CALLBACK_WRITE]) {
-        eloop_callback->callbacks[ELOOP_CALLBACK_WRITE](eloop_callback->fd, eloop_callback->data);
+        eloop_callback->callbacks[ELOOP_CALLBACK_WRITE](eloop_callback->fd, eloop_callback->datas[ELOOP_CALLBACK_WRITE]);
       }
 
       if (events[i].events & EPOLLRDHUP && eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE]) {
-        eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE](eloop_callback->fd, eloop_callback->data);
+        eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE](eloop_callback->fd, eloop_callback->datas[ELOOP_CALLBACK_CLOSE]);
       }
     }
     collector_collect(eloop->collector);
@@ -105,77 +109,114 @@ event_loop_stop(struct ELoop *eloop)
   eloop->running = 0;
 }
 
-int
-event_loop_add_fd_watch(struct ELoop         *eloop,
-                        int                   fd,
-                        ELoopWatchFdCallback  callbacks[ELOOP_CALLBACK_MAX],
-                        const void           *data)
+static int
+find_callback_by_fd(struct ELoop          *eloop,
+                    int                    fd,
+                    struct ELoopCallback **ec,
+                    struct ELoopCallback **pec)
 {
-  struct epoll_event ev = {0,};
-  struct ELoopCallback *eloop_callback;
+  assert(ec != NULL);
+
+  for (*ec = eloop->callbacks_list; *ec != NULL; *ec = (*ec)->next) {
+    if ((*ec)->fd == fd) {
+      return 0;
+    }
+
+    if (pec != NULL)
+      *pec = *ec;
+  }
+
+  return -1;
+}
+
+static uint32_t
+eloop_callback_type_to_epoll_event(enum ELoopWatchFdCallbackType callback_type)
+{
+  uint32_t event = 0;
+
+  switch (callback_type) {
+  case ELOOP_CALLBACK_READ:
+    event = EPOLLIN;
+    break;
+  case ELOOP_CALLBACK_WRITE:
+    event = EPOLLOUT;
+    break;
+  case ELOOP_CALLBACK_CLOSE:
+    event = EPOLLRDHUP;
+    break;
+  }
+
+  return event;
+}
+
+int
+event_loop_add_fd_watch(struct ELoop                 *eloop,
+                        int                           fd,
+                        enum ELoopWatchFdCallbackType callback_type,
+                        ELoopWatchFdCallback          callback,
+                        const void                   *data)
+{
+  struct ELoopCallback *ec = NULL;
+  int epoll_operation = EPOLL_CTL_MOD;
+
+  assert(eloop != NULL);
+  assert(fd > -1);
+  assert(callback != NULL);
+
+  if (find_callback_by_fd(eloop, fd, &ec, NULL) < 0) {
+    if ((ec = calloc(1, sizeof(struct ELoopCallback))) == NULL) {
+      logger_trace(eloop->logger, LOG_ERROR, "eloop", "calloc: %s", strerror(errno));
+      return -1;
+    }
+
+    ec->next = eloop->callbacks_list;
+    eloop->callbacks_list = ec;
+
+    epoll_operation = EPOLL_CTL_ADD;
+  }
+
+  ec->ev.events |= eloop_callback_type_to_epoll_event(callback_type);
+  ec->ev.data.ptr = ec;
+
+  ec->fd = fd;
+  ec->callbacks[callback_type] = callback;
+  ec->datas[callback_type] = data;
+
+  return epoll_ctl(eloop->epollfd, epoll_operation, fd, &(ec->ev));
+}
+
+int
+event_loop_remove_fd_watch(struct ELoop                 *eloop,
+                           int                           fd,
+                           enum ELoopWatchFdCallbackType callback_type)
+{
+  struct ELoopCallback *ec = NULL;
+  struct ELoopCallback *pec = NULL;
+  int epoll_operation = EPOLL_CTL_MOD;
   int i = 0;
 
   assert(eloop != NULL);
   assert(fd > -1);
-  assert(callbacks != NULL);
 
-  for (; i < ELOOP_CALLBACK_MAX; i++) {
-    if (callbacks[i]) {
-      switch (i) {
-      case ELOOP_CALLBACK_READ:
-        ev.events |= EPOLLIN;
-        break;
-      case ELOOP_CALLBACK_WRITE:
-        ev.events |= EPOLLOUT;
-        break;
-      case ELOOP_CALLBACK_CLOSE:
-        ev.events |= EPOLLRDHUP;
-        break;
-      }
-    }
-  }
-
-  if ((eloop_callback = calloc(1, sizeof(struct ELoopCallback))) == NULL) {
-    perror("calloc");
+  if (find_callback_by_fd(eloop, fd, &ec, &pec) < 0)
     return -1;
+
+  ec->callbacks[callback_type] = NULL;
+  ec->datas[callback_type] = NULL;
+
+  ec->ev.events &= ~(eloop_callback_type_to_epoll_event(callback_type));
+
+  if (ec->ev.events == 0) {
+    epoll_operation = EPOLL_CTL_DEL;
+
+    if (pec == NULL)
+      eloop->callbacks_list = ec->next;
+    else
+      pec->next = ec->next;
+    free(ec);
   }
 
-  memcpy(eloop_callback->callbacks, callbacks, ELOOP_CALLBACK_MAX * sizeof(ELoopWatchFdCallback));
-  eloop_callback->fd = fd;
-  eloop_callback->data = data;
-
-  /*
-   * Prepend this callback to the callback_list
-   */
-  eloop_callback->next = eloop->callbacks_list;
-  eloop->callbacks_list = eloop_callback;
-
-  ev.data.ptr = eloop_callback;
-
-  return epoll_ctl(eloop->epollfd, EPOLL_CTL_ADD, fd, &ev);
-}
-
-int
-event_loop_remove_fd_watch(struct ELoop *eloop,
-                           int    fd)
-{
-  struct ELoopCallback *cb, *pcb = NULL;
-
-  assert(eloop != NULL);
-  assert(fd > -1);
-
-  for (cb = eloop->callbacks_list; cb != NULL; pcb = cb, cb = cb->next) {
-    if (cb->fd == fd) {
-      if (pcb == NULL)
-        eloop->callbacks_list = cb->next;
-      else
-        pcb->next = cb->next;
-      free(cb);
-      break;
-    }
-  }
-
-  return epoll_ctl(eloop->epollfd, EPOLL_CTL_DEL, fd, NULL);
+  return epoll_ctl(eloop->epollfd, epoll_operation, fd, &(ec->ev));
 }
 
 void

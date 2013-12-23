@@ -12,8 +12,9 @@ set(RAPP_CORE_SOURCES
     container.c
     eloop.c
     httpconnection.c
+    httpresponse.c
     httprequest.c
-    httpresponsewriter.c
+    httprouter.c
     httpserver.c
     logger.c
     signalhandler.c

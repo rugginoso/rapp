@@ -8,14 +8,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <assert.h>
 
+#include "logger.h"
 #include "tcpconnection.h"
 #include "httprequest.h"
-#include "httpresponsewriter.h"
+#include "httpresponse.h"
 #include "httpconnection.h"
+#include "httprouter.h"
 
-#define RECV_BUFSIZE 80 * 1024
+
+#define BUFSIZE 80 * 1024
 
 struct HTTPConnection {
   struct TcpConnection *tcp_connection;
@@ -24,67 +28,17 @@ struct HTTPConnection {
   void *data;
 
   struct HTTPRequest *request;
+  struct HTTPResponse *response;
+
+  struct HTTPRouter *router;
+  struct Logger *logger;
 };
 
 static void
-on_headers_sent(struct HTTPResponseWriter *response_writer, void *data)
+on_read(struct TcpConnection *tcp_connection,
+        const void           *data)
 {
-  struct HTTPConnection *http_connection = NULL;
-
-  assert(data != NULL);
-
-  http_connection = (struct HTTPConnection *)data;
-
-  http_response_writer_write_data(response_writer, "Server: RApp dev\r\n", 18);
-  http_response_writer_write_data(response_writer, "\r\n", 2);
-}
-
-static void
-on_body_sent(struct HTTPResponseWriter *response_writer, void *data)
-{
-  struct HTTPConnection *http_connection = NULL;
-
-  assert(data != NULL);
-
-  http_connection = (struct HTTPConnection *)data;
-
-  http_response_writer_write_data(response_writer, "\r\n", 2);
-  http_connection->finish_callback(http_connection, http_connection->data);
-}
-
-static void
-on_parse_finish(struct HTTPRequest *request, void *data)
-{
-  struct HTTPConnection *http_connection = NULL;
-  struct HTTPResponseWriter *response_writer = NULL;
-
-  assert(data != NULL);
-
-  http_connection = (struct HTTPConnection *)data;
-
-  if ((response_writer = http_response_writer_new(http_connection->tcp_connection, on_headers_sent, on_body_sent, http_connection)) == NULL) {
-    http_connection->finish_callback(http_connection, http_connection->data);
-    return;
-  }
-
-  /* Example code */
-  http_response_writer_write_data(response_writer, "HTTP/1.1 200 OK\r\n", 17);
-  http_response_writer_write_data(response_writer, "Content-Type: text/plain; charset=utf-8\r\n", 41);
-  http_response_writer_write_data(response_writer, "Content-Length: 12\r\n", 20);
-
-  http_response_writer_notify_headers_sent(response_writer);
-
-  http_response_writer_write_data(response_writer, "Hello world!", 12);
-  http_response_writer_notify_body_sent(response_writer);
-  /* end */
-
-  http_response_writer_destroy(response_writer);
-}
-
-static void
-on_read(struct TcpConnection *tcp_connection, const void *data)
-{
-  char buffer[RECV_BUFSIZE];
+  char buffer[BUFSIZE];
   ssize_t got = -1;
   struct HTTPConnection *http_connection = NULL;
 
@@ -92,8 +46,8 @@ on_read(struct TcpConnection *tcp_connection, const void *data)
 
   http_connection = (struct HTTPConnection *)data;
 
-  if ((got = tcp_connection_read_data(tcp_connection, buffer, RECV_BUFSIZE)) < 0) {
-    perror("read");
+  if ((got = tcp_connection_read_data(tcp_connection, buffer, BUFSIZE)) < 0) {
+    logger_trace(http_connection->logger, LOG_ERROR, "httpconnection", "read: %s", strerror(errno));
     http_connection->finish_callback(http_connection, http_connection->data);
     return;
   }
@@ -107,7 +61,28 @@ on_read(struct TcpConnection *tcp_connection, const void *data)
 }
 
 static void
-on_close(struct TcpConnection *tcp_connection, const void *data)
+on_write(struct TcpConnection *tcp_connection,
+         const void           *data)
+{
+  char buffer[BUFSIZE];
+  ssize_t got = -1;
+  struct HTTPConnection *http_connection = NULL;
+
+  assert(data != NULL);
+
+  http_connection = (struct HTTPConnection *)data;
+
+  if ((got = http_response_read_data(http_connection->response, buffer, BUFSIZE)) > 0) {
+    tcp_connection_write_data(tcp_connection, buffer, got);
+  }
+  else {
+    http_connection->finish_callback(http_connection, http_connection->data);
+  }
+}
+
+static void
+on_close(struct TcpConnection *tcp_connection,
+         const void           *data)
 {
   struct HTTPConnection *http_connection = NULL;
 
@@ -118,26 +93,53 @@ on_close(struct TcpConnection *tcp_connection, const void *data)
   http_connection->finish_callback(http_connection, http_connection->data);
 }
 
+static void
+on_parse_finish(struct HTTPRequest *request,
+                void               *data)
+{
+  struct HTTPConnection *http_connection = NULL;
+
+  assert(data != NULL);
+
+  http_connection = (struct HTTPConnection *)data;
+
+  tcp_connection_set_callbacks(http_connection->tcp_connection, NULL, on_write, on_close, http_connection);
+
+  http_router_serve(http_connection->router, request, http_connection->response);
+}
+
 struct HTTPConnection *
-http_connection_new(struct TcpConnection *tcp_connection)
+http_connection_new(struct Logger        *logger,
+                    struct TcpConnection *tcp_connection,
+                    struct HTTPRouter    *router)
 {
   struct HTTPConnection *http_connection = NULL;
 
   assert(tcp_connection != NULL);
 
   if ((http_connection = calloc(1, sizeof(struct HTTPConnection))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "httpconnection", "calloc: %s", strerror(errno));
     return NULL;
   }
 
-  if ((http_connection->request = http_request_new()) == NULL) {
+  if ((http_connection->request = http_request_new(logger)) == NULL) {
     free(http_connection);
     return NULL;
   }
   http_request_set_parse_finish_callback(http_connection->request, on_parse_finish, http_connection);
 
+  if ((http_connection->response = http_response_new(http_connection->logger)) == NULL) {
+    free(http_connection->request);
+    free(http_connection);
+    return NULL;
+  }
+
+  http_connection->router = router;
+
   http_connection->tcp_connection = tcp_connection;
   tcp_connection_set_callbacks(http_connection->tcp_connection, on_read, NULL, on_close, http_connection);
+
+  http_connection->logger = logger;
 
   return http_connection;
 }
@@ -152,6 +154,9 @@ http_connection_destroy(struct HTTPConnection *http_connection)
 
   if (http_connection->request != NULL)
     http_request_destroy(http_connection->request);
+
+  if (http_connection->response != NULL)
+    http_response_destroy(http_connection->response);
 
   free(http_connection);
 }

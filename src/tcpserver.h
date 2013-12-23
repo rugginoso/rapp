@@ -10,13 +10,14 @@
 
 #include <inttypes.h>
 
+struct Logger;
 struct ELoop;
 struct TcpConnection;
 struct TcpServer;
 
 typedef void (*TcpServerAcceptCallback)(struct TcpConnection *connection, const void *data);
 
-struct TcpServer *tcp_server_new(struct ELoop *eloop);
+struct TcpServer *tcp_server_new(struct Logger *logger, struct ELoop *eloop);
 void tcp_server_destroy(struct TcpServer *server);
 
 void tcp_server_set_accept_callback(struct TcpServer *server, TcpServerAcceptCallback callback, const void *data);

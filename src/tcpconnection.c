@@ -8,10 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #include <assert.h>
 
 #include <sys/socket.h>
 
+#include "logger.h"
 #include "tcpconnection.h"
 #include "eloop.h"
 
@@ -19,6 +21,7 @@ struct TcpConnection
 {
   int fd;
   struct ELoop *eloop;
+  struct Logger *logger;
   TcpConnectionReadCallback read_callback;
   TcpConnectionWriteCallback write_callback;
   TcpConnectionCloseCallback close_callback;
@@ -26,19 +29,23 @@ struct TcpConnection
 };
 
 struct TcpConnection *
-tcp_connection_with_fd(int fd, struct ELoop *eloop)
+tcp_connection_with_fd(int            fd,
+                       struct Logger *logger,
+                       struct ELoop  *eloop)
 {
   struct TcpConnection *connection = NULL;
 
   assert(fd >= 0);
+  assert(logger != NULL);
   assert(eloop != NULL);
 
   if ((connection = calloc(1, sizeof(struct TcpConnection))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "tcpconnection", "calloc: %s", strerror(errno));
     return NULL;
   }
 
   connection->fd = fd;
+  connection->logger = logger;
   connection->eloop = eloop;
 
   return connection;
@@ -60,14 +67,17 @@ tcp_connection_close(struct TcpConnection *connection)
   assert(connection != NULL);
 
   if (connection->fd >= 0) {
-    event_loop_remove_fd_watch(connection->eloop, connection->fd);
+    event_loop_remove_fd_watch(connection->eloop, connection->fd, ELOOP_CALLBACK_READ);
+    event_loop_remove_fd_watch(connection->eloop, connection->fd, ELOOP_CALLBACK_WRITE);
+    event_loop_remove_fd_watch(connection->eloop, connection->fd, ELOOP_CALLBACK_CLOSE);
     close(connection->fd);
     connection->fd = -1;
   }
 }
 
 static int
-on_ready_read(int fd, const void *data)
+on_ready_read(int         fd,
+              const void *data)
 {
   struct TcpConnection *connection = NULL;
 
@@ -82,7 +92,8 @@ on_ready_read(int fd, const void *data)
 }
 
 static int
-on_ready_write(int fd, const void *data)
+on_ready_write(int         fd,
+               const void *data)
 {
   struct TcpConnection *connection = NULL;
 
@@ -97,7 +108,8 @@ on_ready_write(int fd, const void *data)
 }
 
 static int
-on_close(int fd, const void *data)
+on_close(int         fd,
+         const void *data)
 {
   struct TcpConnection *connection = NULL;
 
@@ -118,28 +130,29 @@ tcp_connection_set_callbacks(struct TcpConnection      *connection,
                              TcpConnectionCloseCallback close_callback,
                              const void                *data)
 {
-  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX] = {0, 0, 0};
-
   assert(connection != NULL);
 
   if (read_callback != NULL) {
+    if (event_loop_add_fd_watch(connection->eloop, connection->fd, ELOOP_CALLBACK_READ, on_ready_read, connection) < 0)
+      return -1;
     connection->read_callback = read_callback;
-    callbacks[ELOOP_CALLBACK_READ] = on_ready_read;
   }
 
   if (write_callback != NULL) {
+    if (event_loop_add_fd_watch(connection->eloop, connection->fd, ELOOP_CALLBACK_WRITE, on_ready_write, connection) < 0)
+      return -1;
     connection->write_callback = write_callback;
-    callbacks[ELOOP_CALLBACK_WRITE] = on_ready_write;
   }
 
   if (close_callback != NULL) {
+    if (event_loop_add_fd_watch(connection->eloop, connection->fd, ELOOP_CALLBACK_CLOSE, on_close, connection))
+      return -1;
     connection->close_callback = close_callback;
-    callbacks[ELOOP_CALLBACK_CLOSE] = on_close;
   }
 
   connection->data = data;
 
-  return event_loop_add_fd_watch(connection->eloop, connection->fd, callbacks, connection);
+  return 0;
 }
 
 ssize_t

@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <assert.h>
 
 #include <sys/types.h>
@@ -17,6 +18,7 @@
 
 #include <config.h>
 
+#include "logger.h"
 #include "tcpserver.h"
 #include "tcpconnection.h"
 #include "eloop.h"
@@ -31,23 +33,26 @@ struct TcpServer {
   int listen_fd;
   TcpServerAcceptCallback accept_callback;
   const void *data;
+  struct Logger *logger;
 };
 
 
 struct TcpServer *
-tcp_server_new(struct ELoop *eloop)
+tcp_server_new(struct Logger *logger,
+               struct ELoop  *eloop)
 {
   struct TcpServer *server = NULL;
 
   assert(eloop != NULL);
 
   if ((server = calloc(1, sizeof(struct TcpServer))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "tcpserver", "calloc: %s", strerror(errno));
     return NULL;
   }
 
   server->listen_fd = -1;
   server->eloop = eloop;
+  server->logger = logger;
 
   return server;
 }
@@ -58,7 +63,7 @@ tcp_server_destroy(struct TcpServer *server)
   assert(server != NULL);
 
   if (server->listen_fd >= 0) {
-    event_loop_remove_fd_watch(server->eloop, server->listen_fd);
+    event_loop_remove_fd_watch(server->eloop, server->listen_fd, ELOOP_CALLBACK_READ);
     close(server->listen_fd);
   }
 
@@ -78,7 +83,8 @@ tcp_server_set_accept_callback(struct TcpServer      *server,
 }
 
 static int
-on_incoming_connection(int server_fd, const void *data)
+on_incoming_connection(int         server_fd,
+                       const void *data)
 {
   struct TcpServer *server = NULL;
   struct TcpConnection *connection = NULL;
@@ -89,11 +95,11 @@ on_incoming_connection(int server_fd, const void *data)
   server = (struct TcpServer *)data;
 
   if ((client_fd = accept(server_fd, NULL, NULL)) < 0) {
-    perror("accept");
+    logger_trace(server->logger, LOG_ERROR, "tcpserver", "accept: %s", strerror(errno));
     return -1;
   }
 
-  if ((connection = tcp_connection_with_fd(client_fd, server->eloop)) == NULL) {
+  if ((connection = tcp_connection_with_fd(client_fd, server->logger, server->eloop)) == NULL) {
     close(client_fd);
     return -1;
   }
@@ -112,7 +118,6 @@ tcp_server_start_listen(struct TcpServer *server,
   struct addrinfo *addrinfos, hints = {0, };
   char *port_s = NULL;
   int addrinfo_ret = 0;
-  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
   int on = 1;
 
   assert(server != NULL);
@@ -126,47 +131,43 @@ tcp_server_start_listen(struct TcpServer *server,
   snprintf(port_s, PORT_S_LEN, "%d", port);
 
   if ((addrinfo_ret = getaddrinfo(host, port_s, &hints, &addrinfos)) != 0) {
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(addrinfo_ret));
+    logger_trace(server->logger, LOG_ERROR, "tcpserver", "getaddrinfo: %s", gai_strerror(addrinfo_ret));
     return -1;
   }
 
   if ((server->listen_fd = socket(addrinfos->ai_family, addrinfos->ai_socktype, 0)) < 0) {
-    perror("socket");
+    logger_trace(server->logger, LOG_ERROR, "tcpserver", "socket: %s", strerror(errno));
     freeaddrinfo(addrinfos);
     return -1;
   }
 
   if (setsockopt(server->listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int)) < 0) {
-    perror("setsockopt");
+    logger_trace(server->logger, LOG_ERROR, "tcpserver", "setsockopt: %s", strerror(errno));
     freeaddrinfo(addrinfos);
     return -1;
   }
 
   #ifdef SO_REUSEPORT_FOUND
   if (setsockopt(server->listen_fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(int)) < 0) {
-    perror("setsockopt");
+    logger_trace(server->logger, LOG_ERROR, "tcpserver", "setsockopt: %s", strerror(errno));
     freeaddrinfo(addrinfos);
     return -1;
   }
   #endif
 
   if (bind(server->listen_fd, addrinfos->ai_addr, addrinfos->ai_addrlen) < 0) {
-    perror("bind");
+    logger_trace(server->logger, LOG_ERROR, "tcpserver", "bind: %s", strerror(errno));
     freeaddrinfo(addrinfos);
     return -1;
   }
   freeaddrinfo(addrinfos);
 
   if (listen(server->listen_fd, BACKLOG) < 0) {
-    perror("listen");
+    logger_trace(server->logger, LOG_ERROR, "tcpserver", "listen: %s", strerror(errno));
     return -1;
   }
 
-  callbacks[ELOOP_CALLBACK_READ] = on_incoming_connection;
-  callbacks[ELOOP_CALLBACK_WRITE] = NULL;
-  callbacks[ELOOP_CALLBACK_CLOSE] = NULL;
-
-  return event_loop_add_fd_watch(server->eloop, server->listen_fd, callbacks, server);
+  return event_loop_add_fd_watch(server->eloop, server->listen_fd, ELOOP_CALLBACK_READ, on_incoming_connection, server);
 }
 
 /*

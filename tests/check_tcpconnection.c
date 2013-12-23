@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 
+#include <logger.h>
 #include <eloop.h>
 #include <tcpconnection.h>
 
@@ -22,6 +23,7 @@
 #define MESSAGE_LEN STRLEN(MESSAGE)
 
 struct ELoop *eloop = NULL;
+struct Logger *logger = NULL;
 struct TcpConnection *tcp_connection = NULL;
 int server_fd = -1;
 int client_fd = -1;
@@ -30,13 +32,14 @@ char buf[MESSAGE_LEN];
 void
 setup(void)
 {
-  eloop = event_loop_new();
+  logger = logger_new_null();
+  eloop = event_loop_new(logger);
   tcp_connection = NULL;
 
   server_fd = listen_to(HOST, PORT);
   client_fd = connect_to(HOST, PORT);
 
-  tcp_connection = tcp_connection_with_fd(accept(server_fd, NULL, NULL), eloop);
+  tcp_connection = tcp_connection_with_fd(accept(server_fd, NULL, NULL), logger, eloop);
 
   memset(buf, 0, MESSAGE_LEN);
 }
@@ -47,6 +50,7 @@ void teardown(void)
   close(server_fd);
   tcp_connection_destroy(tcp_connection);
   event_loop_destroy(eloop);
+  logger_destroy(logger);
 }
 
 static void

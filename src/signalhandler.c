@@ -9,11 +9,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 #include <assert.h>
 
 #include <bits/signum.h>
 #include <sys/signalfd.h>
 
+#include "logger.h"
 #include "eloop.h"
 #include "signalhandler.h"
 
@@ -23,6 +25,7 @@ struct SignalHandler {
   sigset_t sigmask;
 
   struct ELoop *eloop;
+  struct Logger *logger;
 
   SignalHandlerCallback callbacks[_NSIG];
   void *data;
@@ -51,35 +54,32 @@ on_signal(int         fd,
 }
 
 struct SignalHandler *
-signal_handler_new(struct ELoop *eloop)
+signal_handler_new(struct Logger *logger,
+                   struct ELoop  *eloop)
 {
   struct SignalHandler *signal_handler = NULL;
-  ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
 
   if ((signal_handler = calloc(1, sizeof(struct SignalHandler))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "signalhandler", "calloc: %s", strerror(errno));
     return NULL;
   }
 
   sigemptyset(&(signal_handler->sigmask));
 
   if ((signal_handler->fd = signalfd(-1, &(signal_handler->sigmask), 0)) < 0) {
-    perror("signalfd");
+    logger_trace(logger, LOG_ERROR, "signalhandler", "signalfd: %s", strerror(errno));
     free(signal_handler);
     return NULL;
   }
 
-  callbacks[ELOOP_CALLBACK_READ] = on_signal;
-  callbacks[ELOOP_CALLBACK_WRITE] = NULL;
-  callbacks[ELOOP_CALLBACK_CLOSE] = NULL;
-
-  if (event_loop_add_fd_watch(eloop, signal_handler->fd, callbacks, signal_handler) < 0) {
-    perror("epoll_ctl");
+  if (event_loop_add_fd_watch(eloop, signal_handler->fd, ELOOP_CALLBACK_READ, on_signal, signal_handler) < 0) {
+    logger_trace(logger, LOG_ERROR, "signalhandler", "epoll_ctl: %s", strerror(errno));
     close(signal_handler->fd);
     free(signal_handler);
     return NULL;
   }
 
+  signal_handler->logger = logger;
   signal_handler->eloop = eloop;
 
   return signal_handler;
@@ -91,7 +91,7 @@ signal_handler_destroy(struct SignalHandler *signal_handler)
   assert(signal_handler != NULL);
 
   if (signal_handler->fd > 0) {
-    event_loop_remove_fd_watch(signal_handler->eloop, signal_handler->fd);
+    event_loop_remove_fd_watch(signal_handler->eloop, signal_handler->fd, ELOOP_CALLBACK_READ);
     close(signal_handler->fd);
   }
 
@@ -110,12 +110,12 @@ signal_handler_add_signal_callback(struct SignalHandler *signal_handler,
   sigaddset(&(signal_handler->sigmask), sig);
 
   if (sigprocmask(SIG_SETMASK, &(signal_handler->sigmask), NULL) != 0) {
-    perror("sigprocmask");
+    logger_trace(signal_handler->logger, LOG_ERROR, "signalhandler", "sigprocmask: %s", strerror(errno));
     return -1;
   }
 
   if (signalfd(signal_handler->fd, &(signal_handler->sigmask), 0) < 0) {
-    perror("signalfd");
+    logger_trace(signal_handler->logger, LOG_ERROR, "signalhandler", "signalfd: %s", strerror(errno));
     return -1;
   }
 
@@ -135,12 +135,12 @@ signal_handler_remove_signal_callback(struct SignalHandler *signal_handler,
   sigdelset(&(signal_handler->sigmask), sig);
 
   if (sigprocmask(SIG_SETMASK, &(signal_handler->sigmask), NULL) != 0) {
-    perror("sigprocmask");
+    logger_trace(signal_handler->logger, LOG_ERROR, "signalhandler", "sigprocmask: %s", strerror(errno));
     return -1;
   }
 
   if (signalfd(signal_handler->fd, &(signal_handler->sigmask), 0) < 0) {
-    perror("signalfd");
+    logger_trace(signal_handler->logger, LOG_ERROR, "signalhandler", "signalfd: %s", strerror(errno));
     return -1;
   }
 

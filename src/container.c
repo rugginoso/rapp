@@ -23,9 +23,8 @@ struct Container {
   struct Logger *logger;
   char *name;
 
-  int (*serve)(void *, struct HTTPRequest *, struct HTTPResponseWriter *);
-
-  int (*destroy)(void *);
+  RappServeCallback serve;
+  RappDestroyCallback destroy;
 };
 
 static int
@@ -94,17 +93,23 @@ container_make(void          *plugin,
     return NULL;
 
   if ((container = calloc(1, sizeof(struct Container))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "loader", "plugin[%s] creation failed error=%s", name, strerror(errno));
+    logger_trace(logger, LOG_ERROR, "loader", "plugin[%s] alloc failed error=%s", name, strerror(errno));
+    return NULL;
+  }
+
+  if ((container->name = strdup(name)) == NULL) {
+    free(container);
+    logger_trace(logger, LOG_ERROR, "loader", "plugin[%s] name alloc failed error=%s", name, strerror(errno));
     return NULL;
   }
 
   if ((handle = plugin_create(container, ac, av, &error)) == NULL) {
-    logger_trace(logger, LOG_ERROR, "loader", "plugin[%s] creation failed error=%i", name, error);
+    free(container->name);
     free(container);
+    logger_trace(logger, LOG_ERROR, "loader", "plugin[%s] creation failed error=%i", name, error);
     return NULL;
   }
 
-  container->name = strdup(name);
   container->logger = logger;
   container->plugin = plugin;
   container->handle = handle;
@@ -164,24 +169,83 @@ container_destroy(struct Container *container)
   logger_trace(container->logger, LOG_INFO, "loader", "unloading plugin[%s] id=%p (%p)", container->name, container, container->plugin);
 
   if (container->destroy(container->handle) == 0) {
+    /* the `null` container doesn't have a handle */
+    if (container->plugin)
       dlclose(container->plugin);
 
-      logger_trace(container->logger, LOG_INFO, "loader", "unloaded plugin[%s]", container->name);
-      free(container->name);
-      free(container);  /* caveat emptor! */
+    logger_trace(container->logger, LOG_INFO, "loader", "unloaded plugin[%s]", container->name);
+    free(container->name);
+    free(container);  /* caveat emptor! */
   }
 }
 
-void
+int
 container_serve(struct Container          *container,
                 struct HTTPRequest        *http_request,
-                struct HTTPResponseWriter *response_writer)
+                struct HTTPResponse *response)
 {
   assert(container != NULL);
   assert(http_request != NULL);
-  assert(response_writer != NULL);
+  assert(response != NULL);
 
-  container->serve(container->handle, http_request, response_writer);
+  return container->serve(container->handle, http_request, response);
+}
+
+static int
+null_serve(struct RappContainer      *handle,
+           struct HTTPRequest        *request,
+           struct HTTPResponse       *response)
+{
+  struct Logger *logger = NULL;
+
+  assert(handle != NULL);
+  assert(request != NULL);
+  assert(response != NULL);
+
+  logger = (struct Logger *)handle;
+  logger_trace(logger, LOG_DEBUG, "null", "received request on unhandled route");
+  return -1;
+}
+
+static int
+null_destroy(struct RappContainer *handle)
+{
+  assert(handle);
+  return 0;
+}
+
+struct Container *
+container_new_custom(struct Logger      *logger,
+                     const char         *tag,
+                     RappServeCallback   serve,
+                     RappDestroyCallback destroy,
+                     void                *user_data)
+{
+  struct Container *container = NULL;
+  if ((container = calloc(1, sizeof(struct Container))) == NULL) {
+    perror("calloc");
+    return NULL;
+  }
+
+  if ((container->name = strdup(tag)) == NULL) {
+    perror("strdup");
+    free(container);
+    return NULL;
+  }
+
+  container->plugin = NULL;
+  container->handle = user_data;
+  container->logger = logger;
+  container->serve = serve;
+  container->destroy = destroy;
+  return container;
+}
+
+struct Container *
+container_new_null(struct Logger *logger,
+                   const char    *tag)
+{
+  return container_new_custom(logger, tag, null_serve, null_destroy, logger);
 }
 
 /*

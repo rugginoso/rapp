@@ -14,6 +14,7 @@
 
 #include "logger.h"
 #include "eloop.h"
+#include "httprouter.h"
 #include "httpserver.h"
 #include "signalhandler.h"
 #include "container.h"
@@ -22,7 +23,8 @@
 const char *argp_program_version;
 
 static void
-on_signal(struct SignalHandler *signal_handler, void *data)
+on_signal(struct SignalHandler *signal_handler,
+          void                 *data)
 {
   struct ELoop *eloop = NULL;
 
@@ -38,6 +40,7 @@ main(int argc, char *argv[])
 {
   struct Logger *logger = NULL;
   struct ELoop *eloop = NULL;
+  struct HTTPRouter *http_router = NULL;
   struct HTTPServer *http_server = NULL;
   struct SignalHandler *signal_handler = NULL;
   struct Container *container = NULL;
@@ -47,6 +50,7 @@ main(int argc, char *argv[])
   int num, i, res;
   char *confpath;
   struct RappArguments arguments;
+
   argp_program_version = rapp_get_version_full();
   config_parse_early_commandline(&arguments, argc, argv);
 
@@ -121,13 +125,16 @@ main(int argc, char *argv[])
                "rapp %s (rev %s) starting... (PID=%d)",
                rapp_get_version(), rapp_get_version_sha1(), getpid());
 
-  eloop = event_loop_new();
+  eloop = event_loop_new(logger);
 
-  signal_handler = signal_handler_new(eloop);
+  signal_handler = signal_handler_new(logger, eloop);
   signal_handler_add_signal_callback(signal_handler, SIGINT, on_signal, eloop);
   signal_handler_add_signal_callback(signal_handler, SIGTERM, on_signal, eloop);
 
-  http_server = http_server_new(eloop);
+  http_router = http_router_new(logger);
+  http_router_bind(http_router, "/", container);
+
+  http_server = http_server_new(logger, eloop, http_router);
 
   http_server_start(http_server, address, port);
   free(address);
@@ -136,6 +143,7 @@ main(int argc, char *argv[])
   event_loop_run(eloop);
 
   http_server_destroy(http_server);
+  http_router_destroy(http_router);
   signal_handler_destroy(signal_handler);
   event_loop_destroy(eloop);
 

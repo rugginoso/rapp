@@ -24,22 +24,26 @@ rapp_get_abi_version()
 
 
 int
-rapp_serve(struct RappContainer      *handle,
-           struct HTTPRequest        *http_request,
-           struct HTTPResponseWriter *response_writer)
+rapp_serve(struct RappContainer *handle,
+           struct HTTPRequest   *http_request,
+           struct HTTPResponse  *response)
 {
   int err = -1;
   if (handle) {
     size_t len = strlen(handle->message);
+    char *len_s = NULL;
 
-    http_response_writer_printf(response_writer, "HTTP/1.1 200 OK" HTTP_EOL);
-    http_response_writer_printf(response_writer, "Content-Type: text/plain; charset=utf-8" HTTP_EOL);
-    http_response_writer_printf(response_writer, "Content-Length: %d" HTTP_EOL, len);
+    http_response_write_status_line_by_code(response, 200);
+    http_response_write_header(response, "Content-Type", "text/plain; charset=utf-8");
 
-    http_response_writer_notify_headers_sent(response_writer);
+    asprintf(&len_s, "%d", len);
+    http_response_write_header(response, "Content-Length", len_s);
+    free(len_s);
 
-    http_response_writer_write_data(response_writer, handle->message, len);
-    http_response_writer_notify_body_sent(response_writer);
+    http_response_end_headers(response);
+
+    http_response_append_data(response, handle->message, len);
+
     err = 0;
   }
   return err;
@@ -54,7 +58,10 @@ rapp_destroy(struct RappContainer *handle)
 }
 
 struct RappContainer *
-rapp_create(void *cookie, int argc, char **argv, int *err)
+rapp_create(void  *cookie,
+            int    argc,
+            char **argv,
+            int   *err)
 {
   struct RappContainer *handle = calloc(1, sizeof(struct RappContainer));
   if (handle) {

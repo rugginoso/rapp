@@ -10,10 +10,12 @@
 
 #include <inttypes.h>
 
+struct Logger;
 struct ELoop;
+struct HTTPRouter;
 struct HTTPServer;
 
-struct HTTPServer *http_server_new(struct ELoop *eloop);
+struct HTTPServer *http_server_new(struct Logger *logger, struct ELoop *eloop, struct HTTPRouter *router);
 void http_server_destroy(struct HTTPServer *http_server);
 
 int http_server_start(struct HTTPServer *http_server, const char *host, uint16_t port);

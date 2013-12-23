@@ -9,8 +9,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include <assert.h>
 
+#include "logger.h"
 #include "collector.h"
 
 struct CollectEntry {
@@ -22,18 +24,21 @@ struct CollectEntry {
 
 struct Collector {
   struct CollectEntry *collect_entries_list;
+  struct Logger *logger;
 };
 
 
 struct Collector *
-collector_new(void)
+collector_new(struct Logger *logger)
 {
   struct Collector *collector = NULL;
 
   if ((collector = calloc(1, sizeof(struct Collector))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "collector", "calloc: %s", strerror(errno));
     return NULL;
   }
+
+  collector->logger = logger;
 
   return collector;
 }
@@ -65,7 +70,7 @@ void collector_schedule_free(struct Collector  *collector,
   }
 
   if ((entry = calloc(1, sizeof(struct CollectEntry))) == NULL) {
-    perror("calloc");
+    logger_trace(collector->logger, LOG_ERROR, "collector", "calloc: %s", strerror(errno));
     return;
   }
 

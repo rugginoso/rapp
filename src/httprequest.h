@@ -13,14 +13,16 @@
 
 typedef void (*HTTPRequestParseFinishCallback)(struct HTTPRequest *request, void *data);
 
+struct Logger;
 
-struct HTTPRequest *http_request_new(void);
+struct HTTPRequest *http_request_new(struct Logger *logger);
 void http_request_destroy(struct HTTPRequest *request);
 
 void http_request_set_parse_finish_callback(struct HTTPRequest *request, HTTPRequestParseFinishCallback callback, void *data);
 
 int http_request_append_data(struct HTTPRequest *request, void *data, size_t length);
 
+struct HTTPRequest *http_request_new_fake_url(struct Logger *logger, const char *url);
 
 #endif /* HTTPREQUEST_H */
 /*

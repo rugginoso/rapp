@@ -10,11 +10,13 @@
 
 #include <signal.h>
 
+#include <logger.h>
 #include <eloop.h>
 #include <signalhandler.h>
 
 struct ELoop *eloop = NULL;
 struct SignalHandler *signal_handler = NULL;
+struct Logger *logger = NULL;
 
 static void
 on_signal(struct SignalHandler *signal_handler, void *data)
@@ -40,14 +42,16 @@ on_posix_signal(int sig)
 void
 setup(void)
 {
-  eloop = event_loop_new();
-  signal_handler = signal_handler_new(eloop);
+  logger = logger_new_null();
+  eloop = event_loop_new(logger);
+  signal_handler = signal_handler_new(logger, eloop);
 }
 
 void teardown(void)
 {
   signal_handler_destroy(signal_handler);
   event_loop_destroy(eloop);
+  logger_destroy(logger);
 }
 
 START_TEST(test_signal_handler_calls_callback_when_signal_arrives)

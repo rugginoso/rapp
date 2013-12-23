@@ -9,10 +9,12 @@
 
 #include <check.h>
 
+#include "logger.h"
 #include "httprequest.h"
 
 
 struct HTTPRequest *http_request = NULL;
+struct Logger *logger = NULL;
 static int finish_called = 0;
 static const char *HTTP_METHODS_FIXTURES[HTTP_METHOD_MAX] = {
   "DELETE",
@@ -51,13 +53,15 @@ void finish_func(struct HTTPRequest *request, void *data)
 
 void setup()
 {
-  http_request = http_request_new();
+  logger = logger_new_null();
+  http_request = http_request_new(logger);
   finish_called = 0;
 }
 
 void teardown()
 {
   http_request_destroy(http_request);
+  logger_destroy(logger);
 }
 
 START_TEST(test_httprequest_error_on_invalid_request)
@@ -88,7 +92,7 @@ START_TEST(test_httprequest_gets_the_right_method)
 
   while (i < HTTP_METHOD_MAX) {
     http_request_destroy(http_request);
-    http_request = http_request_new();
+    http_request = http_request_new(logger);
 
     asprintf(&request, "%s /hello/world/ HTTP/1.1\r\n\r\n", HTTP_METHODS_FIXTURES[i]);
     append_data_return = http_request_append_data(http_request, request, strlen(request));
