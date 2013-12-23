@@ -21,7 +21,7 @@ START_TEST(test_httprouter_new_destroy)
   struct Logger *logger = NULL;
   struct HTTPRouter *router = NULL;
   logger = logger_new_null();
-  router = http_router_new(logger);
+  router = http_router_new(logger, ROUTE_MATCH_FIRST);
   ck_assert(router != NULL);
   http_router_destroy(router);
   logger_destroy(logger);
@@ -37,7 +37,7 @@ START_TEST(test_httprouter_serve_without_containers)
 
   logger = logger_new_null();
 
-  router = http_router_new(logger);
+  router = http_router_new(logger, ROUTE_MATCH_FIRST);
   ck_assert(router != NULL);
 
   ret = http_router_serve(router, (struct HTTPRequest *)&logger, (struct HTTPResponse *)&logger); /* FIXME */
@@ -80,7 +80,7 @@ START_TEST(test_httprouter_default_container_alone)
   logger = logger_new_null();
   debug = container_new_custom(logger, "debug", debug_serve, debug_destroy, &debug_data);
 
-  router = http_router_new(logger);
+  router = http_router_new(logger, ROUTE_MATCH_FIRST);
   ck_assert(router != NULL);
   ret = http_router_set_default_container(router, debug);
   ck_assert_int_eq(ret, 0);
@@ -109,7 +109,7 @@ check_route(const char *route)
   logger = logger_new_null();
   debug = container_new_custom(logger, "debug", debug_serve, debug_destroy, &debug_data);
 
-  router = http_router_new(logger);
+  router = http_router_new(logger, ROUTE_MATCH_FIRST);
   ck_assert(router != NULL);
   ret = http_router_bind(router, route, debug);
   ck_assert_int_eq(ret, 0);
@@ -161,7 +161,7 @@ check_many_routes(const char *route_tmpl,
   ck_assert(debug_data != NULL);
 
   logger = logger_new_null();
-  router = http_router_new(logger);
+  router = http_router_new(logger, ROUTE_MATCH_FIRST);
   ck_assert(router != NULL);
 
   /* setup */

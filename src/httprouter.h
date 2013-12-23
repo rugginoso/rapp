@@ -15,7 +15,12 @@ struct Logger;
 
 struct HTTPRouter;
 
-struct HTTPRouter *http_router_new(struct Logger *logger);
+enum RouteMatchMode {
+  ROUTE_MATCH_FIRST,
+  ROUTE_MATCH_LONGEST
+};
+
+struct HTTPRouter *http_router_new(struct Logger *logger, enum RouteMatchMode match_mode);
 void http_router_destroy(struct HTTPRouter *router);
 
 int http_router_set_default_container(struct HTTPRouter *router, struct Container *container);
