@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #include <assert.h>
 
 #include "logger.h"
@@ -20,10 +21,14 @@
 /* HTTP/1.1 */
 #define PROTOCOL_LEN 8
 
+/* %a, %d %b %Y %H:%M:%S %z */
+#define DATETIME_LEN 32
 
 struct HTTPResponse {
   char *buffer;
   size_t buffer_length;
+
+  const char *server_name;
 
   struct Logger *logger;
 };
@@ -96,17 +101,33 @@ static const struct HTTPStatus http_statuses[] = {
   {0, NULL}
 };
 
+static const char *error_body = \
+"<!DOCTYPE html>"       \
+"<html>"                \
+  "<head>"              \
+    "<title>%s</title>" \
+  "</head>"             \
+  "<body>"              \
+    "<h1>%s</h1>"       \
+  "</body>"             \
+"</html>";
+
+
 struct HTTPResponse*
-http_response_new(struct Logger *logger)
+http_response_new(struct Logger *logger, const char *server_name)
 {
   struct HTTPResponse *response = NULL;
 
+  assert(logger != NULL);
+  assert(server_name != NULL);
+
   if ((response = calloc(1, sizeof(struct HTTPResponse))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "httpresponse", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 
   response->logger = logger;
+  response->server_name = server_name;
 
   return response;
 }
@@ -158,7 +179,7 @@ ssize_t http_response_write_status_line(struct HTTPResponse *response,
 
   snprintf(status, status_len, "HTTP/1.1 %s" HTTP_EOL, status_line);
 
-  return http_response_append_data(response, status, status_len);
+  return http_response_append_data(response, status, status_len - 1);
 }
 
 ssize_t
@@ -182,10 +203,39 @@ http_response_write_header(struct HTTPResponse *response,
   return ret;
 }
 
-void
+ssize_t
 http_response_end_headers(struct HTTPResponse *response)
 {
-  http_response_append_data(response, HTTP_EOL, strlen(HTTP_EOL));
+  char *datetime = alloca(DATETIME_LEN);
+  time_t now = 0;
+  ssize_t total_length = 0;
+  ssize_t ret = 0;
+
+  assert(response != NULL);
+
+  if ((ret = http_response_write_header(response, "Server", response->server_name)) < 0)
+    return -1;
+  total_length += ret;
+
+  if (time(&now) < 0) {
+    logger_trace(response->logger, LOG_ERROR, "httpresponse", "time: %s", error(errno));
+    return -1;
+  }
+
+  if (strftime(datetime, DATETIME_LEN, "%a, %d %b %Y %H:%M:%S %z", gmtime(&now)) == 0) {
+    logger_trace(response->logger, LOG_ERROR, "httpresponse", "strftime: error formatting datetime");
+    return -1;
+  }
+
+  if ((ret = http_response_write_header(response, "Date", datetime)) < 0)
+    return -1;
+  total_length += ret;
+
+  if ((ret = http_response_append_data(response, HTTP_EOL, strlen(HTTP_EOL))) < 0)
+    return -1;
+  total_length += ret;
+
+  return total_length;
 }
 
 ssize_t
@@ -198,7 +248,7 @@ http_response_append_data(struct HTTPResponse *response,
   assert(length > 0);
 
   if ((response->buffer = realloc(response->buffer, response->buffer_length + length)) == NULL) {
-    logger_trace(response->logger, LOG_ERROR, "httpresponse", "realloc: %s", strerror(errno));
+    LOGGER_PERROR(response->logger, "realloc");
     return -1;
   }
 
@@ -233,12 +283,77 @@ http_response_read_data(struct HTTPResponse *response,
   else {
     memmove(response->buffer, &(response->buffer[avaiable_length]), response->buffer_length);
     if ((response->buffer = realloc(response->buffer, response->buffer_length)) == NULL) {
-      logger_trace(response->logger, LOG_ERROR, "httpresponse", "realloc: %s", strerror(errno));
+      LOGGER_PERROR(response->logger, "realloc");
       return -1;
     }
   }
 
   return avaiable_length;
+}
+
+ssize_t
+http_response_write_error_by_code(struct HTTPResponse *response,
+                                  unsigned             code)
+{
+  const char *message = NULL;
+  char *body = NULL;
+  char *len_s = NULL;
+  ssize_t total_length = 0;
+  ssize_t ret;
+
+  assert(response != NULL);
+
+  if ((message = status_message_by_code(code)) == NULL)
+    return -1;
+
+  if (asprintf(&body, error_body, message, message) < 0) {
+    LOGGER_PERROR(response->logger, "asprintf: body");
+    return -1;
+  }
+
+  if (asprintf(&len_s, "%d", strlen(body)) < 0) {
+    LOGGER_PERROR(response->logger, "asprintf: len_s");
+    free(body);
+    return -1;
+  }
+
+  if ((ret = http_response_write_status_line_by_code(response, code)) < 0) {
+    free(body);
+    free(len_s);
+    return -1;
+  }
+  total_length += ret;
+
+  if ((ret = http_response_write_header(response, "Content-Type", "text/html")) < 0) {
+    free(body);
+    free(len_s);
+    return -1;
+  }
+  total_length += ret;
+
+  if ((ret = http_response_write_header(response, "Content-Length", len_s)) < 0) {
+    free(body);
+    free(len_s);
+    return -1;
+  }
+  free(len_s);
+  total_length += ret;
+
+  if ((ret = http_response_end_headers(response)) < 0) {
+    free(body);
+    return -1;
+  }
+  total_length += ret;
+
+  if (ret = http_response_append_data(response, body, strlen(body)) < 0) {
+    free(body);
+    return -1;
+  }
+  total_length += ret;
+
+  free(body);
+
+  return total_length;
 }
 
 /*

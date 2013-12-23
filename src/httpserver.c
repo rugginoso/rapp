@@ -65,7 +65,7 @@ http_server_new(struct Logger     *logger,
   struct HTTPServer *http_server = NULL;
 
   if ((http_server = calloc(1, sizeof(struct HTTPServer))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "httpserver", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 

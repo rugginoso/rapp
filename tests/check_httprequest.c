@@ -125,6 +125,41 @@ START_TEST(test_httprequest_gets_the_right_url)
 }
 END_TEST
 
+START_TEST(test_httprequest_gets_the_right_url_field)
+{
+  char *request = "GET http://user:pass@example.com:8080/hello/?q=greeting#world HTTP/1.1\r\n\r\n";
+  const char *request_buffer = NULL;
+  struct MemoryRange field_range;
+  char *field = NULL;
+  int i = 0;
+  char *expected[HTTP_URL_FIELD_MAX] = {
+    "http",
+    "example.com",
+    "8080",
+    "/hello/",
+    "q=greeting",
+    "world",
+    "user:pass",
+  };
+
+  http_request_append_data(http_request, request, strlen(request));
+
+  request_buffer = http_request_get_buffer(http_request);
+
+  while (i < HTTP_URL_FIELD_MAX) {
+    ck_assert_int_eq(http_request_get_url_field_range(http_request, i, &field_range), 0);
+    ck_assert(field_range.length > 0);
+
+    EXTRACT_MEMORY_RANGE(field, request_buffer, field_range);
+    field[field_range.length] = 0;
+
+    ck_assert_str_eq(field, expected[i]);
+
+    i++;
+  }
+}
+END_TEST
+
 START_TEST(test_httprequest_gets_all_the_headers)
 {
   char *request = "GET /hello/world/ HTTP/1.1\r\nHost: someserver\r\nAccept: text/html\r\n\r\n";
@@ -237,6 +272,7 @@ httprequest_suite(void)
   tcase_add_test(tc, test_httprequest_calls_callback_when_finish_to_parse_request);
   tcase_add_test(tc, test_httprequest_gets_the_right_method);
   tcase_add_test(tc, test_httprequest_gets_the_right_url);
+  tcase_add_test(tc, test_httprequest_gets_the_right_url_field);
   tcase_add_test(tc, test_httprequest_gets_all_the_headers);
   tcase_add_test(tc, test_httprequest_gets_a_specific_header);
   tcase_add_test(tc, test_httprequest_error_on_not_existent_header);

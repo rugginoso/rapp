@@ -43,6 +43,7 @@ main(int argc, char *argv[])
   struct SignalHandler *signal_handler = NULL;
   struct Container *container = NULL;
   struct Config *config = NULL;
+  enum RouteMatchMode match_mode = ROUTE_MATCH_FIRST;
   char *address;
   long port;
   int num, i, res;
@@ -128,7 +129,7 @@ main(int argc, char *argv[])
   signal_handler_add_signal_callback(signal_handler, SIGINT, on_signal, eloop);
   signal_handler_add_signal_callback(signal_handler, SIGTERM, on_signal, eloop);
 
-  http_router = http_router_new(logger);
+  http_router = http_router_new(logger, match_mode);
   http_router_bind(http_router, "/", container);
 
   http_server = http_server_new(logger, eloop, http_router);

@@ -40,7 +40,7 @@ tcp_connection_with_fd(int            fd,
   assert(eloop != NULL);
 
   if ((connection = calloc(1, sizeof(struct TcpConnection))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "tcpconnection", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 

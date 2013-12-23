@@ -61,6 +61,17 @@ enum HTTPMethod {
   HTTP_METHOD_MAX
 };
 
+enum HTTPURLField {
+  HTTP_URL_FIELD_SCHEMA,
+  HTTP_URL_FIELD_HOST,
+  HTTP_URL_FIELD_PORT,
+  HTTP_URL_FIELD_PATH,
+  HTTP_URL_FIELD_QUERY,
+  HTTP_URL_FIELD_FRAGMENT,
+  HTTP_URL_FIELD_USERINFO,
+  HTTP_URL_FIELD_MAX
+};
+
 struct HTTPRequest;
 
 const char *http_request_get_buffer(struct HTTPRequest *request);
@@ -68,6 +79,7 @@ const char *http_request_get_buffer(struct HTTPRequest *request);
 enum HTTPMethod http_request_get_method(struct HTTPRequest *request);
 
 void http_request_get_url_range(struct HTTPRequest *request, struct MemoryRange *range);
+int http_request_get_url_field_range(struct HTTPRequest *request, enum HTTPURLField field, struct MemoryRange *range);
 
 int http_request_get_header_value_range(struct HTTPRequest *request, const char *header_name, struct MemoryRange *range);
 void http_request_get_headers_ranges(struct HTTPRequest *request, struct HeaderMemoryRange **ranges, unsigned *n_ranges);

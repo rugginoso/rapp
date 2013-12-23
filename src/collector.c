@@ -34,7 +34,7 @@ collector_new(struct Logger *logger)
   struct Collector *collector = NULL;
 
   if ((collector = calloc(1, sizeof(struct Collector))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "collector", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 
@@ -70,7 +70,7 @@ void collector_schedule_free(struct Collector  *collector,
   }
 
   if ((entry = calloc(1, sizeof(struct CollectEntry))) == NULL) {
-    logger_trace(collector->logger, LOG_ERROR, "collector", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(collector->logger, "calloc");
     return;
   }
 

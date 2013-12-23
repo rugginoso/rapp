@@ -17,6 +17,7 @@
 #include "httpresponse.h"
 #include "httpconnection.h"
 #include "httprouter.h"
+#include "rapp/rapp_version.h"
 
 
 #define BUFSIZE 80 * 1024
@@ -47,7 +48,7 @@ on_read(struct TcpConnection *tcp_connection,
   http_connection = (struct HTTPConnection *)data;
 
   if ((got = tcp_connection_read_data(tcp_connection, buffer, BUFSIZE)) < 0) {
-    logger_trace(http_connection->logger, LOG_ERROR, "httpconnection", "read: %s", strerror(errno));
+    LOGGER_PERROR(http_connection->logger, "read");
     http_connection->finish_callback(http_connection, http_connection->data);
     return;
   }
@@ -118,7 +119,7 @@ http_connection_new(struct Logger        *logger,
   assert(tcp_connection != NULL);
 
   if ((http_connection = calloc(1, sizeof(struct HTTPConnection))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "httpconnection", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 
@@ -128,7 +129,7 @@ http_connection_new(struct Logger        *logger,
   }
   http_request_set_parse_finish_callback(http_connection->request, on_parse_finish, http_connection);
 
-  if ((http_connection->response = http_response_new(http_connection->logger)) == NULL) {
+  if ((http_connection->response = http_response_new(logger, rapp_get_banner())) == NULL) {
     free(http_connection->request);
     free(http_connection);
     return NULL;

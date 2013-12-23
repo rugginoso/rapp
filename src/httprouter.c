@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include "httprouter.h"
 #include "container.h"
@@ -41,10 +42,12 @@ struct HTTPRouter {
   struct Logger *logger;
   struct Container *null;
   struct Container *starter; /* because `default` is a keyword. */
+  enum RouteMatchMode match_mode;
 };
 
 struct HTTPRouter *
-http_router_new(struct Logger *logger)
+http_router_new(struct Logger      *logger,
+                enum RouteMatchMode match_mode)
 {
   struct HTTPRouter *router = NULL;
   struct Container *null = NULL;
@@ -52,12 +55,12 @@ http_router_new(struct Logger *logger)
   assert(logger);
 
   if ((null = container_new_null(logger, "default")) == NULL) {
-    /* TODO trace */
+    /* error already logged */ 
     return NULL;
   }
 
   if ((router = calloc(1, sizeof(struct HTTPRouter))) == NULL) {
-    perror("calloc");
+    LOGGER_PERROR(router->logger, "calloc");
     container_destroy(null);
     return NULL;
   }
@@ -65,6 +68,7 @@ http_router_new(struct Logger *logger)
   router->logger = logger;
   router->null = null;
   router->last = &router->pack;
+  router->match_mode = match_mode;
 
   return router;
 }
@@ -190,6 +194,7 @@ strmatch(const char *s1,
   return match;
 }
 
+
 int
 http_router_serve(struct HTTPRouter         *router,
                   struct HTTPRequest        *request,
@@ -219,8 +224,15 @@ http_router_serve(struct HTTPRouter         *router,
     for (i = 0; !found && i < pack->binding_num; i++) {
       int current = strmatch(pack->bindings[i].route, raw_req + uri_range.offset, uri_range.length);
       if (current >= pack->bindings[i].route_len) {
+        /* woot! a match! let's update the candidate */
         container = pack->bindings[i].container;
-        found = 1;
+        if (router->match_mode == ROUTE_MATCH_FIRST) {
+          found = 1;
+        }
+        /*
+         * else we scan all the routes and automatically update
+         * the container to the longest match we find.
+         */
       }
     }
   }

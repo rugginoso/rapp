@@ -43,7 +43,7 @@ on_signal(int         fd,
   signal_handler = (struct SignalHandler *)data;
 
   if (read(fd, &siginfo, sizeof(struct signalfd_siginfo)) < 0) {
-    perror("read");
+    LOGGER_PERROR(signal_handler->logger, "read");
     return -1;
   }
 
@@ -60,20 +60,20 @@ signal_handler_new(struct Logger *logger,
   struct SignalHandler *signal_handler = NULL;
 
   if ((signal_handler = calloc(1, sizeof(struct SignalHandler))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "signalhandler", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 
   sigemptyset(&(signal_handler->sigmask));
 
   if ((signal_handler->fd = signalfd(-1, &(signal_handler->sigmask), 0)) < 0) {
-    logger_trace(logger, LOG_ERROR, "signalhandler", "signalfd: %s", strerror(errno));
+    LOGGER_PERROR(logger, "signalfd");
     free(signal_handler);
     return NULL;
   }
 
   if (event_loop_add_fd_watch(eloop, signal_handler->fd, ELOOP_CALLBACK_READ, on_signal, signal_handler) < 0) {
-    logger_trace(logger, LOG_ERROR, "signalhandler", "epoll_ctl: %s", strerror(errno));
+    /* error already logged */
     close(signal_handler->fd);
     free(signal_handler);
     return NULL;
@@ -110,12 +110,12 @@ signal_handler_add_signal_callback(struct SignalHandler *signal_handler,
   sigaddset(&(signal_handler->sigmask), sig);
 
   if (sigprocmask(SIG_SETMASK, &(signal_handler->sigmask), NULL) != 0) {
-    logger_trace(signal_handler->logger, LOG_ERROR, "signalhandler", "sigprocmask: %s", strerror(errno));
+    LOGGER_PERROR(signal_handler->logger, "sigprocmask");
     return -1;
   }
 
   if (signalfd(signal_handler->fd, &(signal_handler->sigmask), 0) < 0) {
-    logger_trace(signal_handler->logger, LOG_ERROR, "signalhandler", "signalfd: %s", strerror(errno));
+    LOGGER_PERROR(signal_handler->logger, "signalfd");
     return -1;
   }
 
@@ -135,12 +135,12 @@ signal_handler_remove_signal_callback(struct SignalHandler *signal_handler,
   sigdelset(&(signal_handler->sigmask), sig);
 
   if (sigprocmask(SIG_SETMASK, &(signal_handler->sigmask), NULL) != 0) {
-    logger_trace(signal_handler->logger, LOG_ERROR, "signalhandler", "sigprocmask: %s", strerror(errno));
+    LOGGER_PERROR(signal_handler->logger, "sigprocmask");
     return -1;
   }
 
   if (signalfd(signal_handler->fd, &(signal_handler->sigmask), 0) < 0) {
-    logger_trace(signal_handler->logger, LOG_ERROR, "signalhandler", "signalfd: %s", strerror(errno));
+    LOGGER_PERROR(signal_handler->logger, "signalfd");
     return -1;
   }
 

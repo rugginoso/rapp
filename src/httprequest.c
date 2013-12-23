@@ -23,6 +23,7 @@ struct HTTPRequest {
   unsigned current_header;
 
   struct MemoryRange url_range;
+  struct MemoryRange url_field_ranges[HTTP_URL_FIELD_MAX];
   struct HeaderMemoryRange headers_ranges[HTTP_REQUEST_MAX_HEADERS];
   struct MemoryRange body_range;
 
@@ -41,11 +42,25 @@ on_url(http_parser *parser,
        size_t       length)
 {
   struct HTTPRequest *request = NULL;
+  struct http_parser_url url;
+  int i = 0;
 
   request = (struct HTTPRequest *)parser->data;
 
+  if (http_parser_parse_url(at, length, 0, &url) != 0)
+    return -1;
+
   request->url_range.offset = at - request->buffer;
   request->url_range.length = length;
+
+  while (i < HTTP_URL_FIELD_MAX) {
+    if (url.field_set & (1 << i)) {
+      request->url_field_ranges[i].offset = (at - request->buffer) + url.field_data[i].off;
+      request->url_field_ranges[i].length = url.field_data[i].len;
+    }
+
+    i++;
+  }
 
   return 0;
 }
@@ -119,7 +134,7 @@ http_request_new(struct Logger *logger)
   struct HTTPRequest *request = NULL;
 
   if ((request = calloc(1, sizeof(struct HTTPRequest))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "httprequest", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 
@@ -171,7 +186,7 @@ http_request_append_data(struct HTTPRequest *request,
   ssize_t parsed = -1;
 
   if ((request->buffer = realloc(request->buffer, request->buffer_length + length)) == NULL) {
-    logger_trace(request->logger, LOG_ERROR, "httprequest", "realloc: %s", strerror(errno));
+    LOGGER_PERROR(request->logger, "realloc");
     return -1;
   }
   memcpy(&(request->buffer[request->buffer_length]), data, length);
@@ -217,6 +232,22 @@ http_request_get_url_range(struct HTTPRequest *request,
   assert(range != NULL);
 
   *range = request->url_range;
+}
+
+int
+http_request_get_url_field_range(struct HTTPRequest *request,
+                                 enum HTTPURLField   field,
+                                 struct MemoryRange *range)
+{
+  assert(request != NULL);
+  assert(range != NULL);
+
+  if (request->url_field_ranges[field].length == 0)
+    return -1;
+
+  *range = request->url_field_ranges[field];
+
+  return 0;
 }
 
 int
@@ -287,7 +318,7 @@ http_request_new_fake_url(struct Logger *logger,
 
   request_len = strlen(url);
   if ((request_url = strdup(url)) == NULL) {
-    logger_trace(logger, LOG_ERROR, "httprequest", "strdup: %s", strerror(errno));
+    LOGGER_PERROR(logger, "strdup");
     return NULL;
   }
 
