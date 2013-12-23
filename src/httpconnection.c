@@ -91,7 +91,6 @@ static void
 on_parse_finish(struct HTTPRequest *request, void *data)
 {
   struct HTTPConnection *http_connection = NULL;
-  struct HTTPResponse *response = NULL;
 
   assert(data != NULL);
 
@@ -99,7 +98,7 @@ on_parse_finish(struct HTTPRequest *request, void *data)
 
   tcp_connection_set_callbacks(http_connection->tcp_connection, NULL, on_write, on_close, http_connection);
 
-  http_router_serve(http_connection->router, request, response);
+  http_router_serve(http_connection->router, request, http_connection->response);
 }
 
 struct HTTPConnection *
