@@ -89,5 +89,14 @@ if(ENABLE_TESTS)
     )
     add_test(test_httpresponse ${EXECUTABLE_OUTPUT_PATH}/check_httpresponse)
 
+    add_executable(check_httprouter check_httprouter.c)
+    target_link_libraries(check_httprouter
+        rapp_core
+	rapp_test
+	${LIBCHECK_LIBRARY}
+	${LIBCHECK_DEPS}
+    )
+    add_test(test_httprouter ${EXECUTABLE_OUTPUT_PATH}/check_httprouter)
+
 endif(ENABLE_TESTS)
 

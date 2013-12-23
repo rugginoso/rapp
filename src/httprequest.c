@@ -260,6 +260,36 @@ http_request_get_body_range(struct HTTPRequest *request,
 
   *range = request->body_range;
 }
+
+
+struct HTTPRequest *
+http_request_new_fake_url(const char *url)
+{
+  struct HTTPRequest *request = NULL;
+  char *request_url = NULL;
+  size_t request_len = 0;
+
+  assert(url);
+
+  request_len = strlen(url);
+  if ((request_url = strdup(url)) == NULL) {
+    perror("strdup");
+    return NULL;
+  }
+
+  if ((request = http_request_new()) == NULL) {
+    free(request_url);
+    /* perror() already done inside http_request_new */
+    return NULL;
+  }
+
+  request->buffer = request_url;
+  request->buffer_length = request_len;
+  request->url_range.offset = 0;
+  request->url_range.length = request_len;
+  return request;
+}
+
 /*
  * vim: expandtab shiftwidth=2 tabstop=2:
  */

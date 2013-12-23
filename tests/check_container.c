@@ -141,6 +141,38 @@ START_TEST(test_container_logger_get)
 }
 END_TEST
 
+START_TEST(test_container_new_null_new_destroy)
+{
+  struct Logger *logger = NULL;
+  struct Container *container = NULL;
+  logger = logger_new_null();
+  container = container_new_null(logger, "test");
+  ck_assert(container != NULL);
+  container_destroy(container);
+  logger_destroy(logger);
+}
+END_TEST
+
+/* TODO: check logger output */
+START_TEST(test_container_new_null_serve)
+{
+  int ret = 0;
+  struct Logger *logger = NULL;
+  struct Container *container = NULL;
+
+  logger = logger_new_null();
+
+  container = container_new_null(logger, "test");
+  ck_assert(container != NULL);
+  ret = container_serve(container,
+                        (struct HTTPRequest *)logger,
+                        (struct HTTPResponse *)logger); /* FIXME */
+  ck_assert_int_eq(ret, -1);
+
+  container_destroy(container);
+  logger_destroy(logger);
+}
+END_TEST
 
 
 static Suite *
@@ -155,6 +187,8 @@ container_suite(void)
   tcase_add_test(tc, test_container_new_dummy);
   tcase_add_test(tc, test_container_serve_dummy);
   tcase_add_test(tc, test_container_logger_get);
+  tcase_add_test(tc, test_container_new_null_new_destroy);
+  tcase_add_test(tc, test_container_new_null_serve);
   suite_add_tcase(s, tc);
 
   return s;
