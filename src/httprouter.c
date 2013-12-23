@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include "httprouter.h"
 #include "container.h"
@@ -57,7 +58,7 @@ http_router_new(struct Logger *logger)
   }
 
   if ((router = calloc(1, sizeof(struct HTTPRouter))) == NULL) {
-    perror("calloc");
+    logger_trace(router->logger, LOG_ERROR, "router", "calloc: %s", strerror(errno));
     container_destroy(null);
     return NULL;
   }

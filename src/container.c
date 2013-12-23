@@ -223,12 +223,12 @@ container_new_custom(struct Logger      *logger,
 {
   struct Container *container = NULL;
   if ((container = calloc(1, sizeof(struct Container))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "loader", "calloc: %s", strerror(errno));
     return NULL;
   }
 
   if ((container->name = strdup(tag)) == NULL) {
-    perror("strdup");
+    logger_trace(logger, LOG_ERROR, "loader", "strdup: %s", strerror(errno));
     free(container);
     return NULL;
   }

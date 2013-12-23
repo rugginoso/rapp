@@ -43,7 +43,7 @@ on_signal(int         fd,
   signal_handler = (struct SignalHandler *)data;
 
   if (read(fd, &siginfo, sizeof(struct signalfd_siginfo)) < 0) {
-    perror("read");
+    logger_trace(signal_handler->logger, LOG_ERROR, "signalhandler", "read: %s", strerror(errno));
     return -1;
   }
 
