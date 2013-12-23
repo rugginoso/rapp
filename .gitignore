@@ -6,5 +6,4 @@ install_manifest.txt
 build
 tags
 config.h
-src/version.c
 .syntastic_c_config

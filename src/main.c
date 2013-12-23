@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <config.h>
 #include "logger.h"
 #include "eloop.h"
 #include "httprouter.h"
@@ -121,7 +122,7 @@ main(int argc, char *argv[])
 
   logger_trace(logger, LOG_INFO, "rapp",
                "rapp %s (rev %s) starting... (PID=%d)",
-               rapp_get_version(), rapp_get_version_sha1(), getpid());
+               RAPP_VERSION, RAPP_VERSION_GIT_SHA1, getpid());
 
   eloop = event_loop_new(logger);
 

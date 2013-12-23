@@ -1,11 +1,6 @@
 #include <string.h>
+#include <config.h>
 #include <rapp/rapp_version.h>
-#define VERSION "dev"
-#define GIT_SHA1 "@GIT_SHA1@"
-#define GIT_TAG "@GIT_TAG@"
-#define FULL_VERSION VERSION "." GIT_SHA1
-#define BANNER "RApp-" FULL_VERSION
-
 
 const char*
 rapp_get_version_full(void)
