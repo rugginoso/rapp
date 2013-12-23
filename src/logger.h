@@ -22,7 +22,7 @@ struct Logger *logger_new_custom(LogLevel max_level, LogHandlerCallback log_hand
 
 void logger_destroy(struct Logger *logger);
 
-int logger_panic(const char *msg);
+int logger_panic(const char *fmt, ...);
 
 #endif  /* LOGGER_H */
 

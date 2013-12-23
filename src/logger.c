@@ -45,6 +45,7 @@ struct Logger {
 #define COL_WHITE           COL(37)
 #define COL_GRAY            "\033[0m"
 
+#define PANIC_BUF_SIZE      256
 #define LOG_BUF_SIZE        1024
 #define LOG_TEMPLATE_LEN    32
 /* upper bound, really */
@@ -125,9 +126,22 @@ logger_trace_console(void       *user_data,
 
 /* for extreme circumstances, like unable to creae a logger. */
 int
-logger_panic(const char *msg)
+logger_panic(const char *fmt, ...)
 {
-  fprintf(stderr, "[CRI] %s\n", msg);
+  va_list args;
+
+  char buf[PANIC_BUF_SIZE];
+  /* construct real format string; mimics the trace format */
+  snprintf(buf, sizeof(buf), "[CRI] %s\n", fmt);
+
+  va_start(args, fmt);
+  /*
+   * stderr is the safest route and the lowest
+   * common denominator here.
+   */
+  vfprintf(stderr, buf, args);
+  va_end(args);
+
   return 0;
 }
 
@@ -201,7 +215,7 @@ logger_new_fp(LogLevel max_level,
   assert(sink != NULL);
 
   if ((logger = calloc(1, sizeof(struct Logger))) == NULL) {
-    perror("calloc");
+    logger_panic("calloc: %s", strerror(errno));
     return NULL;
   }
 
@@ -241,7 +255,7 @@ logger_make(LogLevel           lev,
   /* it is allowed for user_data to be NULL! */
 
   if ((logger = calloc(1, sizeof(struct Logger))) == NULL) {
-    perror("calloc");
+    logger_panic("calloc: %s", strerror(errno));
     return NULL;
   }
 
