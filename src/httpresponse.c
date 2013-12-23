@@ -8,8 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <assert.h>
 
+#include "logger.h"
 #include "httpresponse.h"
 
 /* code + space + message + NULL */
@@ -22,6 +24,8 @@
 struct HTTPResponse {
   char *buffer;
   size_t buffer_length;
+
+  struct Logger *logger;
 };
 
 struct HTTPStatus {
@@ -93,14 +97,16 @@ static const struct HTTPStatus http_statuses[] = {
 };
 
 struct HTTPResponse*
-http_response_new(void)
+http_response_new(struct Logger *logger)
 {
   struct HTTPResponse *response = NULL;
 
   if ((response = calloc(1, sizeof(struct HTTPResponse))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "httpresponse", "calloc: %s", strerror(errno));
     return NULL;
   }
+
+  response->logger = logger;
 
   return response;
 }
@@ -192,7 +198,7 @@ http_response_append_data(struct HTTPResponse *response,
   assert(length > 0);
 
   if ((response->buffer = realloc(response->buffer, response->buffer_length + length)) == NULL) {
-    perror("realloc");
+    logger_trace(response->logger, LOG_ERROR, "httpresponse", "realloc: %s", strerror(errno));
     return -1;
   }
 
@@ -227,7 +233,7 @@ http_response_read_data(struct HTTPResponse *response,
   else {
     memmove(response->buffer, &(response->buffer[avaiable_length]), response->buffer_length);
     if ((response->buffer = realloc(response->buffer, response->buffer_length)) == NULL) {
-      perror("realloc");
+      logger_trace(response->logger, LOG_ERROR, "httpresponse", "realloc: %s", strerror(errno));
       return -1;
     }
   }

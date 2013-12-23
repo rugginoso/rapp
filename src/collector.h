@@ -8,11 +8,12 @@
 #ifndef COLLECTOR_H
 #define COLLECTOR_H
 
+struct Logger;
 struct Collector;
 
 typedef void (*CollectorFreeFunc)(void *data);
 
-struct Collector *collector_new(void);
+struct Collector *collector_new(struct Logger *logger);
 void collector_destroy(struct Collector *collector);
 
 void collector_schedule_free(struct Collector *collector, CollectorFreeFunc, void *data);

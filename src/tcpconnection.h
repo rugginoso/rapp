@@ -8,6 +8,7 @@
 #ifndef TCPCONNECTION_H
 #define TCPCONNECTION_H
 
+struct Logger;
 struct ELoop;
 struct TcpConnection;
 
@@ -15,7 +16,7 @@ typedef void (*TcpConnectionReadCallback)(struct TcpConnection *connection, cons
 typedef void (*TcpConnectionWriteCallback)(struct TcpConnection *connection, const void *data);
 typedef void (*TcpConnectionCloseCallback)(struct TcpConnection *connection, const void *data);
 
-struct TcpConnection *tcp_connection_with_fd(int fd, struct ELoop *eloop);
+struct TcpConnection *tcp_connection_with_fd(int fd, struct Logger *logger, struct ELoop *eloop);
 void tcp_connection_destroy(struct TcpConnection *connection);
 
 void tcp_connection_close(struct TcpConnection *connection);

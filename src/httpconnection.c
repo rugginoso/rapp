@@ -8,8 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <assert.h>
 
+#include "logger.h"
 #include "tcpconnection.h"
 #include "httprequest.h"
 #include "httpresponse.h"
@@ -29,6 +31,7 @@ struct HTTPConnection {
   struct HTTPResponse *response;
 
   struct HTTPRouter *router;
+  struct Logger *logger;
 };
 
 static void
@@ -43,7 +46,7 @@ on_read(struct TcpConnection *tcp_connection, const void *data)
   http_connection = (struct HTTPConnection *)data;
 
   if ((got = tcp_connection_read_data(tcp_connection, buffer, BUFSIZE)) < 0) {
-    perror("read");
+    logger_trace(http_connection->logger, LOG_ERROR, "httpconnection", "read: %s", strerror(errno));
     http_connection->finish_callback(http_connection, http_connection->data);
     return;
   }
@@ -102,24 +105,24 @@ on_parse_finish(struct HTTPRequest *request, void *data)
 }
 
 struct HTTPConnection *
-http_connection_new(struct TcpConnection *tcp_connection, struct HTTPRouter *router)
+http_connection_new(struct Logger *logger, struct TcpConnection *tcp_connection, struct HTTPRouter *router)
 {
   struct HTTPConnection *http_connection = NULL;
 
   assert(tcp_connection != NULL);
 
   if ((http_connection = calloc(1, sizeof(struct HTTPConnection))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "httpconnection", "calloc: %s", strerror(errno));
     return NULL;
   }
 
-  if ((http_connection->request = http_request_new()) == NULL) {
+  if ((http_connection->request = http_request_new(logger)) == NULL) {
     free(http_connection);
     return NULL;
   }
   http_request_set_parse_finish_callback(http_connection->request, on_parse_finish, http_connection);
 
-  if ((http_connection->response = http_response_new()) == NULL) {
+  if ((http_connection->response = http_response_new(http_connection->logger)) == NULL) {
     free(http_connection->request);
     free(http_connection);
     return NULL;
@@ -129,6 +132,8 @@ http_connection_new(struct TcpConnection *tcp_connection, struct HTTPRouter *rou
 
   http_connection->tcp_connection = tcp_connection;
   tcp_connection_set_callbacks(http_connection->tcp_connection, on_read, NULL, on_close, http_connection);
+
+  http_connection->logger = logger;
 
   return http_connection;
 }

@@ -10,6 +10,7 @@
 
 #include <sys/socket.h>
 
+#include <logger.h>
 #include <eloop.h>
 #include "test_utils.h"
 
@@ -23,6 +24,7 @@ struct ELoop *eloop = NULL;
 ELoopWatchFdCallback callbacks[ELOOP_CALLBACK_MAX];
 char buf[MESSAGE_LEN];
 int fds[2];
+struct Logger *logger;
 
 static int
 read_func(int         fd,
@@ -78,7 +80,8 @@ free_func(void *data)
 void
 setup(void)
 {
-  eloop = event_loop_new();
+  logger = logger_new_null();
+  eloop = event_loop_new(logger);
 
   socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
 
@@ -91,6 +94,7 @@ void teardown(void)
   close(fds[WATCHED]);
   close(fds[OTHER]);
   event_loop_destroy(eloop);
+  logger_destroy(logger);
 }
 
 START_TEST(test_eloop_calls_read_func_when_fd_has_pending_data)

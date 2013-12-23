@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <check.h>
 
+#include <logger.h>
 #include <collector.h>
 
 #include "test_utils.h"
@@ -19,6 +20,7 @@
 char buf[MESSAGE_LEN];
 struct Collector *collector = NULL;
 int calls = 0;
+struct Logger *logger;
 
 static void
 free_func(void *data)
@@ -29,7 +31,8 @@ free_func(void *data)
 
 void setup()
 {
-  collector = collector_new();
+  logger = logger_new_null();
+  collector = collector_new(logger);
   memset(buf, 0, MESSAGE_LEN);
   calls = 0;
 }
@@ -37,6 +40,7 @@ void setup()
 void teardown()
 {
   collector_destroy(collector);
+  logger_destroy(logger);
 }
 
 START_TEST(test_collector_calls_free_func_on_collect)

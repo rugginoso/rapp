@@ -10,6 +10,7 @@
 
 #include "collector.h"
 
+struct Logger;
 struct ELoop;
 
 typedef int (*ELoopWatchFdCallback)(int fd, const void *data);
@@ -21,7 +22,7 @@ enum ELoopWatchFdCallbackType {
   ELOOP_CALLBACK_MAX,
 };
 
-struct ELoop *event_loop_new(void);
+struct ELoop *event_loop_new(struct Logger *logger);
 void event_loop_destroy(struct ELoop *eloop);
 
 int event_loop_run(struct ELoop *eloop);

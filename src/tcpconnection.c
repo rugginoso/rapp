@@ -8,10 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #include <assert.h>
 
 #include <sys/socket.h>
 
+#include "logger.h"
 #include "tcpconnection.h"
 #include "eloop.h"
 
@@ -19,6 +21,7 @@ struct TcpConnection
 {
   int fd;
   struct ELoop *eloop;
+  struct Logger *logger;
   TcpConnectionReadCallback read_callback;
   TcpConnectionWriteCallback write_callback;
   TcpConnectionCloseCallback close_callback;
@@ -26,19 +29,21 @@ struct TcpConnection
 };
 
 struct TcpConnection *
-tcp_connection_with_fd(int fd, struct ELoop *eloop)
+tcp_connection_with_fd(int fd, struct Logger *logger, struct ELoop *eloop)
 {
   struct TcpConnection *connection = NULL;
 
   assert(fd >= 0);
+  assert(logger != NULL);
   assert(eloop != NULL);
 
   if ((connection = calloc(1, sizeof(struct TcpConnection))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "tcpconnection", "calloc: %s", strerror(errno));
     return NULL;
   }
 
   connection->fd = fd;
+  connection->logger = logger;
   connection->eloop = eloop;
 
   return connection;

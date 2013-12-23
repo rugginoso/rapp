@@ -10,21 +10,25 @@
 
 #include <check.h>
 
+#include "logger.h"
 #include "httpresponse.h"
 
 struct HTTPResponse *response = NULL;
+struct Logger *logger = NULL;
 
 
 void
 setup()
 {
-  response = http_response_new();
+  logger = logger_new_null();
+  response = http_response_new(logger);
 }
 
 void
 teardown()
 {
   http_response_destroy(response);
+  logger_destroy(logger);
 }
 
 START_TEST(test_httpresponse_append_data_writes_data)

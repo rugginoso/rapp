@@ -63,16 +63,16 @@ main(int argc, char *argv[])
                rapp_get_version(), rapp_get_version_sha1(),
                rapp_get_version_tag(), getpid());
 
-  eloop = event_loop_new();
+  eloop = event_loop_new(logger);
 
-  signal_handler = signal_handler_new(eloop);
+  signal_handler = signal_handler_new(logger, eloop);
   signal_handler_add_signal_callback(signal_handler, SIGINT, on_signal, eloop);
   signal_handler_add_signal_callback(signal_handler, SIGTERM, on_signal, eloop);
 
   http_router = http_router_new(logger);
   http_router_bind(http_router, "/", container);
 
-  http_server = http_server_new(eloop, http_router);
+  http_server = http_server_new(logger, eloop, http_router);
 
   http_server_start(http_server, "127.0.0.1", 8000);
 

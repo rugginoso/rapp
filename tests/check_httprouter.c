@@ -114,7 +114,7 @@ check_route(const char *route)
   ret = http_router_bind(router, route, debug);
   ck_assert_int_eq(ret, 0);
 
-  request = http_request_new_fake_url(route);
+  request = http_request_new_fake_url(logger, route);
 
   ret = http_router_serve(router, request, (struct HTTPResponse *)&debug_data); /* FIXME */
   ck_assert_int_eq(ret, 0);
@@ -177,7 +177,7 @@ check_many_routes(const char *route_tmpl,
   /* exercise */
   for (i = 0; i < routes_num; i++) {
     snprintf(buf, sizeof(buf), route_tmpl, 5000+i);
-    request = http_request_new_fake_url(buf);
+    request = http_request_new_fake_url(logger, buf);
 
     ret = http_router_serve(router, request,
                             (struct HTTPResponse *)request); /* FIXME */

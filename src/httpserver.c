@@ -7,8 +7,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <assert.h>
 
+#include "logger.h"
 #include "eloop.h"
 #include "tcpserver.h"
 #include "httpconnection.h"
@@ -20,6 +22,7 @@ struct HTTPServer {
   struct TcpServer *tcp_server;
   struct ELoop *eloop;
   struct HTTPRouter *router;
+  struct Logger *logger;
 };
 
 
@@ -45,7 +48,7 @@ on_accept(struct TcpConnection *tcp_connection, const void *data)
 
   http_server = (struct HTTPServer *)data;
 
-  if ((http_connection = http_connection_new(tcp_connection, http_server->router)) == NULL) {
+  if ((http_connection = http_connection_new(http_server->logger, tcp_connection, http_server->router)) == NULL) {
     return;
   }
 
@@ -53,22 +56,23 @@ on_accept(struct TcpConnection *tcp_connection, const void *data)
 }
 
 struct HTTPServer *
-http_server_new(struct ELoop *eloop, struct HTTPRouter *router)
+http_server_new(struct Logger *logger, struct ELoop *eloop, struct HTTPRouter *router)
 {
   struct HTTPServer *http_server = NULL;
 
   if ((http_server = calloc(1, sizeof(struct HTTPServer))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "httpserver", "calloc: %s", strerror(errno));
     return NULL;
   }
 
-  if ((http_server->tcp_server = tcp_server_new(eloop)) == NULL) {
+  if ((http_server->tcp_server = tcp_server_new(logger, eloop)) == NULL) {
     free(http_server);
     return NULL;
   }
 
   tcp_server_set_accept_callback(http_server->tcp_server, on_accept, http_server);
 
+  http_server->logger = logger;
   http_server->eloop = eloop;
   http_server->router = router;
 

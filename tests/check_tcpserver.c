@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <check.h>
 
+#include <logger.h>
 #include <eloop.h>
 #include <tcpserver.h>
 
@@ -17,6 +18,7 @@
 #define PORT 8000
 
 
+struct Logger *logger = NULL;
 struct ELoop *eloop = NULL;
 struct TcpServer *tcp_server = NULL;
 struct TcpConnection *tcp_connection = NULL;
@@ -36,8 +38,9 @@ accept_func(struct TcpConnection *connection,
 void
 setup(void)
 {
-  eloop = event_loop_new();
-  tcp_server = tcp_server_new(eloop);
+  logger = logger_new_null();
+  eloop = event_loop_new(logger);
+  tcp_server = tcp_server_new(logger, eloop);
   tcp_connection = NULL;
 }
 
@@ -47,6 +50,7 @@ void teardown(void)
     tcp_connection_destroy(tcp_connection);
   tcp_server_destroy(tcp_server);
   event_loop_destroy(eloop);
+  logger_destroy(logger);
 }
 
 START_TEST(test_tcp_server_calls_callback_when_accepts_new_connections)

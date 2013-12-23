@@ -8,10 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <assert.h>
 
 #include <http_parser.h>
 
+#include "logger.h"
 #include "httprequest.h"
 
 
@@ -29,6 +31,8 @@ struct HTTPRequest {
 
   HTTPRequestParseFinishCallback parse_finish_callback;
   void *data;
+
+  struct Logger *logger;
 };
 
 static int
@@ -102,12 +106,12 @@ on_message_complete(http_parser *parser)
 }
 
 struct HTTPRequest *
-http_request_new(void)
+http_request_new(struct Logger *logger)
 {
   struct HTTPRequest *request = NULL;
 
   if ((request = calloc(1, sizeof(struct HTTPRequest))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "httprequest", "calloc: %s", strerror(errno));
     return NULL;
   }
 
@@ -119,6 +123,8 @@ http_request_new(void)
   request->parser_settings.on_header_value = on_header_value;
   request->parser_settings.on_body = on_body;
   request->parser_settings.on_message_complete = on_message_complete;
+
+  request->logger = logger;
 
   return request;
 }
@@ -157,7 +163,7 @@ http_request_append_data(struct HTTPRequest *request,
   ssize_t parsed = -1;
 
   if ((request->buffer = realloc(request->buffer, request->buffer_length + length)) == NULL) {
-    perror("realloc");
+    logger_trace(request->logger, LOG_ERROR, "httprequest", "realloc: %s", strerror(errno));
     return -1;
   }
   memcpy(&(request->buffer[request->buffer_length]), data, length);
@@ -170,10 +176,9 @@ http_request_append_data(struct HTTPRequest *request,
   request->buffer_length += length;
 
   if (parsed != length) {
-    /*
-     * TODO: log parser error with http_errno_name(request->parser.http_errno) and
-     *       http_errno_description(request->parser.http_errno)
-     */
+    logger_trace(request->logger, LOG_ERROR, "httprequest", "parser error: %s: %s",
+                                                            http_errno_name(request->parser.http_errno),
+                                                            http_errno_description(request->parser.http_errno));
     return -1;
   }
 
@@ -263,7 +268,8 @@ http_request_get_body_range(struct HTTPRequest *request,
 
 
 struct HTTPRequest *
-http_request_new_fake_url(const char *url)
+http_request_new_fake_url(struct Logger *logger,
+                          const char    *url)
 {
   struct HTTPRequest *request = NULL;
   char *request_url = NULL;
@@ -273,13 +279,13 @@ http_request_new_fake_url(const char *url)
 
   request_len = strlen(url);
   if ((request_url = strdup(url)) == NULL) {
-    perror("strdup");
+    logger_trace(logger, LOG_ERROR, "httprequest", "strdup: %s", strerror(errno));
     return NULL;
   }
 
-  if ((request = http_request_new()) == NULL) {
+  if ((request = http_request_new(logger)) == NULL) {
     free(request_url);
-    /* perror() already done inside http_request_new */
+    /* logger_trace() already done inside http_request_new */
     return NULL;
   }
 

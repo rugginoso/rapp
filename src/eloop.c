@@ -9,10 +9,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include <assert.h>
 
 #include <sys/epoll.h>
-
+#include "logger.h"
 #include "eloop.h"
 
 #define MAX_EVENTS 10
@@ -21,6 +22,7 @@
 struct ELoop {
   int epollfd;
   struct Collector *collector;
+  struct Logger *logger;
   struct ELoopCallback *callbacks_list;
   int running;
 };
@@ -36,22 +38,23 @@ struct ELoopCallback {
 
 
 struct ELoop *
-event_loop_new(void)
+event_loop_new(struct Logger *logger)
 {
   struct ELoop *eloop = NULL;
 
   if ((eloop = calloc(1, sizeof(struct ELoop))) == NULL) {
-    perror("calloc");
+    logger_trace(logger, LOG_ERROR, "eloop", "calloc: %s", strerror(errno));
     return NULL;
   }
 
   if ((eloop->epollfd = epoll_create(1)) < 0) {
-    perror("epoll_create");
+    logger_trace(logger, LOG_ERROR, "eloop", "epoll_create: %s", strerror(errno));
     return NULL;
   }
 
-  eloop->collector = collector_new();
+  eloop->collector = collector_new(logger);
   eloop->callbacks_list = NULL;
+  eloop->logger = logger;
 
   return eloop;
 }
@@ -162,7 +165,7 @@ event_loop_add_fd_watch(struct ELoop                 *eloop,
 
   if (find_callback_by_fd(eloop, fd, &ec, NULL) < 0) {
     if ((ec = calloc(1, sizeof(struct ELoopCallback))) == NULL) {
-      perror("calloc");
+      logger_trace(eloop->logger, LOG_ERROR, "eloop", "calloc: %s", strerror(errno));
       return -1;
     }
 
