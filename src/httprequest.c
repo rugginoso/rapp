@@ -134,7 +134,7 @@ http_request_new(struct Logger *logger)
   struct HTTPRequest *request = NULL;
 
   if ((request = calloc(1, sizeof(struct HTTPRequest))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "httprequest", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 
@@ -186,7 +186,7 @@ http_request_append_data(struct HTTPRequest *request,
   ssize_t parsed = -1;
 
   if ((request->buffer = realloc(request->buffer, request->buffer_length + length)) == NULL) {
-    logger_trace(request->logger, LOG_ERROR, "httprequest", "realloc: %s", strerror(errno));
+    LOGGER_PERROR(request->logger, "realloc");
     return -1;
   }
   memcpy(&(request->buffer[request->buffer_length]), data, length);
@@ -318,7 +318,7 @@ http_request_new_fake_url(struct Logger *logger,
 
   request_len = strlen(url);
   if ((request_url = strdup(url)) == NULL) {
-    logger_trace(logger, LOG_ERROR, "httprequest", "strdup: %s", strerror(errno));
+    LOGGER_PERROR(logger, "strdup");
     return NULL;
   }
 

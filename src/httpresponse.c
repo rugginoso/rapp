@@ -122,7 +122,7 @@ http_response_new(struct Logger *logger, const char *server_name)
   assert(server_name != NULL);
 
   if ((response = calloc(1, sizeof(struct HTTPResponse))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "httpresponse", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 
@@ -248,7 +248,7 @@ http_response_append_data(struct HTTPResponse *response,
   assert(length > 0);
 
   if ((response->buffer = realloc(response->buffer, response->buffer_length + length)) == NULL) {
-    logger_trace(response->logger, LOG_ERROR, "httpresponse", "realloc: %s", strerror(errno));
+    LOGGER_PERROR(response->logger, "realloc");
     return -1;
   }
 
@@ -283,7 +283,7 @@ http_response_read_data(struct HTTPResponse *response,
   else {
     memmove(response->buffer, &(response->buffer[avaiable_length]), response->buffer_length);
     if ((response->buffer = realloc(response->buffer, response->buffer_length)) == NULL) {
-      logger_trace(response->logger, LOG_ERROR, "httpresponse", "realloc: %s", strerror(errno));
+      LOGGER_PERROR(response->logger, "realloc");
       return -1;
     }
   }
@@ -307,12 +307,12 @@ http_response_write_error_by_code(struct HTTPResponse *response,
     return -1;
 
   if (asprintf(&body, error_body, message, message) < 0) {
-    logger_trace(response->logger, LOG_ERROR, "httpresponse", "asprintf: %s", strerror(errno));
+    LOGGER_PERROR(response->logger, "asprintf: body");
     return -1;
   }
 
   if (asprintf(&len_s, "%d", strlen(body)) < 0) {
-    logger_trace(response->logger, LOG_ERROR, "httpresponse", "asprintf: %s", strerror(errno));
+    LOGGER_PERROR(response->logger, "asprintf: len_s");
     free(body);
     return -1;
   }

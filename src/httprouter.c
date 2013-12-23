@@ -53,12 +53,12 @@ http_router_new(struct Logger *logger)
   assert(logger);
 
   if ((null = container_new_null(logger, "default")) == NULL) {
-    /* TODO trace */
+    /* error already logged */ 
     return NULL;
   }
 
   if ((router = calloc(1, sizeof(struct HTTPRouter))) == NULL) {
-    logger_trace(router->logger, LOG_ERROR, "router", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(router->logger, "calloc");
     container_destroy(null);
     return NULL;
   }

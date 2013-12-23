@@ -23,6 +23,8 @@ struct Logger *logger_new_custom(LogLevel max_level, LogHandlerCallback log_hand
 void logger_destroy(struct Logger *logger);
 
 int logger_panic(const char *fmt, ...);
+#define LOGGER_PERROR(LOGGER, MSG) \
+  logger_trace((LOGGER), LOG_ERROR, __FILE__, "%s: %s", (MSG), strerror(errno))
 
 #endif  /* LOGGER_H */
 

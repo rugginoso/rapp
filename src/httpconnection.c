@@ -48,7 +48,7 @@ on_read(struct TcpConnection *tcp_connection,
   http_connection = (struct HTTPConnection *)data;
 
   if ((got = tcp_connection_read_data(tcp_connection, buffer, BUFSIZE)) < 0) {
-    logger_trace(http_connection->logger, LOG_ERROR, "httpconnection", "read: %s", strerror(errno));
+    LOGGER_PERROR(http_connection->logger, "read");
     http_connection->finish_callback(http_connection, http_connection->data);
     return;
   }
@@ -119,7 +119,7 @@ http_connection_new(struct Logger        *logger,
   assert(tcp_connection != NULL);
 
   if ((http_connection = calloc(1, sizeof(struct HTTPConnection))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "httpconnection", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 

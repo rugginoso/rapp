@@ -43,12 +43,12 @@ event_loop_new(struct Logger *logger)
   struct ELoop *eloop = NULL;
 
   if ((eloop = calloc(1, sizeof(struct ELoop))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "eloop", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 
   if ((eloop->epollfd = epoll_create(1)) < 0) {
-    logger_trace(logger, LOG_ERROR, "eloop", "epoll_create: %s", strerror(errno));
+    LOGGER_PERROR(logger, "epoll_create");
     return NULL;
   }
 
@@ -158,6 +158,7 @@ event_loop_add_fd_watch(struct ELoop                 *eloop,
 {
   struct ELoopCallback *ec = NULL;
   int epoll_operation = EPOLL_CTL_MOD;
+  int ret = 0;
 
   assert(eloop != NULL);
   assert(fd > -1);
@@ -165,7 +166,7 @@ event_loop_add_fd_watch(struct ELoop                 *eloop,
 
   if (find_callback_by_fd(eloop, fd, &ec, NULL) < 0) {
     if ((ec = calloc(1, sizeof(struct ELoopCallback))) == NULL) {
-      logger_trace(eloop->logger, LOG_ERROR, "eloop", "calloc: %s", strerror(errno));
+      LOGGER_PERROR(eloop->logger, "calloc");
       return -1;
     }
 
@@ -182,7 +183,11 @@ event_loop_add_fd_watch(struct ELoop                 *eloop,
   ec->callbacks[callback_type] = callback;
   ec->datas[callback_type] = data;
 
-  return epoll_ctl(eloop->epollfd, epoll_operation, fd, &(ec->ev));
+  if ((ret = epoll_ctl(eloop->epollfd, epoll_operation, fd, &(ec->ev))) < 0) {
+    LOGGER_PERROR(eloop->logger, "epoll_ctl");
+    /* FIXME: ec is now leaked */
+  }
+  return ret;
 }
 
 int

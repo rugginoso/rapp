@@ -46,7 +46,7 @@ tcp_server_new(struct Logger *logger,
   assert(eloop != NULL);
 
   if ((server = calloc(1, sizeof(struct TcpServer))) == NULL) {
-    logger_trace(logger, LOG_ERROR, "tcpserver", "calloc: %s", strerror(errno));
+    LOGGER_PERROR(logger, "calloc");
     return NULL;
   }
 
@@ -95,7 +95,7 @@ on_incoming_connection(int         server_fd,
   server = (struct TcpServer *)data;
 
   if ((client_fd = accept(server_fd, NULL, NULL)) < 0) {
-    logger_trace(server->logger, LOG_ERROR, "tcpserver", "accept: %s", strerror(errno));
+    LOGGER_PERROR(server->logger, "accept");
     return -1;
   }
 
@@ -131,39 +131,39 @@ tcp_server_start_listen(struct TcpServer *server,
   snprintf(port_s, PORT_S_LEN, "%d", port);
 
   if ((addrinfo_ret = getaddrinfo(host, port_s, &hints, &addrinfos)) != 0) {
-    logger_trace(server->logger, LOG_ERROR, "tcpserver", "getaddrinfo: %s", gai_strerror(addrinfo_ret));
+    LOGGER_PERROR(server->logger, "getaddrinfo");
     return -1;
   }
 
   if ((server->listen_fd = socket(addrinfos->ai_family, addrinfos->ai_socktype, 0)) < 0) {
-    logger_trace(server->logger, LOG_ERROR, "tcpserver", "socket: %s", strerror(errno));
+    LOGGER_PERROR(server->logger, "socket");
     freeaddrinfo(addrinfos);
     return -1;
   }
 
   if (setsockopt(server->listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int)) < 0) {
-    logger_trace(server->logger, LOG_ERROR, "tcpserver", "setsockopt: %s", strerror(errno));
+    LOGGER_PERROR(server->logger, "setsockopt: reuseaddr");
     freeaddrinfo(addrinfos);
     return -1;
   }
 
   #ifdef SO_REUSEPORT_FOUND
   if (setsockopt(server->listen_fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(int)) < 0) {
-    logger_trace(server->logger, LOG_ERROR, "tcpserver", "setsockopt: %s", strerror(errno));
+    LOGGER_PERROR(server->logger, "setsockopt: reuseport");
     freeaddrinfo(addrinfos);
     return -1;
   }
   #endif
 
   if (bind(server->listen_fd, addrinfos->ai_addr, addrinfos->ai_addrlen) < 0) {
-    logger_trace(server->logger, LOG_ERROR, "tcpserver", "bind: %s", strerror(errno));
+    LOGGER_PERROR(server->logger, "bind");
     freeaddrinfo(addrinfos);
     return -1;
   }
   freeaddrinfo(addrinfos);
 
   if (listen(server->listen_fd, BACKLOG) < 0) {
-    logger_trace(server->logger, LOG_ERROR, "tcpserver", "listen: %s", strerror(errno));
+    LOGGER_PERROR(server->logger, "listen");
     return -1;
   }
 
