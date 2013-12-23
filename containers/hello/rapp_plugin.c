@@ -11,7 +11,6 @@
 
 #include <rapp/rapp.h>
 
-#define HTTP_200 "HTTP/1.1 200 OK" HTTP_EOL
 
 struct RappContainer {
   char *message;
@@ -34,7 +33,7 @@ rapp_serve(struct RappContainer *handle,
     size_t len = strlen(handle->message);
     char *len_s = NULL;
 
-    http_response_append_data(response, HTTP_200, strlen(HTTP_200));
+    http_response_write_status_line_by_code(response, 200);
     http_response_write_header(response, "Content-Type", "text/plain; charset=utf-8");
 
     asprintf(&len_s, "%d", len);

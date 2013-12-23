@@ -12,6 +12,9 @@
 
 struct HTTPResponse;
 
+ssize_t http_response_write_status_line_by_code(struct HTTPResponse *response, unsigned code);
+ssize_t http_response_write_status_line(struct HTTPResponse *response, const char *status_line);
+
 ssize_t http_response_write_header(struct HTTPResponse *response, const char *key, const char *value);
 void http_response_end_headers(struct HTTPResponse *response);
 

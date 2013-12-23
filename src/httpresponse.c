@@ -12,10 +12,84 @@
 
 #include "httpresponse.h"
 
+/* code + space + message + NULL */
+#define STATUSLINE_LEN 36
+
+/* HTTP/1.1 */
+#define PROTOCOL_LEN 8
+
 
 struct HTTPResponse {
   char *buffer;
   size_t buffer_length;
+};
+
+struct HTTPStatus {
+  unsigned code;
+  const char *message;
+};
+
+/* http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml */
+static const struct HTTPStatus http_statuses[] = {
+  {100, "Continue"},
+  {101, "Switching Protocols"},
+  {102, "Processing"},
+  {200, "OK"},
+  {201, "Created"},
+  {202, "Accepted"},
+  {203, "Non-Authoritative Information"},
+  {204, "No Content"},
+  {205, "Reset Content"},
+  {206, "Partial Content"},
+  {207, "Multi-Status"},
+  {208, "Already Reported"},
+  {226, "IM Used"},
+  {300, "Multiple Choices"},
+  {301, "Moved Permanently"},
+  {302, "Found"},
+  {303, "See Other"},
+  {304, "Not Modified"},
+  {305, "Use Proxy"},
+  {306, "Reserved"},
+  {307, "Temporary Redirect"},
+  {308, "Permanent Redirect"},
+  {400, "Bad Request"},
+  {401, "Unauthorized"},
+  {402, "Payment Required"},
+  {403, "Forbidden"},
+  {404, "Not Found"},
+  {405, "Method Not Allowed"},
+  {406, "Not Acceptable"},
+  {407, "Proxy Authentication Required"},
+  {408, "Request Timeout"},
+  {409, "Conflict"},
+  {410, "Gone"},
+  {411, "Length Required"},
+  {412, "Precondition Failed"},
+  {413, "Request Entity Too Large"},
+  {414, "Request-URI Too Long"},
+  {415, "Unsupported Media Type"},
+  {416, "Requested Range Not Satisfiable"},
+  {417, "Expectation Failed"},
+  {422, "Unprocessable Entity"},
+  {423, "Locked"},
+  {424, "Failed Dependency"},
+  {426, "Upgrade Required"},
+  {428, "Precondition Required"},
+  {429, "Too Many Requests"},
+  {431, "Request Header Fields Too Large"},
+  {500, "Internal Server Error"},
+  {501, "Not Implemented"},
+  {502, "Bad Gateway"},
+  {503, "Service Unavailable"},
+  {504, "Gateway Timeout"},
+  {505, "HTTP Version Not Supported"},
+  {506, "Variant Also Negotiates"},
+  {507, "Insufficient Storage"},
+  {508, "Loop Detected"},
+  {510, "Not Extended"},
+  {511, "Network Authentication Required"},
+  {0, NULL}
 };
 
 struct HTTPResponse*
@@ -40,6 +114,45 @@ http_response_destroy(struct HTTPResponse *response)
     free(response->buffer);
 
   free(response);
+}
+
+static const char *
+status_message_by_code(unsigned code)
+{
+  const struct HTTPStatus *sp = NULL;
+
+  for (sp = http_statuses; sp->code != 0; sp++) {
+    if (sp->code == code)
+      return sp->message;
+  }
+
+  return NULL;
+}
+
+ssize_t http_response_write_status_line_by_code(struct HTTPResponse *response,
+                                                unsigned             code)
+{
+  const char *message = NULL;
+  char *status_line = alloca(STATUSLINE_LEN);
+
+  if ((message = status_message_by_code(code)) == NULL)
+    return -1;
+
+  snprintf(status_line, STATUSLINE_LEN, "%d %s", code, message);
+
+  return http_response_write_status_line(response, status_line);
+}
+
+ssize_t http_response_write_status_line(struct HTTPResponse *response,
+                                        const char          *status_line)
+{
+  /* HTTP/1.1 + space + status_line + HTTP_EOL + NULL */
+  size_t status_len = PROTOCOL_LEN + 1 + strlen(status_line) + strlen(HTTP_EOL) + 1;
+  char *status = alloca(status_len);
+
+  snprintf(status, status_len, "HTTP/1.1 %s" HTTP_EOL, status_line);
+
+  return http_response_append_data(response, status, status_len);
 }
 
 ssize_t
