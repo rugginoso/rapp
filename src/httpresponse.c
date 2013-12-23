@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #include <assert.h>
 
 #include "logger.h"
@@ -20,10 +21,14 @@
 /* HTTP/1.1 */
 #define PROTOCOL_LEN 8
 
+/* %a, %d %b %Y %H:%M:%S %z */
+#define DATETIME_LEN 32
 
 struct HTTPResponse {
   char *buffer;
   size_t buffer_length;
+
+  const char *server_name;
 
   struct Logger *logger;
 };
@@ -97,9 +102,12 @@ static const struct HTTPStatus http_statuses[] = {
 };
 
 struct HTTPResponse*
-http_response_new(struct Logger *logger)
+http_response_new(struct Logger *logger, const char *server_name)
 {
   struct HTTPResponse *response = NULL;
+
+  assert(logger != NULL);
+  assert(server_name != NULL);
 
   if ((response = calloc(1, sizeof(struct HTTPResponse))) == NULL) {
     logger_trace(logger, LOG_ERROR, "httpresponse", "calloc: %s", strerror(errno));
@@ -107,6 +115,7 @@ http_response_new(struct Logger *logger)
   }
 
   response->logger = logger;
+  response->server_name = server_name;
 
   return response;
 }
@@ -182,10 +191,39 @@ http_response_write_header(struct HTTPResponse *response,
   return ret;
 }
 
-void
+ssize_t
 http_response_end_headers(struct HTTPResponse *response)
 {
-  http_response_append_data(response, HTTP_EOL, strlen(HTTP_EOL));
+  char *datetime = alloca(DATETIME_LEN);
+  time_t now = 0;
+  ssize_t total_length = 0;
+  ssize_t ret = 0;
+
+  assert(response != NULL);
+
+  if ((ret = http_response_write_header(response, "Server", response->server_name)) < 0)
+    return -1;
+  total_length += ret;
+
+  if (time(&now) < 0) {
+    logger_trace(response->logger, LOG_ERROR, "httpresponse", "time: %s", error(errno));
+    return -1;
+  }
+
+  if (strftime(datetime, DATETIME_LEN, "%a, %d %b %Y %H:%M:%S %z", gmtime(&now)) == 0) {
+    logger_trace(response->logger, LOG_ERROR, "httpresponse", "strftime: error formatting datetime");
+    return -1;
+  }
+
+  if ((ret = http_response_write_header(response, "Date", datetime)) < 0)
+    return -1;
+  total_length += ret;
+
+  if ((ret = http_response_append_data(response, HTTP_EOL, strlen(HTTP_EOL))) < 0)
+    return -1;
+  total_length += ret;
+
+  return total_length;
 }
 
 ssize_t

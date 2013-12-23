@@ -17,6 +17,7 @@
 #include "httpresponse.h"
 #include "httpconnection.h"
 #include "httprouter.h"
+#include "rapp/rapp_version.h"
 
 
 #define BUFSIZE 80 * 1024
@@ -128,7 +129,7 @@ http_connection_new(struct Logger        *logger,
   }
   http_request_set_parse_finish_callback(http_connection->request, on_parse_finish, http_connection);
 
-  if ((http_connection->response = http_response_new(http_connection->logger)) == NULL) {
+  if ((http_connection->response = http_response_new(logger, rapp_get_banner())) == NULL) {
     free(http_connection->request);
     free(http_connection);
     return NULL;

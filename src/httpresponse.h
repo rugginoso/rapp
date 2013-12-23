@@ -13,7 +13,7 @@
 struct Logger;
 struct TcpConnection;
 
-struct HTTPResponse* http_response_new(struct Logger *logger);
+struct HTTPResponse* http_response_new(struct Logger *logger, const char *server_name);
 void http_response_destroy(struct HTTPResponse *response);
 
 ssize_t http_response_read_data(struct HTTPResponse *response, void *data, size_t length);

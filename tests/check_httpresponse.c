@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include <check.h>
 
@@ -21,7 +22,7 @@ void
 setup()
 {
   logger = logger_new_null();
-  response = http_response_new(logger);
+  response = http_response_new(logger, "test");
 }
 
 void
@@ -59,17 +60,29 @@ START_TEST(test_httpresponse_write_header_correctly_formats_headers)
 }
 END_TEST
 
-START_TEST(test_httpresponse_end_headers_adds_empty_header)
+START_TEST(test_httpresponse_end_headers_adds_server_date_empty_header)
 {
   char *result = alloca(1024);
+  time_t now;
+  char *datetime = alloca(32);
+  char *expected = NULL;
   ssize_t len = 0;
+
+  time(&now);
+  strftime(datetime, 32, "%a, %d %b %Y %H:%M:%S %z", gmtime(&now));
+
+  asprintf(&expected, "Server: test" HTTP_EOL
+                      "Date: %s" HTTP_EOL
+                      HTTP_EOL, datetime);
 
   http_response_end_headers(response);
 
   len = http_response_read_data(response, result, 1024);
   result[len] = 0;
 
-  ck_assert_str_eq(result, HTTP_EOL);
+  ck_assert_str_eq(result, expected);
+
+  free(expected);
 }
 END_TEST
 
@@ -142,7 +155,7 @@ httpresponse_suite(void)
   tcase_add_checked_fixture(tc, setup, teardown);
   tcase_add_test(tc, test_httpresponse_append_data_writes_data);
   tcase_add_test(tc, test_httpresponse_write_header_correctly_formats_headers);
-  tcase_add_test(tc, test_httpresponse_end_headers_adds_empty_header);
+  tcase_add_test(tc, test_httpresponse_end_headers_adds_server_date_empty_header);
   tcase_add_test(tc, test_httpresponse_read_data_supports_partials_reads);
   tcase_add_test(tc, test_httpresponse_frees_not_consumed_data_on_destroy);
   tcase_add_test(tc, test_httpresponse_write_status_line_appends_statusline);
