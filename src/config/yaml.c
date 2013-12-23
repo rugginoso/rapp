@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <yaml.h>
-#include "config_private.h"
+#include "common.h"
 
 int
 endswith(const char *str, const char *suffix)

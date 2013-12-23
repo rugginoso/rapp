@@ -7,7 +7,7 @@
 
 #ifndef CONFIG_H
 #define CONFIG_H
-#include "logger.h"
+#include <rapp/rapp_logger.h>
 
 #define RAPP_CONFIG_SECTION "core"
 typedef enum {

@@ -18,7 +18,7 @@
 #include "httpserver.h"
 #include "signalhandler.h"
 #include "container.h"
-#include "config_private.h"
+#include "config/common.h"
 
 static void
 on_signal(struct SignalHandler *signal_handler,

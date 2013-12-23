@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/queue.h>
-#include "config_private.h"
+#include "common.h"
 
 // shamelessly stolen from pyyaml - http://bit.ly/Jhm0C0
 const char *regex_bool_str = "^yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF$";

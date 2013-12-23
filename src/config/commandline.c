@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include "config_private.h"
+#include "common.h"
 #include <rapp/rapp_version.h>
 
 #define ARG_INDEX_BASE 128

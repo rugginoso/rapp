@@ -12,6 +12,7 @@
 #include "rapp_httpresponse.h"
 #include "rapp_logger.h"
 #include "rapp_version.h"
+#include "rapp_config.h"
 
 struct RappContainer;
 

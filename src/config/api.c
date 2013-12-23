@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/queue.h>
-#include "config_private.h"
+#include "common.h"
 
 int
 config_opt_add(struct Config *conf,

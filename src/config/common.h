@@ -8,7 +8,7 @@
 #ifndef CONFIG_PRIVATE_H
 #define CONFIG_PRIVATE_H
 #include <sys/queue.h>
-#include "config_api.h"
+#include <rapp/rapp_config.h>
 
 #define LOG(conf, level, fmt, ...) logger_trace(conf->logger, level, "config", fmt, __VA_ARGS__)
 #define INFO(conf, fmt, ...) LOG(conf, LOG_INFO, fmt, __VA_ARGS__)

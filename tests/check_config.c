@@ -9,7 +9,7 @@
 #include <check.h>
 
 /* include the header(s) of the tested code right after */
-#include <config_private.h>
+#include <config/common.h>
 #include <logger.h>
 
 #include "test_utils.h"

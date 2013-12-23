@@ -5,10 +5,10 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.c.in" "${CMAKE_CURRENT_SOURC
 
 set(RAPP_CORE_SOURCES
     collector.c
-    config.c
-    config_commandline.c
-    config_private.c
-    config_yaml_parser.c
+    config/api.c
+    config/commandline.c
+    config/common.c
+    config/yaml.c
     container.c
     eloop.c
     httpconnection.c
