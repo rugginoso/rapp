@@ -14,10 +14,6 @@
 #include <logger.h>
 
 #include "test_utils.h"
-#define S "sectname"
-#define N "optname"
-#define PS PARAM_STRING
-
 
 struct Config *conf;
 const char *argp_program_version;
@@ -25,34 +21,6 @@ char *empty[] = {"rapp"};
 char *usage[] = {"rapp", "--usage"};
 char *version[] = {"rapp", "--version"};
 char *help[] = {"rapp", "--help"};
-
-char**
-copy_argv(int argc, char *argv[])
-{
-  char **res;
-  int i;
-  size_t len;
-  res = calloc(argc, sizeof(char*));
-  for (i=0; i<argc; i++) {
-    if (argv[i]) {
-      len = strlen(argv[i]) + 1;
-      res[i] = malloc(len);
-      strncpy(res[i], argv[i], len);
-    }
-  }
-  return res;
-}
-
-void
-clear_argv(int argc, char *argv[])
-{
-  int i;
-  for (i=0; i<argc; i++) {
-    if (argv[i])
-      free(argv[i]);
-  }
-  free(argv);
-}
 
 void
 setup(void)
@@ -81,9 +49,9 @@ START_TEST(test_config_early_options)
 {
   struct RappArguments arguments;
   char **args;
-  char *loglevel[] = {"rapp", "--log-level", NULL, NULL};
-  char *logout[] = {"rapp", "--log-output", "-", NULL};
-  char *load[] = {"rapp", "--load", NULL, NULL};
+  char *loglevel[] = {"rapp", "--log-level", NULL};
+  char *logout[] = {"rapp", "--log-output", "-"};
+  char *load[] = {"rapp", "--load", NULL};
   char *logcolor[] = {"rapp", "--log-nocolor"};
   ck_assert_call_fail(config_parse_early_commandline, &arguments, 0, 0);
   ck_assert_call_fail(config_parse_early_commandline, &arguments, 1, 0);
@@ -125,14 +93,12 @@ END_TEST
 
 START_TEST(test_config_commandline)
 {
-  struct Config *conf;
   struct Logger *logger = logger_new_null();
   char *empty[] = {"rapp"};
   char *withvalue[] = {"rapp", "--test-option", "value"};
   char *coreopt[] = {"rapp", "--option", "value"};
   char *logoption[] = {"rapp", "--log-level", "debug"};
   char *value;
-  conf = config_new(logger);
   config_opt_add(conf, "test", "option", PARAM_STRING, "doc", "meta");
   config_opt_set_default_string(conf, "test", "option", "default");
 
@@ -165,38 +131,39 @@ START_TEST(test_config_commandline)
   // early options are skipped
   conf = config_new(logger);
   ck_assert_call_ok(config_parse_commandline, conf, 3, logoption);
-  config_destroy(conf);
-
-  // help / usage / version support
-
 }
 END_TEST
 
 START_TEST(test_config_commandline_help)
 {
-  struct Config *conf;
-  struct Logger *logger = logger_new_null();
-  conf = config_new(logger);
   config_parse_commandline(conf, 2, help);
 }
 END_TEST
 
 START_TEST(test_config_commandline_usage)
 {
-  struct Config *conf;
-  struct Logger *logger = logger_new_null();
-  conf = config_new(logger);
   config_parse_commandline(conf, 2, usage);
 }
 END_TEST
 
 START_TEST(test_config_commandline_version)
 {
-  struct Config *conf;
-  struct Logger *logger = logger_new_null();
-  conf = config_new(logger);
   argp_program_version = rapp_get_version_full();
   config_parse_commandline(conf, 2, version);
+}
+END_TEST
+
+START_TEST(test_config_commandline_override)
+{
+  char *value = NULL;
+  char *address[] = {"rapp", "--address", "localhost"};
+  const char *yaml = "---\ncore: {address: \"0.0.0.0\"}";
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "127.0.0.1");
+  config_parse_commandline(conf, 3, address);
+  ck_assert_call_ok(config_parse_string, conf, yaml);
+  config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
+  ck_assert_str_eq(value, "localhost");
 }
 END_TEST
 
@@ -209,6 +176,7 @@ config_commandline_suite(void)
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_config_early_options);
   tcase_add_test(tc, test_config_commandline);
+  tcase_add_test(tc, test_config_commandline_override);
   tcase_add_exit_test(tc, test_config_commandline_help, 0);
   tcase_add_exit_test(tc, test_config_commandline_version, 0);
   tcase_add_exit_test(tc, test_config_commandline_usage, 0);
