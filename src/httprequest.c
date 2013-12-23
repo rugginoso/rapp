@@ -36,7 +36,9 @@ struct HTTPRequest {
 };
 
 static int
-on_url(http_parser *parser, const char *at, size_t length)
+on_url(http_parser *parser,
+       const char  *at,
+       size_t       length)
 {
   struct HTTPRequest *request = NULL;
 
@@ -49,7 +51,9 @@ on_url(http_parser *parser, const char *at, size_t length)
 }
 
 static int
-on_header_field(http_parser *parser, const char *at, size_t length)
+on_header_field(http_parser *parser,
+                const char  *at,
+                size_t       length)
 {
   struct HTTPRequest *request = NULL;
 
@@ -65,7 +69,9 @@ on_header_field(http_parser *parser, const char *at, size_t length)
 }
 
 static int
-on_header_value(http_parser *parser, const char *at, size_t length)
+on_header_value(http_parser *parser,
+                const char  *at,
+                size_t       length)
 {
   struct HTTPRequest *request = NULL;
 
@@ -80,7 +86,9 @@ on_header_value(http_parser *parser, const char *at, size_t length)
 }
 
 static int
-on_body(http_parser *parser, const char *at, size_t length)
+on_body(http_parser *parser,
+        const char  *at,
+        size_t       length)
 {
   struct HTTPRequest *request = NULL;
 
@@ -244,9 +252,9 @@ http_request_get_header_value_range(struct HTTPRequest *request,
 }
 
 void
-http_request_get_headers_ranges(struct HTTPRequest *request,
+http_request_get_headers_ranges(struct HTTPRequest        *request,
                                 struct HeaderMemoryRange **ranges,
-                                unsigned *n_ranges)
+                                unsigned                  *n_ranges)
 {
   assert(request != NULL);
   assert(ranges != NULL);

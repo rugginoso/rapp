@@ -21,7 +21,8 @@
 #include "container.h"
 
 static void
-on_signal(struct SignalHandler *signal_handler, void *data)
+on_signal(struct SignalHandler *signal_handler,
+          void                 *data)
 {
   struct ELoop *eloop = NULL;
 

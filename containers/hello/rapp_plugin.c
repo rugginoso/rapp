@@ -58,7 +58,10 @@ rapp_destroy(struct RappContainer *handle)
 }
 
 struct RappContainer *
-rapp_create(void *cookie, int argc, char **argv, int *err)
+rapp_create(void  *cookie,
+            int    argc,
+            char **argv,
+            int   *err)
 {
   struct RappContainer *handle = calloc(1, sizeof(struct RappContainer));
   if (handle) {

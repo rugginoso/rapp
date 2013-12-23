@@ -38,7 +38,8 @@ struct TcpServer {
 
 
 struct TcpServer *
-tcp_server_new(struct Logger *logger, struct ELoop *eloop)
+tcp_server_new(struct Logger *logger,
+               struct ELoop  *eloop)
 {
   struct TcpServer *server = NULL;
 
@@ -82,7 +83,8 @@ tcp_server_set_accept_callback(struct TcpServer      *server,
 }
 
 static int
-on_incoming_connection(int server_fd, const void *data)
+on_incoming_connection(int         server_fd,
+                       const void *data)
 {
   struct TcpServer *server = NULL;
   struct TcpConnection *connection = NULL;

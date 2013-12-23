@@ -35,7 +35,8 @@ struct HTTPConnection {
 };
 
 static void
-on_read(struct TcpConnection *tcp_connection, const void *data)
+on_read(struct TcpConnection *tcp_connection,
+        const void           *data)
 {
   char buffer[BUFSIZE];
   ssize_t got = -1;
@@ -60,7 +61,8 @@ on_read(struct TcpConnection *tcp_connection, const void *data)
 }
 
 static void
-on_write(struct TcpConnection *tcp_connection, const void *data)
+on_write(struct TcpConnection *tcp_connection,
+         const void           *data)
 {
   char buffer[BUFSIZE];
   ssize_t got = -1;
@@ -79,7 +81,8 @@ on_write(struct TcpConnection *tcp_connection, const void *data)
 }
 
 static void
-on_close(struct TcpConnection *tcp_connection, const void *data)
+on_close(struct TcpConnection *tcp_connection,
+         const void           *data)
 {
   struct HTTPConnection *http_connection = NULL;
 
@@ -91,7 +94,8 @@ on_close(struct TcpConnection *tcp_connection, const void *data)
 }
 
 static void
-on_parse_finish(struct HTTPRequest *request, void *data)
+on_parse_finish(struct HTTPRequest *request,
+                void               *data)
 {
   struct HTTPConnection *http_connection = NULL;
 
@@ -105,7 +109,9 @@ on_parse_finish(struct HTTPRequest *request, void *data)
 }
 
 struct HTTPConnection *
-http_connection_new(struct Logger *logger, struct TcpConnection *tcp_connection, struct HTTPRouter *router)
+http_connection_new(struct Logger        *logger,
+                    struct TcpConnection *tcp_connection,
+                    struct HTTPRouter    *router)
 {
   struct HTTPConnection *http_connection = NULL;
 

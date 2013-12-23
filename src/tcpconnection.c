@@ -29,7 +29,9 @@ struct TcpConnection
 };
 
 struct TcpConnection *
-tcp_connection_with_fd(int fd, struct Logger *logger, struct ELoop *eloop)
+tcp_connection_with_fd(int            fd,
+                       struct Logger *logger,
+                       struct ELoop  *eloop)
 {
   struct TcpConnection *connection = NULL;
 
@@ -74,7 +76,8 @@ tcp_connection_close(struct TcpConnection *connection)
 }
 
 static int
-on_ready_read(int fd, const void *data)
+on_ready_read(int         fd,
+              const void *data)
 {
   struct TcpConnection *connection = NULL;
 
@@ -89,7 +92,8 @@ on_ready_read(int fd, const void *data)
 }
 
 static int
-on_ready_write(int fd, const void *data)
+on_ready_write(int         fd,
+               const void *data)
 {
   struct TcpConnection *connection = NULL;
 
@@ -104,7 +108,8 @@ on_ready_write(int fd, const void *data)
 }
 
 static int
-on_close(int fd, const void *data)
+on_close(int         fd,
+         const void *data)
 {
   struct TcpConnection *connection = NULL;
 

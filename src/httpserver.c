@@ -27,7 +27,8 @@ struct HTTPServer {
 
 
 static void
-on_request_finish(struct HTTPConnection *http_connection, void *data)
+on_request_finish(struct HTTPConnection *http_connection,
+                  void                  *data)
 {
   struct HTTPServer *http_server = NULL;
 
@@ -39,7 +40,8 @@ on_request_finish(struct HTTPConnection *http_connection, void *data)
 }
 
 static void
-on_accept(struct TcpConnection *tcp_connection, const void *data)
+on_accept(struct TcpConnection *tcp_connection,
+          const void           *data)
 {
   struct HTTPServer *http_server = NULL;
   struct HTTPConnection *http_connection = NULL;
@@ -56,7 +58,9 @@ on_accept(struct TcpConnection *tcp_connection, const void *data)
 }
 
 struct HTTPServer *
-http_server_new(struct Logger *logger, struct ELoop *eloop, struct HTTPRouter *router)
+http_server_new(struct Logger     *logger,
+                struct ELoop      *eloop,
+                struct HTTPRouter *router)
 {
   struct HTTPServer *http_server = NULL;
 
