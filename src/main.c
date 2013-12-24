@@ -52,7 +52,14 @@ main(int argc, char *argv[])
 
   config_parse_early_commandline(&arguments, argc, argv);
 
-  logger = logger_new_console(arguments.loglevel, stderr);
+  if (!arguments.logoutput) {
+    exit(1);
+  }
+  if (arguments.logoutput_is_console == 1)
+    logger = logger_new_console(arguments.loglevel, arguments.logoutput);
+  else
+    logger = logger_new_file(arguments.loglevel, arguments.logoutput);
+
   if (logger == NULL) {
     logger_panic("failed to initialize the logger!");
     exit(1);

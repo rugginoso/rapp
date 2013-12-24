@@ -50,7 +50,9 @@ START_TEST(test_config_early_options)
   struct RappArguments arguments;
   char **args;
   char *loglevel[] = {"rapp", "--log-level", NULL};
-  char *logout[] = {"rapp", "--log-output", "-"};
+  char *logout_no_arg[] = {"rapp", "--log-output", NULL};
+  char *logout_stdout[] = {"rapp", "--log-output", "-"};
+  char *logout_invalid_path[] = {"rapp", "--log-output", "/this/path/should/not/exists"};
   char *load[] = {"rapp", "--load", NULL};
   char *logcolor[] = {"rapp", "--log-nocolor"};
   ck_assert_call_fail(config_parse_early_commandline, &arguments, 0, 0);
@@ -59,7 +61,8 @@ START_TEST(test_config_early_options)
   // defaults:
   ck_assert_int_eq(arguments.loglevel, LOG_INFO);
   ck_assert_int_eq(arguments.lognocolor, 0);
-  ck_assert(arguments.logoutput == NULL);
+  ck_assert(arguments.logoutput == stderr);
+  ck_assert_int_eq(arguments.logoutput_is_console, 1);
   ck_assert(arguments.container == NULL);
 
   // argp arguments should not be defined (EINVAL)
@@ -75,11 +78,15 @@ START_TEST(test_config_early_options)
   test_loglevel(&arguments, 2, 3, loglevel, "warn", LOG_WARNING);
   test_loglevel(&arguments, 2, 3, loglevel, "error", LOG_ERROR);
   test_loglevel(&arguments, 2, 3, loglevel, "critical", LOG_CRITICAL);
-  // unkown values defaults to LOG_INFO
+  // unknown values defaults to LOG_INFO
   test_loglevel(&arguments, 2, 3, loglevel, "other", LOG_INFO);
 
-  // TODO
-  ck_assert_call_ok(config_parse_early_commandline, &arguments, 3, logout);
+  ck_assert_call_fail(config_parse_early_commandline, &arguments, 3, logout_no_arg);
+  ck_assert_call_fail(config_parse_early_commandline, &arguments, 3, logout_invalid_path);
+  ck_assert_int_eq(arguments.logoutput_is_console, 0);
+  ck_assert_call_ok(config_parse_early_commandline, &arguments, 3, logout_stdout);
+  ck_assert_int_eq(arguments.logoutput_is_console, 1);
+  ck_assert(arguments.logoutput == stdout);
 
   ck_assert_call_ok(config_parse_early_commandline, &arguments, 2, logcolor);
   ck_assert_int_eq(arguments.lognocolor, 1);

@@ -7,6 +7,7 @@
 
 #ifndef CONFIG_PRIVATE_H
 #define CONFIG_PRIVATE_H
+#include <stdio.h>
 #include <sys/queue.h>
 #include <rapp/rapp_config.h>
 
@@ -50,7 +51,8 @@ do {                                                                          \
 
 struct RappArguments {
     int loglevel;
-    char *logoutput;
+    int logoutput_is_console;
+    FILE *logoutput;
     int lognocolor;
     char *container;
 };

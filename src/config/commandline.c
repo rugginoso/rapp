@@ -307,7 +307,22 @@ parse_early_opt(int key, char *arg, struct argp_state *state) {
       break;
 
     case ARG_LOGOUTPUT:
-      // TODO
+      arguments->logoutput = NULL;
+      if (!arg)
+        return EINVAL;
+
+      if (strcmp(arg, "-") == 0) {
+        arguments->logoutput = stdout;
+        return 0;
+      }
+
+      arguments->logoutput_is_console = 0;
+      arguments->logoutput = fopen(arg, "w");
+      if (!arguments->logoutput) {
+        logger_panic("Cannot open logfile %s: %s", arg, strerror(errno));
+        return EINVAL;
+      }
+
       return 0;
       break;
 
@@ -340,7 +355,8 @@ config_parse_early_commandline(struct RappArguments *arguments,
 
   // defaults;
   arguments->loglevel = LOG_INFO;
-  arguments->logoutput = NULL;
+  arguments->logoutput_is_console = 1;
+  arguments->logoutput = stderr;
   arguments->lognocolor = 0;
   arguments->container = NULL;
 
