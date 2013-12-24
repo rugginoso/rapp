@@ -116,7 +116,7 @@ tcp_server_start_listen(struct TcpServer *server,
                         uint16_t          port)
 {
   struct addrinfo *addrinfos, hints = {0, };
-  char *port_s = NULL;
+  char port_s[PORT_S_LEN] = { '\0' };
   int addrinfo_ret = 0;
   int on = 1;
 
@@ -127,8 +127,7 @@ tcp_server_start_listen(struct TcpServer *server,
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
-  port_s = alloca(PORT_S_LEN);
-  snprintf(port_s, PORT_S_LEN, "%d", port);
+  snprintf(port_s, sizeof(port_s), "%d", port);
 
   if ((addrinfo_ret = getaddrinfo(host, port_s, &hints, &addrinfos)) != 0) {
     LOGGER_PERROR(server->logger, "getaddrinfo");
