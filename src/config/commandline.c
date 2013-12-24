@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "common.h"
+#include <config.h>
 #include <rapp/rapp_version.h>
 
 #define ARG_INDEX_BASE 128
@@ -19,7 +20,7 @@
 #define ARG_LOAD ARG_INDEX_BASE + 3
 #define ARG_INDEX_OFFSET 150
 
-const char *argp_program_version;
+const char *argp_program_version = RAPP_VERSION_FULL;
 static struct argp_option rappoptions[] = {
   {0, 0, 0, OPTION_DOC, "Logging:", -3},
   {"log-level", ARG_LOGLEVEL, "LOGLEVEL", 0,
@@ -349,7 +350,6 @@ config_parse_early_commandline(struct RappArguments *arguments,
 {
   struct argp argp = {rappoptions, parse_early_opt, 0, 0};
   int res;
-  argp_program_version = rapp_get_version_full();
   if (argc == 0 || !argv)
     return -1;
 

@@ -31,7 +31,7 @@ endif (NOT SIGNALFD_FOUND)
 
 CHECK_SYMBOL_EXISTS(SO_REUSEPORT sys/socket.h SO_REUSEPORT_FOUND)
 
-configure_file(${CMAKE_SOURCE_DIR}/config.h.in ${CMAKE_SOURCE_DIR}/config.h)
+configure_file(${CMAKE_SOURCE_DIR}/config.h.in ${CMAKE_SOURCE_DIR}/config.h @ONLY)
 
 option(ENABLE_TESTS "compile testsuite")
 

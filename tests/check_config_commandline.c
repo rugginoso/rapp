@@ -16,7 +16,6 @@
 #include "test_utils.h"
 
 struct Config *conf;
-const char *argp_program_version;
 char *empty[] = {"rapp"};
 char *usage[] = {"rapp", "--usage"};
 char *version[] = {"rapp", "--version"};
@@ -155,7 +154,6 @@ END_TEST
 
 START_TEST(test_config_commandline_version)
 {
-  argp_program_version = rapp_get_version_full();
   config_parse_commandline(conf, 2, version);
 }
 END_TEST
