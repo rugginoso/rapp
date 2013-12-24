@@ -104,7 +104,7 @@ config_add_value_int(struct Config *conf, const char *section,
 
 int
 config_add_value_string(struct Config *conf, const char *section,
-                        char *name, const char *value)
+                        const char *name, const char *value)
 {
   struct ConfigOption *opt = NULL;
   GET_OPTION(opt, conf, section, name);
@@ -117,7 +117,7 @@ config_add_value_string(struct Config *conf, const char *section,
 
 int
 config_add_value_from_string(struct Config *conf, struct ConfigOption *opt,
-    const char* value)
+                             const char* value)
 {
   long val;
   char *endptr;
