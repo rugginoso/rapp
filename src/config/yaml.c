@@ -1,5 +1,5 @@
 /*
- * config_yaml_parser.c - is part of RApp.
+ * config/yaml.c - is part of RApp.
  * RApp is a modular web application container made for linux and for speed.
  * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
  *     see LICENSE for all the details.

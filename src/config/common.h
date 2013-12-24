@@ -1,12 +1,12 @@
 /*
- * config_private.h - is part of RApp.
+ * common.h - is part of RApp.
  * RApp is a modular web application container made for linux and for speed.
  * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
  *     see LICENSE for all the details.
  */
 
-#ifndef CONFIG_PRIVATE_H
-#define CONFIG_PRIVATE_H
+#ifndef CONFIG_COMMON_H
+#define CONFIG_COMMON_H
 #include <stdio.h>
 #include <sys/queue.h>
 #include <rapp/rapp_config.h>
@@ -27,7 +27,7 @@ do {                                                                          \
   opt = NULL;                                                                 \
   for (opt=sect->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) { \
     if (strcmp(opt->name, (optname)) == 0)                                    \
-      break;                                                                  \
+    break;                                                                    \
   }                                                                           \
   if (!opt) {                                                                 \
     WARN(conf, "No such option %s in section %s", (optname), (sect->name));   \
@@ -50,56 +50,56 @@ do {                                                                          \
 } while(0)
 
 struct RappArguments {
-    int loglevel;
-    int logoutput_is_console;
-    FILE *logoutput;
-    int lognocolor;
-    char *container;
+  int loglevel;
+  int logoutput_is_console;
+  FILE *logoutput;
+  int lognocolor;
+  char *container;
 };
 
 struct ConfigValue {
-    union {
-        long intvalue;
-        char *strvalue;
-    } value;
-    TAILQ_ENTRY(ConfigValue) entries;
+  union {
+    long intvalue;
+    char *strvalue;
+  } value;
+  TAILQ_ENTRY(ConfigValue) entries;
 };
 
 struct ConfigOption {
-    ConfigParamType type;
-    char *help;
-    char *name;
-    int range_set;
-    long value_min;
-    long value_max;
-    int multivalued;
-    int num_values;
-    union {
-        long intvalue;
-        char *strvalue;
-    } default_value;
-    int default_set;
-    char *metavar;
-    int set_from_commandline;
-    struct ConfigSection *section;
-    TAILQ_ENTRY(ConfigOption) entries;
-    TAILQ_HEAD(ConfigValuesHead, ConfigValue) values;
+  ConfigParamType type;
+  char *help;
+  char *name;
+  int range_set;
+  long value_min;
+  long value_max;
+  int multivalued;
+  int num_values;
+  union {
+    long intvalue;
+    char *strvalue;
+  } default_value;
+  int default_set;
+  char *metavar;
+  int set_from_commandline;
+  struct ConfigSection *section;
+  TAILQ_ENTRY(ConfigOption) entries;
+  TAILQ_HEAD(ConfigValuesHead, ConfigValue) values;
 };
 
 struct ConfigSection {
-    char *name;
-    int num_opts;
-    TAILQ_ENTRY(ConfigSection) entries;
-    TAILQ_HEAD(ConfigOptionHead, ConfigOption) options;
+  char *name;
+  int num_opts;
+  TAILQ_ENTRY(ConfigSection) entries;
+  TAILQ_HEAD(ConfigOptionHead, ConfigOption) options;
 };
 
 struct Config {
-    int num_sections;
-    struct Logger *logger;
-    struct ConfigOption **options_map;
-    struct argp_option *options;
-    int num_argp_options;
-    TAILQ_HEAD(ConfigSectionHead, ConfigSection) sections;
+  int num_sections;
+  struct Logger *logger;
+  struct ConfigOption **options_map;
+  struct argp_option *options;
+  int num_argp_options;
+  TAILQ_HEAD(ConfigSectionHead, ConfigSection) sections;
 };
 
 struct Config *config_new(struct Logger *logger);
@@ -116,9 +116,9 @@ void config_section_destroy(struct ConfigSection *sect);
 int config_add_value_string(struct Config *conf, const char *section,
                             const char *name, const char* value);
 int config_add_value_int(struct Config *conf, const char *section,
-                         const char *name, long value);
+    const char *name, long value);
 int config_add_value_from_string(struct Config *conf, struct ConfigOption *opt,
-                                 const char *value);
+    const char *value);
 void config_option_remove_all_values(struct ConfigOption *opt);
 void config_option_destroy(struct ConfigOption *opt);
 
@@ -127,7 +127,7 @@ int config_generate_commandline(struct Config *conf);
 int config_parse_commandline(struct Config *conf, int argc, char *argv[]);
 int config_parse_early_commandline(struct RappArguments *arguments,
                                    int argc, char* argv[]);
-#endif /* CONFIG_PRIVATE_H */
+#endif /* CONFIG_COMMON_H */
 
 /*
  * vim: expandtab shiftwidth=2 tabstop=2:
