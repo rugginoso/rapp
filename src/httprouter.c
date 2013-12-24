@@ -222,7 +222,7 @@ http_router_serve(struct HTTPRouter         *router,
   for (pack = &router->pack; !found && pack != NULL; pack = pack->next) {
     int i = 0;
     for (i = 0; !found && i < pack->binding_num; i++) {
-      int current = strmatch(pack->bindings[i].route, raw_req + uri_range.offset, uri_range.length);
+      int current = strmatch(raw_req + uri_range.offset, pack->bindings[i].route, uri_range.length);
       if (current >= pack->bindings[i].route_len) {
         /* woot! a match! let's update the candidate */
         container = pack->bindings[i].container;
