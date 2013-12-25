@@ -1,5 +1,5 @@
 /*
- * check_config_commandline.c - is part of RApp.
+ * check_config_env.c - is part of RApp.
  * RApp is a modular web application container made for linux and for speed.
  * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
  *     see LICENSE for all the details.
@@ -16,6 +16,7 @@
 #include "test_utils.h"
 
 struct Config *conf;
+char *address[] = {"RAPP_ADDRESS=0.0.0.0"};
 
 void
 setup(void)
@@ -32,18 +33,100 @@ teardown(void)
 
 START_TEST(test_config_env)
 {
-  ck_assert_call_ok(config_read_env, conf, NULL);
+  char *no_relevant[] = {"MYVAR=3"};
+  char *value;
+  ck_assert_call_fail(config_read_env, conf, NULL);
+  ck_assert_call_fail(config_read_env, NULL, no_relevant);
+  // conf should ignore non-related or not set options
+  ck_assert_call_ok(config_read_env, conf, no_relevant);
+  ck_assert_call_ok(config_read_env, conf, address);
+
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
+  ck_assert_call_ok(config_read_env, conf, address);
+  config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
+  ck_assert_str_eq(value, "0.0.0.0");
+}
+END_TEST
+
+START_TEST(test_config_env_override_conf)
+{
+  char *config_s = "---\ncore: {address: 127.0.0.1}";
+  char *value;
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
+  ck_assert_call_ok(config_read_env, conf, address);
+  ck_assert_call_ok(config_parse_string, conf, config_s);
+  config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
+  ck_assert_str_eq(value, "0.0.0.0");
+}
+END_TEST
+
+START_TEST(test_config_env_overridden_by_commandline)
+{
+  char *cmdline[] = {"rapp", "--address", "127.0.0.1"};
+  char *value;
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
+  ck_assert_call_ok(config_parse_commandline, conf, 3, cmdline);
+  ck_assert_call_ok(config_read_env, conf, address);
+  config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
+  ck_assert_str_eq(value, "127.0.0.1");
+}
+END_TEST
+
+START_TEST(test_config_env_multivalue)
+{
+  char *multivalued[] = {"RAP_SECT_OPT=1:2:3"};
+  int value;
+  config_opt_add(conf, "SECT", "OPT", PARAM_INT, NULL, NULL);
+  config_opt_set_multivalued(conf, "SECT", "OPT", 1);
+  ck_assert_call_ok(config_read_env, conf, multivalued);
+  config_get_num_values(conf, "SECT", "OPT", &value);
+  ck_assert_int_eq(3, value);
+  config_get_nth_int(conf, "SECT", "OPT", 0, (long *) &value);
+  ck_assert_int_eq(1, value);
+  config_get_nth_int(conf, "SECT", "OPT", 1, (long *) &value);
+  ck_assert_int_eq(2, value);
+  config_get_nth_int(conf, "SECT", "OPT", 2, (long *) &value);
+  ck_assert_int_eq(3, value);
+}
+END_TEST
+
+START_TEST(test_config_env_bool_ok)
+{
+  char *boolean_ok[] = {"RAPP_SECT_OPT=1"};
+  int value;
+  config_opt_add(conf, "SECT", "OPT", PARAM_BOOL, NULL, NULL);
+  ck_assert_call_ok(config_read_env, conf, boolean_ok);
+  config_get_bool(conf, "SECT", "OPT", &value);
+  ck_assert_int_eq(value, 1);
+}
+END_TEST
+
+START_TEST(test_config_env_bool_fail)
+{
+  char *boolean_fail[] = {"RAPP_SECT_OPT=2"};
+  int value;
+  config_opt_add(conf, "SECT", "OPT", PARAM_BOOL, NULL, NULL);
+  ck_assert_call_ok(config_read_env, conf, boolean_fail);
+  ck_assert_call_fail(config_get_bool, conf, "SECT", "OPT", &value);
 }
 END_TEST
 
 static Suite *
-config_commandline_suite(void)
+config_env_suite(void)
 {
   Suite *s = suite_create("rapp.core.config_env");
   TCase *tc = tcase_create("rapp.core.config_env");
 
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_config_env);
+  tcase_add_test(tc, test_config_env_override_conf);
+  tcase_add_test(tc, test_config_env_overridden_by_commandline);
+  tcase_add_test(tc, test_config_env_multivalue);
+  tcase_add_test(tc, test_config_env_bool_ok);
+  tcase_add_test(tc, test_config_env_bool_fail);
   suite_add_tcase(s, tc);
 
   return s;
@@ -55,9 +138,9 @@ main (void)
 {
   int number_failed = 0;
 
-  Suite *s = config_commandline_suite();
+  Suite *s = config_env_suite();
   SRunner *sr = srunner_create(s);
-  srunner_set_log(sr, "check_config_commandline.log");
+  srunner_set_log(sr, "check_config_env.log");
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);
   srunner_free(sr);

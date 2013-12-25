@@ -9,6 +9,8 @@
 int
 config_read_env(struct Config *conf, char *envp[])
 {
+  if (!conf || !envp)
+    return -1;
   return 0;
 }
 /*
