@@ -10,9 +10,11 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+#include <fcntl.h>
 #include <assert.h>
 
 #include "logger.h"
+#include "tcpconnection.h"
 #include "httpresponse.h"
 
 /* code + space + message + NULL */
@@ -27,6 +29,10 @@
 struct HTTPResponse {
   char *buffer;
   size_t buffer_length;
+
+  int sendfile_fd;
+  off_t sendfile_offset;
+  size_t sendfile_length;
 
   const char *server_name;
 
@@ -126,6 +132,7 @@ http_response_new(struct Logger *logger, const char *server_name)
     return NULL;
   }
 
+  response->sendfile_fd = -1;
   response->logger = logger;
   response->server_name = server_name;
 
@@ -360,6 +367,46 @@ http_response_write_error_by_code(struct HTTPResponse *response,
   free(body);
 
   return total_length;
+}
+
+int
+http_response_write_file(struct HTTPResponse *response,
+                         const char          *path,
+                         size_t               length)
+{
+  assert(response != NULL);
+  assert(path != 0);
+
+  if ((response->sendfile_fd = open(path, O_RDONLY)) < 0)
+    return -1;
+
+  response->sendfile_length = length;
+
+  return 0;
+}
+
+ssize_t
+http_response_sendfile(struct HTTPResponse *response,
+                       struct TcpConnection *tcp_connection)
+{
+  ssize_t wrote = -1;
+
+  assert(response != NULL);
+  assert(tcp_connection != NULL);
+
+  if (response->sendfile_fd < 0)
+    return -1;
+
+  wrote = tcp_connection_sendfile(tcp_connection,
+                                  response->sendfile_fd,
+                                  &(response->sendfile_offset),
+                                  response->sendfile_length - response->sendfile_offset);
+  if (wrote <= 0) {
+    close(response->sendfile_fd);
+    response->sendfile_fd = -1;
+  }
+
+  return wrote;
 }
 
 /*

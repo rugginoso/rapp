@@ -18,6 +18,8 @@ void http_response_destroy(struct HTTPResponse *response);
 
 ssize_t http_response_read_data(struct HTTPResponse *response, void *data, size_t length);
 
+ssize_t http_response_sendfile(struct HTTPResponse *response, struct TcpConnection *tcp_connection);
+
 #endif /* HTTTPRESPONSE_H */
 /*
  * vim: expandtab shiftwidth=2 tabstop=2:

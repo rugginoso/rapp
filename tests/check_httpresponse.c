@@ -12,7 +12,18 @@
 #include <check.h>
 
 #include "logger.h"
+#include "eloop.h"
+#include "tcpconnection.h"
 #include "httpresponse.h"
+
+#include "test_utils.h"
+
+#define HOST "localhost"
+#define PORT 8000
+
+#define MESSAGE "Hello world!"
+#define MESSAGE_LEN STRLEN(MESSAGE)
+
 
 struct HTTPResponse *response = NULL;
 struct Logger *logger = NULL;
@@ -194,6 +205,40 @@ START_TEST(test_httpresponse_write_error_by_code_appends_error_page)
 }
 END_TEST
 
+START_TEST(test_httpresponse_write_file_and_httpresponse_sendfile_sends_a_file)
+{
+  struct ELoop *eloop = NULL;
+  struct TcpConnection *tcp_connection = NULL;
+  int server_fd = -1;
+  int client_fd = -1;
+  int file_fd = -1;
+  char buf[MESSAGE_LEN];
+  int ret = 0;
+
+  file_fd = open("test_file.txt", O_WRONLY | O_CREAT, 0640);
+  write(file_fd, MESSAGE, MESSAGE_LEN);
+  close(file_fd);
+
+  ret = http_response_write_file(response, "test_file.txt", MESSAGE_LEN);
+  ck_assert_int_eq(ret, 0);
+
+  eloop = event_loop_new(logger);
+  server_fd = listen_to(HOST, PORT);
+  client_fd = connect_to(HOST, PORT);
+  tcp_connection = tcp_connection_with_fd(accept(server_fd, NULL, NULL), logger, eloop);
+
+  ret = http_response_sendfile(response, tcp_connection);
+  ck_assert_int_eq(ret, MESSAGE_LEN);
+
+  unlink("test_file.txt");
+
+  ret = read(client_fd, buf, MESSAGE_LEN);
+  ck_assert_int_eq(ret, MESSAGE_LEN);
+
+  ck_assert_str_eq(buf, MESSAGE);
+}
+END_TEST
+
 static Suite *
 httpresponse_suite(void)
 {
@@ -210,6 +255,7 @@ httpresponse_suite(void)
   tcase_add_test(tc, test_httpresponse_write_status_line_by_code_appends_statusline);
   tcase_add_test(tc, test_httpresponse_write_status_line_by_code_return_error_on_invalid_code);
   tcase_add_test(tc, test_httpresponse_write_error_by_code_appends_error_page);
+  tcase_add_test(tc, test_httpresponse_write_file_and_httpresponse_sendfile_sends_a_file);
   suite_add_tcase(s, tc);
 
   return s;

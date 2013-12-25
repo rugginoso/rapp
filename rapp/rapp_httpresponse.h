@@ -22,6 +22,8 @@ ssize_t http_response_append_data(struct HTTPResponse *response, const void *dat
 
 ssize_t http_response_write_error_by_code(struct HTTPResponse *response, unsigned code);
 
+int http_response_write_file(struct HTTPResponse *response, const char *path, size_t length);
+
 #endif /* RAPP_HTTTPRESPONSE_H */
 /*
  * vim: expandtab shiftwidth=2 tabstop=2:
