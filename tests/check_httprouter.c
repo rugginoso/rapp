@@ -29,7 +29,8 @@ START_TEST(test_httprouter_new_destroy)
 END_TEST
 
 /* TODO: check the logger output */
-START_TEST(test_httprouter_serve_without_containers)
+static void
+check_no_match(enum RouteMatchMode match_mode)
 {
   int ret = 0;
   struct Logger *logger = NULL;
@@ -37,7 +38,7 @@ START_TEST(test_httprouter_serve_without_containers)
 
   logger = logger_new_null();
 
-  router = http_router_new(logger, ROUTE_MATCH_FIRST);
+  router = http_router_new(logger, match_mode);
   ck_assert(router != NULL);
 
   ret = http_router_serve(router, (struct HTTPRequest *)&logger, (struct HTTPResponse *)&logger); /* FIXME */
@@ -45,6 +46,17 @@ START_TEST(test_httprouter_serve_without_containers)
 
   http_router_destroy(router);
   logger_destroy(logger);
+}
+
+START_TEST(test_httprouter_serve_without_containers_match_first)
+{
+  check_no_match(ROUTE_MATCH_FIRST);
+}
+END_TEST
+
+START_TEST(test_httprouter_serve_without_containers_match_longest)
+{
+  check_no_match(ROUTE_MATCH_LONGEST);
 }
 END_TEST
 
@@ -69,7 +81,8 @@ debug_destroy(struct RappContainer *handle)
   return 0;
 }
 
-START_TEST(test_httprouter_default_container_alone)
+static void
+check_default_container(enum RouteMatchMode match_mode)
 {
   int ret = 0;
   struct Logger *logger = NULL;
@@ -93,11 +106,23 @@ START_TEST(test_httprouter_default_container_alone)
   http_router_destroy(router);
   logger_destroy(logger);
 }
+
+START_TEST(test_httprouter_default_container_alone_match_first)
+{
+  check_default_container(ROUTE_MATCH_FIRST);
+}
+END_TEST
+
+START_TEST(test_httprouter_default_container_alone_match_longest)
+{
+  check_default_container(ROUTE_MATCH_LONGEST);
+}
 END_TEST
 
 
 static void
-check_route(const char *route)
+check_route(const char         *route,
+            enum RouteMatchMode match_mode)
 {
   int ret = 0;
   struct Logger *logger = NULL;
@@ -109,7 +134,7 @@ check_route(const char *route)
   logger = logger_new_null();
   debug = container_new_custom(logger, "debug", debug_serve, debug_destroy, &debug_data);
 
-  router = http_router_new(logger, ROUTE_MATCH_FIRST);
+  router = http_router_new(logger, match_mode);
   ck_assert(router != NULL);
   ret = http_router_bind(router, route, debug);
   ck_assert_int_eq(ret, 0);
@@ -127,15 +152,27 @@ check_route(const char *route)
   logger_destroy(logger);
 }
 
-START_TEST(test_httprouter_one_route_short)
+START_TEST(test_httprouter_one_route_short_match_first)
 {
-  check_route("/");
+  check_route("/", ROUTE_MATCH_FIRST);
 }
 END_TEST
 
-START_TEST(test_httprouter_one_route_long)
+START_TEST(test_httprouter_one_route_short_match_longest)
 {
-  check_route("/this/route/must/be/longer/than/32/characters");
+  check_route("/", ROUTE_MATCH_LONGEST);
+}
+END_TEST
+
+START_TEST(test_httprouter_one_route_long_match_first)
+{
+  check_route("/this/route/must/be/longer/than/32/characters", ROUTE_MATCH_FIRST);
+}
+END_TEST
+
+START_TEST(test_httprouter_one_route_long_match_longest)
+{
+  check_route("/this/route/must/be/longer/than/32/characters", ROUTE_MATCH_LONGEST);
 }
 END_TEST
 
@@ -143,8 +180,9 @@ END_TEST
 #define ROUTES_NUM_BIG    1024
 
 static void
-check_many_routes(const char *route_tmpl,
-                  int         routes_num)
+check_many_routes(const char         *route_tmpl,
+                  int                 routes_num,
+                  enum RouteMatchMode match_mode)
 {
   int i = 0;
   int ret = 0;
@@ -161,7 +199,7 @@ check_many_routes(const char *route_tmpl,
   ck_assert(debug_data != NULL);
 
   logger = logger_new_null();
-  router = http_router_new(logger, ROUTE_MATCH_FIRST);
+  router = http_router_new(logger, match_mode);
   ck_assert(router != NULL);
 
   /* setup */
@@ -197,29 +235,142 @@ check_many_routes(const char *route_tmpl,
   free(debug);
 }
 
-START_TEST(test_httproter_many_small_routes_num_small)
+START_TEST(test_httproter_many_small_routes_num_small_match_first)
 {
-  check_many_routes("/%02i", ROUTES_NUM_SMALL);
+  check_many_routes("/%02i", ROUTES_NUM_SMALL, ROUTE_MATCH_FIRST);
 }
 END_TEST
 
-START_TEST(test_httproter_many_small_routes_num_big)
+START_TEST(test_httproter_many_small_routes_num_big_match_first)
 {
-  check_many_routes("/%02i", ROUTES_NUM_BIG);
+  check_many_routes("/%02i", ROUTES_NUM_BIG, ROUTE_MATCH_FIRST);
 }
 END_TEST
 
-START_TEST(test_httproter_many_long_routes_num_small)
+START_TEST(test_httproter_many_long_routes_num_small_match_first)
 {
-  check_many_routes("/very/long/route/name/number%02i/to/properlyexerciseall/the_code", ROUTES_NUM_SMALL);
+  check_many_routes("/very/long/route/name/number%02i/to/properlyexerciseall/the_code", ROUTES_NUM_SMALL, ROUTE_MATCH_FIRST);
 }
 END_TEST
 
-START_TEST(test_httproter_many_long_routes_num_big)
+START_TEST(test_httproter_many_long_routes_num_big_match_first)
 {
-  check_many_routes("/very/long/route/name/number%02i/to/properlyexerciseall/the_code", ROUTES_NUM_BIG);
+  check_many_routes("/very/long/route/name/number%02i/to/properlyexerciseall/the_code", ROUTES_NUM_BIG, ROUTE_MATCH_FIRST);
 }
 END_TEST
+
+START_TEST(test_httproter_many_small_routes_num_small_match_longest)
+{
+  check_many_routes("/%02i", ROUTES_NUM_SMALL, ROUTE_MATCH_LONGEST);
+}
+END_TEST
+
+START_TEST(test_httproter_many_small_routes_num_big_match_longest)
+{
+  check_many_routes("/%02i", ROUTES_NUM_BIG, ROUTE_MATCH_LONGEST);
+}
+END_TEST
+
+START_TEST(test_httproter_many_long_routes_num_small_match_longest)
+{
+  check_many_routes("/very/long/route/name/number%02i/to/properlyexerciseall/the_code", ROUTES_NUM_SMALL, ROUTE_MATCH_LONGEST);
+}
+END_TEST
+
+START_TEST(test_httproter_many_long_routes_num_big_match_longest)
+{
+  check_many_routes("/very/long/route/name/number%02i/to/properlyexerciseall/the_code", ROUTES_NUM_BIG, ROUTE_MATCH_LONGEST);
+}
+END_TEST
+
+struct RouteTestData {
+  const char *route;
+  struct Container *debug;
+  struct RappContainer debug_data;
+};
+
+static struct RouteTestData test_data[] = {
+  { "/",              },
+  { "/static",        },
+  { "/app",           },
+  { "/app/sub",       },
+  { "/app/sub/path",  },
+  { NULL, }
+};
+
+static void
+check_match_right_route(const char         *test_route,
+                        int                 expected,
+                        enum RouteMatchMode match_mode)
+{
+  char buf[32] = { '\0' }; /* FIXME */
+  struct Logger *logger = NULL;
+  struct HTTPRequest *request = NULL;
+  struct HTTPRouter *router = NULL;
+  int ret = 0;
+  int i = 0;
+
+  logger = logger_new_null();
+  router = http_router_new(logger, match_mode);
+  ck_assert(router != NULL);
+
+  /* setup */
+  for (i = 0; test_data[i].route != NULL; i++) {
+    snprintf(buf, sizeof(buf), "#%02i", i);
+    test_data[i].debug = container_new_custom(logger, buf, debug_serve, debug_destroy, &(test_data[i].debug_data));
+
+    ret = http_router_bind(router, test_data[i].route, test_data[i].debug);
+    ck_assert_int_eq(ret, 0);
+  }
+
+  request = http_request_new_fake_url(logger, test_route);
+
+  ret = http_router_serve(router, request,
+                          (struct HTTPResponse *)request); /* FIXME */
+  ck_assert_int_eq(ret, 0);
+  http_request_destroy(request);
+  
+  /* verify and clean */
+  for (i = 0; test_data[i].route != NULL; i++) {
+    int count = (i == expected) ?1 :0;
+#ifdef TEST_DEBUG
+/*  intentionally left for future debugging */
+    fprintf(stderr, "mode=%i given[%s] added[%s] #%i invoked=%i expected=%i\n",
+            match_mode, test_route, test_data[i].route, i,
+            test_data[i].debug_data.invoke_count, count);
+#endif
+    ck_assert_int_eq(test_data[i].debug_data.invoke_count, count);
+    container_destroy(test_data[i].debug);
+  }
+
+  http_router_destroy(router);
+  logger_destroy(logger);
+}
+
+START_TEST(test_httproter_match_right_route_first1)
+{
+  check_match_right_route("/app", 0, ROUTE_MATCH_FIRST);
+}
+END_TEST
+
+START_TEST(test_httproter_match_right_route_longest1)
+{
+  check_match_right_route("/app", 2, ROUTE_MATCH_LONGEST);
+}
+END_TEST
+
+START_TEST(test_httproter_match_right_route_first2)
+{
+  check_match_right_route("/", 0, ROUTE_MATCH_FIRST);
+}
+END_TEST
+
+START_TEST(test_httproter_match_right_route_longest2)
+{
+  check_match_right_route("/", 0, ROUTE_MATCH_LONGEST);
+}
+END_TEST
+
 
 static Suite *
 httprouter_suite(void)
@@ -228,14 +379,28 @@ httprouter_suite(void)
   TCase *tc = tcase_create("rapp.core.httprouter");
 
   tcase_add_test(tc, test_httprouter_new_destroy);
-  tcase_add_test(tc, test_httprouter_serve_without_containers);
-  tcase_add_test(tc, test_httprouter_default_container_alone);
-  tcase_add_test(tc, test_httprouter_one_route_short);
-  tcase_add_test(tc, test_httprouter_one_route_long);
-  tcase_add_test(tc, test_httproter_many_small_routes_num_small);
-  tcase_add_test(tc, test_httproter_many_small_routes_num_big);
-  tcase_add_test(tc, test_httproter_many_long_routes_num_small);
-  tcase_add_test(tc, test_httproter_many_long_routes_num_big);
+  tcase_add_test(tc, test_httprouter_serve_without_containers_match_first);
+  tcase_add_test(tc, test_httprouter_serve_without_containers_match_longest);
+  tcase_add_test(tc, test_httprouter_default_container_alone_match_first);
+  tcase_add_test(tc, test_httprouter_default_container_alone_match_longest);
+  tcase_add_test(tc, test_httprouter_one_route_short_match_first);
+  tcase_add_test(tc, test_httprouter_one_route_short_match_longest);
+  tcase_add_test(tc, test_httprouter_one_route_long_match_first);
+  tcase_add_test(tc, test_httprouter_one_route_long_match_longest);
+  tcase_add_test(tc, test_httproter_many_small_routes_num_small_match_first);
+  tcase_add_test(tc, test_httproter_many_small_routes_num_small_match_longest);
+  tcase_add_test(tc, test_httproter_many_small_routes_num_big_match_first);
+  tcase_add_test(tc, test_httproter_many_small_routes_num_big_match_longest);
+  tcase_add_test(tc, test_httproter_many_long_routes_num_small_match_first);
+  tcase_add_test(tc, test_httproter_many_long_routes_num_small_match_longest);
+  tcase_add_test(tc, test_httproter_many_long_routes_num_big_match_first);
+  tcase_add_test(tc, test_httproter_many_long_routes_num_big_match_longest);
+
+  tcase_add_test(tc, test_httproter_match_right_route_first1);
+  tcase_add_test(tc, test_httproter_match_right_route_longest1);
+  tcase_add_test(tc, test_httproter_match_right_route_first2);
+  tcase_add_test(tc, test_httproter_match_right_route_longest2);
+
   suite_add_tcase(s, tc);
 
   return s;
