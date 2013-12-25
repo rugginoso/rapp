@@ -28,7 +28,7 @@ struct SignalHandler {
   struct Logger *logger;
 
   SignalHandlerCallback callbacks[_NSIG];
-  void *data;
+  void *data[_NSIG];
 };
 
 static int
@@ -48,7 +48,7 @@ on_signal(int         fd,
   }
 
   if (signal_handler->callbacks[siginfo.ssi_signo] != NULL)
-    signal_handler->callbacks[siginfo.ssi_signo](signal_handler, signal_handler->data);
+    signal_handler->callbacks[siginfo.ssi_signo](signal_handler, signal_handler->data[siginfo.ssi_signo]);
 
   return 0;
 }
@@ -120,7 +120,7 @@ signal_handler_add_signal_callback(struct SignalHandler *signal_handler,
   }
 
   signal_handler->callbacks[sig] = callback;
-  signal_handler->data = data;
+  signal_handler->data[sig] = data;
 
   return 0;
 }
