@@ -77,7 +77,8 @@ on_write(struct TcpConnection *tcp_connection,
     tcp_connection_write_data(tcp_connection, buffer, got);
   }
   else {
-    http_connection->finish_callback(http_connection, http_connection->data);
+    if (http_response_sendfile(http_connection->response, tcp_connection) <= 0)
+      http_connection->finish_callback(http_connection, http_connection->data);
   }
 }
 
