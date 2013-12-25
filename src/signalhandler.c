@@ -98,17 +98,12 @@ signal_handler_destroy(struct SignalHandler *signal_handler)
   free(signal_handler);
 }
 
-int
-signal_handler_add_signal_callback(struct SignalHandler *signal_handler,
+static int
+signal_handler_set_signal_callback(struct SignalHandler *signal_handler,
                                    unsigned              sig,
                                    SignalHandlerCallback callback,
                                    void                 *data)
 {
-  assert(signal_handler != NULL);
-  assert(sig < _NSIG);
-
-  sigaddset(&(signal_handler->sigmask), sig);
-
   if (sigprocmask(SIG_SETMASK, &(signal_handler->sigmask), NULL) != 0) {
     LOGGER_PERROR(signal_handler->logger, "sigprocmask");
     return -1;
@@ -125,6 +120,21 @@ signal_handler_add_signal_callback(struct SignalHandler *signal_handler,
   return 0;
 }
 
+
+int
+signal_handler_add_signal_callback(struct SignalHandler *signal_handler,
+                                   unsigned              sig,
+                                   SignalHandlerCallback callback,
+                                   void                 *data)
+{
+  assert(signal_handler != NULL);
+  assert(sig < _NSIG);
+
+  sigaddset(&(signal_handler->sigmask), sig);
+
+  return signal_handler_set_signal_callback(signal_handler, sig, callback, data);
+}
+
 int
 signal_handler_remove_signal_callback(struct SignalHandler *signal_handler,
                                       unsigned              sig)
@@ -134,19 +144,7 @@ signal_handler_remove_signal_callback(struct SignalHandler *signal_handler,
 
   sigdelset(&(signal_handler->sigmask), sig);
 
-  if (sigprocmask(SIG_SETMASK, &(signal_handler->sigmask), NULL) != 0) {
-    LOGGER_PERROR(signal_handler->logger, "sigprocmask");
-    return -1;
-  }
-
-  if (signalfd(signal_handler->fd, &(signal_handler->sigmask), 0) < 0) {
-    LOGGER_PERROR(signal_handler->logger, "signalfd");
-    return -1;
-  }
-
-  signal_handler->callbacks[sig] = NULL;
-
-  return 0;
+  return signal_handler_set_signal_callback(signal_handler, sig, NULL, NULL);
 }
 
 /*
