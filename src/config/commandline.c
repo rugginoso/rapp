@@ -247,7 +247,7 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
   }
 
   // Do not override the value in case it's present in config
-  opt->set_from_commandline = 1;
+  opt->no_override = 1;
   return 0;
 }
 

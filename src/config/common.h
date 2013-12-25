@@ -80,7 +80,7 @@ struct ConfigOption {
   } default_value;
   int default_set;
   char *metavar;
-  int set_from_commandline;
+  int no_override;
   struct ConfigSection *section;
   TAILQ_ENTRY(ConfigOption) entries;
   TAILQ_HEAD(ConfigValuesHead, ConfigValue) values;

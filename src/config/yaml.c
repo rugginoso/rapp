@@ -63,7 +63,7 @@ config_set_value_from_yaml_scalar(struct Config *conf,
     struct ConfigOption *opt,
     yaml_token_t *token)
 {
-  if (opt->set_from_commandline) {
+  if (opt->no_override) {
     DEBUG(conf, "%s has been locked by commandline", opt->name);
     return 0;
   }
@@ -188,7 +188,7 @@ yaml_parse_key_value(struct Config *conf,
   // multivalued we override the whole list.
   // Note that defaults are kept in a separate value so this is not
   // touching those.
-  if (!opt->set_from_commandline)
+  if (!opt->no_override)
     config_option_remove_all_values(opt);
 
   if (token.type == YAML_BLOCK_SEQUENCE_START_TOKEN ||
