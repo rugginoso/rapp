@@ -126,7 +126,7 @@ START_TEST(test_tcp_connection_sendfile)
 
   file_fd = open("test_file.txt", O_RDONLY);
 
-  tcp_connection_sendfile(tcp_connection, file_fd, MESSAGE_LEN);
+  tcp_connection_sendfile(tcp_connection, file_fd, 0, MESSAGE_LEN);
 
   close(file_fd);
   unlink("test_file.txt");

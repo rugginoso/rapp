@@ -178,12 +178,13 @@ tcp_connection_write_data(struct TcpConnection *connection,
 ssize_t
 tcp_connection_sendfile(struct TcpConnection *connection,
                         int                   file_fd,
+                        off_t                *offset,
                         size_t                length)
 {
   assert(connection != NULL);
   assert(file_fd >= 0);
 
-  return sendfile(connection->fd, file_fd, NULL, length);
+  return sendfile(connection->fd, file_fd, offset, length);
 }
 /*
  * vim: expandtab shiftwidth=2 tabstop=2:
