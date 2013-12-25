@@ -303,6 +303,12 @@ http_response_write_error_by_code(struct HTTPResponse *response,
 
   assert(response != NULL);
 
+  if (response->buffer != NULL) {
+    free(response->buffer);
+    response->buffer = 0;
+    response->buffer_length = 0;
+  }
+
   if ((message = status_message_by_code(code)) == NULL)
     return -1;
 
