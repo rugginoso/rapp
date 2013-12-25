@@ -34,7 +34,7 @@ on_signal(struct SignalHandler *signal_handler,
 }
 
 int
-main(int argc, char *argv[], char *envp[])
+main(int argc, char *argv[])
 {
   struct Logger *logger = NULL;
   struct ELoop *eloop = NULL;
@@ -86,7 +86,7 @@ main(int argc, char *argv[], char *envp[])
   if (res != 0) {
       exit(1);
   }
-  res = config_read_env(config, envp);
+  res = config_read_env(config);
   if (res != 0) {
     exit(1);
   }

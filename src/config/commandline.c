@@ -51,17 +51,6 @@ config_argp_options_destroy(struct Config *conf)
   free(conf->options_map);
 }
 
-void
-uppercase(char *str)
-{
-  if (!str)
-    return;
-  while(*str != '\0') {
-    *str = toupper((unsigned char) *str);
-    str++;
-  }
-}
-
 int
 generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
     int *index, int group)

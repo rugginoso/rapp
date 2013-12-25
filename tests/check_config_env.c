@@ -16,12 +16,12 @@
 #include "test_utils.h"
 
 struct Config *conf;
-char *address[] = {"RAPP_ADDRESS=0.0.0.0"};
 
 void
 setup(void)
 {
-  struct Logger *logger = logger_new_null();
+  clearenv();
+  struct Logger *logger = logger_new_console(LOG_LAST, stderr);
   conf = config_new(logger);
 }
 
@@ -33,17 +33,17 @@ teardown(void)
 
 START_TEST(test_config_env)
 {
-  char *no_relevant[] = {"MYVAR=3"};
   char *value;
-  ck_assert_call_fail(config_read_env, conf, NULL);
-  ck_assert_call_fail(config_read_env, NULL, no_relevant);
+  ck_assert_call_fail(config_read_env, NULL);
   // conf should ignore non-related or not set options
-  ck_assert_call_ok(config_read_env, conf, no_relevant);
-  ck_assert_call_ok(config_read_env, conf, address);
+  putenv("OTHER_VALUE=3");
+  putenv("RAPP_ADDRESS=0.0.0.0");
+  ck_assert_call_ok(config_read_env, conf);
 
   config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "other", PARAM_STRING, NULL, NULL);
   config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
-  ck_assert_call_ok(config_read_env, conf, address);
+  ck_assert_call_ok(config_read_env, conf);
   config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
   ck_assert_str_eq(value, "0.0.0.0");
 }
@@ -53,9 +53,10 @@ START_TEST(test_config_env_override_conf)
 {
   char *config_s = "---\ncore: {address: 127.0.0.1}";
   char *value;
+  putenv("RAPP_ADDRESS=0.0.0.0");
   config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
   config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
-  ck_assert_call_ok(config_read_env, conf, address);
+  ck_assert_call_ok(config_read_env, conf);
   ck_assert_call_ok(config_parse_string, conf, config_s);
   config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
   ck_assert_str_eq(value, "0.0.0.0");
@@ -66,10 +67,11 @@ START_TEST(test_config_env_overridden_by_commandline)
 {
   char *cmdline[] = {"rapp", "--address", "127.0.0.1"};
   char *value;
+  putenv("RAPP_ADDRESS=0.0.0.0");
   config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
   config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
   ck_assert_call_ok(config_parse_commandline, conf, 3, cmdline);
-  ck_assert_call_ok(config_read_env, conf, address);
+  ck_assert_call_ok(config_read_env, conf);
   config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
   ck_assert_str_eq(value, "127.0.0.1");
 }
@@ -77,11 +79,12 @@ END_TEST
 
 START_TEST(test_config_env_multivalue)
 {
-  char *multivalued[] = {"RAP_SECT_OPT=1:2:3"};
   int value;
+  // set a string that starts and ends with : as edge cases
+  putenv("RAPP_SECT_OPT=:1:2:3:");
   config_opt_add(conf, "SECT", "OPT", PARAM_INT, NULL, NULL);
   config_opt_set_multivalued(conf, "SECT", "OPT", 1);
-  ck_assert_call_ok(config_read_env, conf, multivalued);
+  ck_assert_call_ok(config_read_env, conf);
   config_get_num_values(conf, "SECT", "OPT", &value);
   ck_assert_int_eq(3, value);
   config_get_nth_int(conf, "SECT", "OPT", 0, (long *) &value);
@@ -95,10 +98,10 @@ END_TEST
 
 START_TEST(test_config_env_bool_ok)
 {
-  char *boolean_ok[] = {"RAPP_SECT_OPT=1"};
   int value;
+  putenv("RAPP_SECT_OPT=yes");
   config_opt_add(conf, "SECT", "OPT", PARAM_BOOL, NULL, NULL);
-  ck_assert_call_ok(config_read_env, conf, boolean_ok);
+  ck_assert_call_ok(config_read_env, conf);
   config_get_bool(conf, "SECT", "OPT", &value);
   ck_assert_int_eq(value, 1);
 }
@@ -106,10 +109,10 @@ END_TEST
 
 START_TEST(test_config_env_bool_fail)
 {
-  char *boolean_fail[] = {"RAPP_SECT_OPT=2"};
   int value;
+  putenv("RAPP_SECT_OPT=1");
   config_opt_add(conf, "SECT", "OPT", PARAM_BOOL, NULL, NULL);
-  ck_assert_call_ok(config_read_env, conf, boolean_fail);
+  ck_assert_call_ok(config_read_env, conf);
   ck_assert_call_fail(config_get_bool, conf, "SECT", "OPT", &value);
 }
 END_TEST

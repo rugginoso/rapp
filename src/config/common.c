@@ -246,6 +246,17 @@ section_create(struct Config *conf, const char *name)
   DEBUG(conf, "Created section '%s'", name);
   return sect;
 }
+
+void
+uppercase(char *str)
+{
+  if (!str)
+    return;
+  while(*str != '\0') {
+    *str = toupper((unsigned char) *str);
+    str++;
+  }
+}
 /*
  * vim: expandtab shiftwidth=2 tabstop=2:
  */
