@@ -8,6 +8,7 @@ set(RAPP_CORE_SOURCES
     config/api.c
     config/commandline.c
     config/common.c
+    config/env.c
     config/yaml.c
     container.c
     eloop.c

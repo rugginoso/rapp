@@ -34,7 +34,7 @@ on_signal(struct SignalHandler *signal_handler,
 }
 
 int
-main(int argc, char *argv[])
+main(int argc, char *argv[], char *envp[])
 {
   struct Logger *logger = NULL;
   struct ELoop *eloop = NULL;
@@ -85,6 +85,10 @@ main(int argc, char *argv[])
   res = config_parse_commandline(config, argc, argv);
   if (res != 0) {
       exit(1);
+  }
+  res = config_read_env(config, envp);
+  if (res != 0) {
+    exit(1);
   }
 
   // Scan configuration directories

@@ -127,6 +127,8 @@ int config_generate_commandline(struct Config *conf);
 int config_parse_commandline(struct Config *conf, int argc, char *argv[]);
 int config_parse_early_commandline(struct RappArguments *arguments,
                                    int argc, char* argv[]);
+
+int config_read_env(struct Config *conf, char *envp[]);
 #endif /* CONFIG_COMMON_H */
 
 /*
