@@ -15,8 +15,8 @@
 #include "common.h"
 
 // shamelessly stolen from pyyaml - http://bit.ly/Jhm0C0
-const char *regex_bool_str = "^yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF$";
-const char *regex_bool_true_str = "^yes|Yes|YES|true|True|TRUE|on|On|ON$";
+const char *regex_bool_str = "^yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF|1|0$";
+const char *regex_bool_true_str = "^yes|Yes|YES|true|True|TRUE|on|On|ON|1$";
 
 struct Config
 *config_new(struct Logger *logger)

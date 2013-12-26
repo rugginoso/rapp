@@ -110,7 +110,7 @@ END_TEST
 START_TEST(test_config_env_bool_fail)
 {
   int value;
-  putenv("RAPP_SECT_OPT=1");
+  putenv("RAPP_SECT_OPT=2");
   config_opt_add(conf, "SECT", "OPT", PARAM_BOOL, NULL, NULL);
   ck_assert_call_ok(config_read_env, conf);
   ck_assert_call_fail(config_get_bool, conf, "SECT", "OPT", &value);
