@@ -1,0 +1,11 @@
+option(ENABLE_CONTAINER_PYTHON3 "compile python3 container")
+
+if(ENABLE_CONTAINER_PYTHON3)
+  find_package(PythonLibs)
+  if(PYTHONLIBS_FOUND)
+    set(CMAKE_SHARED_MODULE_PREFIX "")
+    add_library(python3 MODULE rapp_plugin.c)
+    include_directories(${PROJECT_SOURCE_DIR} ${PYTHON_INCLUDE_DIRS})
+    target_link_libraries(python3 ${PYTHON_LIBRARIES})
+  endif(PYTHONLIBS_FOUND)
+endif(ENABLE_CONTAINER_PYTHON3)

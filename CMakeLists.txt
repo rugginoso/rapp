@@ -54,5 +54,6 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 add_subdirectory(containers/hello)
+add_subdirectory(containers/python)
 add_subdirectory(src)
 add_subdirectory(tests)
