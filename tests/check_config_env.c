@@ -81,17 +81,17 @@ START_TEST(test_config_env_multivalue)
 {
   int value;
   // set a string that starts and ends with : as edge cases
-  putenv("RAPP_SECT_OPT=:1:2:3:");
-  config_opt_add(conf, "SECT", "OPT", PARAM_INT, NULL, NULL);
-  config_opt_set_multivalued(conf, "SECT", "OPT", 1);
+  putenv("RAPP_SECTION_OPTION=:1:2:3:");
+  config_opt_add(conf, "section", "option", PARAM_INT, NULL, NULL);
+  config_opt_set_multivalued(conf, "section", "option", 1);
   ck_assert_call_ok(config_read_env, conf);
-  config_get_num_values(conf, "SECT", "OPT", &value);
+  config_get_num_values(conf, "section", "option", &value);
   ck_assert_int_eq(3, value);
-  config_get_nth_int(conf, "SECT", "OPT", 0, (long *) &value);
+  config_get_nth_int(conf, "section", "option", 0, (long *) &value);
   ck_assert_int_eq(1, value);
-  config_get_nth_int(conf, "SECT", "OPT", 1, (long *) &value);
+  config_get_nth_int(conf, "section", "option", 1, (long *) &value);
   ck_assert_int_eq(2, value);
-  config_get_nth_int(conf, "SECT", "OPT", 2, (long *) &value);
+  config_get_nth_int(conf, "section", "option", 2, (long *) &value);
   ck_assert_int_eq(3, value);
 }
 END_TEST
@@ -99,10 +99,10 @@ END_TEST
 START_TEST(test_config_env_bool_ok)
 {
   int value;
-  putenv("RAPP_SECT_OPT=yes");
-  config_opt_add(conf, "SECT", "OPT", PARAM_BOOL, NULL, NULL);
+  putenv("RAPP_SECTION_OPTION=yes");
+  config_opt_add(conf, "section", "option", PARAM_BOOL, NULL, NULL);
   ck_assert_call_ok(config_read_env, conf);
-  config_get_bool(conf, "SECT", "OPT", &value);
+  config_get_bool(conf, "section", "option", &value);
   ck_assert_int_eq(value, 1);
 }
 END_TEST
@@ -110,10 +110,10 @@ END_TEST
 START_TEST(test_config_env_bool_fail)
 {
   int value;
-  putenv("RAPP_SECT_OPT=2");
-  config_opt_add(conf, "SECT", "OPT", PARAM_BOOL, NULL, NULL);
+  putenv("RAPP_SECTION_OPTION=2");
+  config_opt_add(conf, "section", "option", PARAM_BOOL, NULL, NULL);
   ck_assert_call_ok(config_read_env, conf);
-  ck_assert_call_fail(config_get_bool, conf, "SECT", "OPT", &value);
+  ck_assert_call_fail(config_get_bool, conf, "section", "option", &value);
 }
 END_TEST
 

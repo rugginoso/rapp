@@ -6,10 +6,32 @@
  */
 
 #include <limits.h>
+#include <regex.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/queue.h>
 #include "common.h"
+
+int validate_name(struct Config *conf, const char *name) {
+  const char *regex_name = "^[[:lower:]][-_[:lower:]]*[[:lower:]]$";
+  char regex_error[100];
+  regex_t reg;
+  int reti;
+  if (!name)
+    return -1;
+
+  reti = regcomp(&reg, regex_name, REG_EXTENDED);
+  if (reti) {
+    CRITICAL(conf, "Cannot compile expr '%s'", regex_name);
+    return -1;
+  }
+  reti = regexec(&reg, name, 0, NULL, 0);
+  if (reti != 0) {
+    ERROR(conf, "'%s' is not a valid config name.", name);
+    return -1;
+  }
+  return 0;
+}
 
 int
 config_opt_add(struct Config *conf,
@@ -23,7 +45,13 @@ config_opt_add(struct Config *conf,
   size_t size = sizeof(struct ConfigOption);
   struct ConfigOption *opt = NULL;
 
-  if (!conf || !section || !name)
+  if (!conf)
+    return -1;
+
+  if (validate_name(conf, name) != 0)
+    return -1;
+
+  if (validate_name(conf, section) != 0)
     return -1;
 
   sect = get_section(conf, section);
