@@ -28,7 +28,7 @@ endswith(const char *str, const char *suffix)
 
 int
 yaml_parse_init(struct Config *conf, const char *filename,
-    yaml_parser_t *parser)
+                yaml_parser_t *parser)
 {
   yaml_token_t token;
   // we should get the STREAM_START first
