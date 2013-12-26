@@ -38,14 +38,18 @@ START_TEST(test_config_env)
   // conf should ignore non-related or not set options
   putenv("OTHER_VALUE=3");
   putenv("RAPP_ADDRESS=0.0.0.0");
+  putenv("RAPP_MY_SECTION_MY_OPTION=yes");
   ck_assert_call_ok(config_read_env, conf);
 
   config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
   config_opt_add(conf, RAPP_CONFIG_SECTION, "other", PARAM_STRING, NULL, NULL);
+  config_opt_add(conf, "my_section", "my_option", PARAM_STRING, NULL, NULL);
   config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
   ck_assert_call_ok(config_read_env, conf);
   config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
   ck_assert_str_eq(value, "0.0.0.0");
+  config_get_string(conf, "my_section", "my_option", &value);
+  ck_assert_str_eq(value, "yes");
 }
 END_TEST
 
