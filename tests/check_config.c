@@ -75,20 +75,18 @@ START_TEST(test_config_create)
   // wrong/accepted names
   ck_assert_call_fail(config_opt_add, conf, S, "-test", PS, 0, 0);
   ck_assert_call_fail(config_opt_add, conf, S, "test-", PS, 0, 0);
-  ck_assert_call_fail(config_opt_add, conf, S, "_test", PS, 0, 0);
+  ck_assert_call_fail(config_opt_add, conf, S, "test-opt", PS, 0, 0);
   ck_assert_call_fail(config_opt_add, conf, S, "_test", PS, 0, 0);
   ck_assert_call_fail(config_opt_add, conf, S, "test_", PS, 0, 0);
   ck_assert_call_fail(config_opt_add, conf, S, "test.name", PS, 0, 0);
   ck_assert_call_ok(config_opt_add, conf, S, "test_name", PS, 0, 0);
-  ck_assert_call_ok(config_opt_add, conf, S, "test-name", PS, 0, 0);
   ck_assert_call_fail(config_opt_add, conf, "-test", N, PS, 0, 0);
   ck_assert_call_fail(config_opt_add, conf, "test-", N, PS, 0, 0);
-  ck_assert_call_fail(config_opt_add, conf, "_test", N, PS, 0, 0);
   ck_assert_call_fail(config_opt_add, conf, "_test", N, PS, 0, 0);
   ck_assert_call_fail(config_opt_add, conf, "test_", N, PS, 0, 0);
   ck_assert_call_fail(config_opt_add, conf, "test.name", N, PS, 0, 0);
   ck_assert_call_ok(config_opt_add, conf, "test_name", N, PS, 0, 0);
-  ck_assert_call_ok(config_opt_add, conf, "test-name", N, PS, 0, 0);
+  ck_assert_call_fail(config_opt_add, conf, "test-name", N, PS, 0, 0);
   return;
 }
 END_TEST

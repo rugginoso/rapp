@@ -13,7 +13,7 @@
 #include "common.h"
 
 int validate_name(struct Config *conf, const char *name) {
-  const char *regex_name = "^[[:lower:]][-_[:lower:]]*[[:lower:]]$";
+  const char *regex_name = "^[[:lower:]][_[:lower:]]*[[:lower:]]$";
   char regex_error[100];
   regex_t reg;
   int reti;
