@@ -37,8 +37,6 @@ is_ABI_compatible(int core_abi,
 struct Logger *
 logger_get(void *cookie)
 {
-  struct Logger *logger = NULL;
-
   assert(cookie);
 
   return ((struct Container *)cookie)->logger;

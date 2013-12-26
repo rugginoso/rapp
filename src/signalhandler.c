@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 #include <errno.h>
 #include <assert.h>
 
