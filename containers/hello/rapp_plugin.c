@@ -4,7 +4,7 @@
  * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
  *     see LICENSE for all the details.
  */
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +36,7 @@ rapp_serve(struct RappContainer *handle,
     http_response_write_status_line_by_code(response, 200);
     http_response_write_header(response, "Content-Type", "text/plain; charset=utf-8");
 
-    asprintf(&len_s, "%d", len);
+    asprintf(&len_s, "%lu", len);
     http_response_write_header(response, "Content-Length", len_s);
     free(len_s);
 

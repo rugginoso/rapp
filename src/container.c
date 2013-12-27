@@ -37,8 +37,6 @@ is_ABI_compatible(int core_abi,
 struct Logger *
 logger_get(void *cookie)
 {
-  struct Logger *logger = NULL;
-
   assert(cookie);
 
   return ((struct Container *)cookie)->logger;
@@ -97,6 +95,9 @@ container_make(void          *plugin,
     return NULL;
   }
 
+  container->logger = logger;
+  container->plugin = plugin;
+
   if ((container->name = strdup(name)) == NULL) {
     free(container);
     logger_trace(logger, LOG_ERROR, "loader", "plugin[%s] name alloc failed error=%s", name, strerror(errno));
@@ -110,8 +111,6 @@ container_make(void          *plugin,
     return NULL;
   }
 
-  container->logger = logger;
-  container->plugin = plugin;
   container->handle = handle;
   container->serve = dlsym(plugin, "rapp_serve");
   container->destroy = dlsym(plugin, "rapp_destroy");

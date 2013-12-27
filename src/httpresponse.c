@@ -4,7 +4,7 @@
  * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.
  *     see LICENSE for all the details.
  */
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -218,7 +218,7 @@ http_response_end_headers(struct HTTPResponse *response)
   total_length += ret;
 
   if (time(&now) < 0) {
-    logger_trace(response->logger, LOG_ERROR, "httpresponse", "time: %s", error(errno));
+    logger_trace(response->logger, LOG_ERROR, "httpresponse", "time: %s", strerror(errno));
     return -1;
   }
 
@@ -311,7 +311,7 @@ http_response_write_error_by_code(struct HTTPResponse *response,
     return -1;
   }
 
-  if (asprintf(&len_s, "%d", strlen(body)) < 0) {
+  if (asprintf(&len_s, "%lu", strlen(body)) < 0) {
     LOGGER_PERROR(response->logger, "asprintf: len_s");
     free(body);
     return -1;
@@ -345,7 +345,7 @@ http_response_write_error_by_code(struct HTTPResponse *response,
   }
   total_length += ret;
 
-  if (ret = http_response_append_data(response, body, strlen(body)) < 0) {
+  if ((ret = http_response_append_data(response, body, strlen(body))) < 0) {
     free(body);
     return -1;
   }

@@ -144,6 +144,8 @@ eloop_callback_type_to_epoll_event(enum ELoopWatchFdCallbackType callback_type)
   case ELOOP_CALLBACK_CLOSE:
     event = EPOLLRDHUP;
     break;
+  default:
+    return -1;
   }
 
   return event;
@@ -198,7 +200,6 @@ event_loop_remove_fd_watch(struct ELoop                 *eloop,
   struct ELoopCallback *ec = NULL;
   struct ELoopCallback *pec = NULL;
   int epoll_operation = EPOLL_CTL_MOD;
-  int i = 0;
 
   assert(eloop != NULL);
   assert(fd > -1);

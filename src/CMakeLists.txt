@@ -27,7 +27,7 @@ set(RAPP_CORE_SOURCES
 add_library(rapp_core STATIC ${RAPP_CORE_SOURCES})
 add_executable(rapp main.c)
 
-set_target_properties(rapp_core PROPERTIES COMPILE_FLAGS "-export-dynamic")
+set_target_properties(rapp_core PROPERTIES COMPILE_FLAGS "-Wall -export-dynamic")
 
 target_link_libraries(rapp rapp_core dl)
 
