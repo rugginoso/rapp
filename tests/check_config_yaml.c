@@ -5,9 +5,11 @@
  *     see LICENSE for all the details.
  */
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <check.h>
 
 /* include the header(s) of the tested code right after */
@@ -144,6 +146,47 @@ START_TEST(test_yaml_file)
 }
 END_TEST
 
+START_TEST(test_yaml_dir)
+{
+  char tmpl[] = "rapptestXXXXXX";
+  char *dir = mkdtemp(tmpl);
+  char yaml_path[PATH_MAX];
+  char txt_path[PATH_MAX];
+  FILE *yh, *th;
+  sprintf(yaml_path, "%s/good.yaml", dir);
+  sprintf(txt_path, "%s/bad.txt", dir);
+  th = fopen(txt_path, "w");
+  yh = fopen(yaml_path, "w");
+  fputs(yaml_malformed, th);
+  fputs(yaml_good, yh);
+  fclose(yh);
+  fclose(th);
+
+
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "port", PARAM_INT, NULL, NULL);
+  config_opt_set_range_int(conf, RAPP_CONFIG_SECTION, "port", 1, 65535);
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list", PARAM_STRING, NULL, NULL);
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list_inline", PARAM_INT, NULL, NULL);
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_bool", PARAM_BOOL, NULL, NULL);
+  config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list", 1);
+  config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list_inline", 1);
+
+  ck_assert_call_fail(config_scan_directory, conf, dir, ".txt");
+  ck_assert_call_ok(config_scan_directory, conf, dir, ".yaml");
+  ck_assert_call_ok(config_scan_directory, conf, dir, 0);
+  ck_assert_call_fail(config_scan_directory, 0, dir, ".yaml");
+  ck_assert_call_fail(config_scan_directory, conf, 0, ".yaml");
+  chmod(dir, 0);
+  ck_assert_call_fail(config_scan_directory, conf, dir, 0);
+  chmod(dir, S_IRUSR | S_IWUSR | S_IXUSR);
+
+  unlink(txt_path);
+  unlink(yaml_path);
+  rmdir(dir);
+}
+END_TEST
+
 static Suite *
 config_yaml_parse_suite(void)
 {
@@ -155,6 +198,7 @@ config_yaml_parse_suite(void)
   tcase_add_test(tc, test_yaml_empty);
   tcase_add_test(tc, test_yaml_invalid_data);
   tcase_add_test(tc, test_yaml_file);
+  tcase_add_test(tc, test_yaml_dir);
   suite_add_tcase(s, tc);
 
   return s;
