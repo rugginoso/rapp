@@ -52,6 +52,18 @@ config_argp_options_destroy(struct Config *conf)
   free(conf->options_map);
 }
 
+void
+replace_underscores(char *str)
+{
+  if (!str)
+    return;
+  while(*str != '\0') {
+    if (*str == '_')
+      *str = '-';
+    str++;
+  }
+}
+
 int
 generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
     int *index, int group)
@@ -82,6 +94,7 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
     else
       snprintf(optname, optname_length, "%s", opt->name);
 
+    replace_underscores(optname);
     conf->options[*index].key = (*index) + ARG_INDEX_OFFSET;
     conf->options[*index].name = optname;
 

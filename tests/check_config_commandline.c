@@ -105,6 +105,7 @@ START_TEST(test_config_commandline)
   char *withvalue[] = {"rapp", "--test-option", "value"};
   char *coreopt[] = {"rapp", "--option", "value"};
   char *logoption[] = {"rapp", "--log-level", "debug"};
+  char *opt_with_underscore[] = {"rapp", "--my-sect-my-opt", "1"};
   char *value;
   config_opt_add(conf, "test", "option", PARAM_STRING, "doc", "meta");
   config_opt_set_default_string(conf, "test", "option", "default");
@@ -138,6 +139,13 @@ START_TEST(test_config_commandline)
   // early options are skipped
   conf = config_new(logger);
   ck_assert_call_ok(config_parse_commandline, conf, 3, logoption);
+  config_destroy(conf);
+
+  conf = config_new(logger);
+  config_opt_add(conf, "my_sect", "my_opt", PARAM_STRING, 0, 0);
+  ck_assert_call_ok(config_parse_commandline, conf, 3, opt_with_underscore);
+  ck_assert_call_ok(config_get_string, conf, "my_sect", "my_opt", &value);
+  ck_assert_str_eq(value, "1");
 }
 END_TEST
 
