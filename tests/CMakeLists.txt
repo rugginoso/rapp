@@ -77,19 +77,19 @@ if(ENABLE_TESTS)
     add_test(test_tcpconnection ${EXECUTABLE_OUTPUT_PATH}/check_tcpconnection)
 
     add_executable(check_config_yaml_parser check_config_yaml.c)
-    target_link_libraries(check_config_yaml_parser rapp_core rapp_test ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS} yaml)
+    target_link_libraries(check_config_yaml_parser rapp_core rapp_test ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS} ${LIBYAML_LIBRARIES})
     add_test(test_config_yaml ${EXECUTABLE_OUTPUT_PATH}/check_config_yaml_parser)
 
     add_executable(check_config check_config.c)
-    target_link_libraries(check_config  rapp_core rapp_test ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS} yaml)
+    target_link_libraries(check_config  rapp_core rapp_test ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS} ${LIBYAML_LIBRARIES})
     add_test(test_config ${EXECUTABLE_OUTPUT_PATH}/check_config)
 
     add_executable(check_config_commandline check_config_commandline.c)
-    target_link_libraries(check_config_commandline  rapp_core rapp_test ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS} yaml)
+    target_link_libraries(check_config_commandline  rapp_core rapp_test ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS} ${LIBYAML_LIBRARIES})
     add_test(test_config_commandline ${EXECUTABLE_OUTPUT_PATH}/check_config_commandline)
 
     add_executable(check_config_env check_config_env.c)
-    target_link_libraries(check_config_env  rapp_core rapp_test ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS} yaml)
+    target_link_libraries(check_config_env  rapp_core rapp_test ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS} ${LIBYAML_LIBRARIES})
     add_test(test_config_env ${EXECUTABLE_OUTPUT_PATH}/check_config_env)
 
     add_executable(check_httprequest check_httprequest.c)
