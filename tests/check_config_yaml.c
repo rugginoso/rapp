@@ -5,7 +5,9 @@
  *     see LICENSE for all the details.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <check.h>
 
 /* include the header(s) of the tested code right after */
@@ -118,6 +120,30 @@ START_TEST(test_yaml_invalid_data)
 }
 END_TEST
 
+START_TEST(test_yaml_file)
+{
+  char *tmp = tmpnam(0);
+  FILE *fh = fopen(tmp, "w");
+  ck_assert_call_fail(config_parse, conf, "/path/to/config/that/should/not/exists");
+
+  fputs(yaml_good, fh);
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "port", PARAM_INT, NULL, NULL);
+  config_opt_set_range_int(conf, RAPP_CONFIG_SECTION, "port", 1, 65535);
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list", PARAM_STRING, NULL, NULL);
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list_inline", PARAM_INT, NULL, NULL);
+  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_bool", PARAM_BOOL, NULL, NULL);
+  config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list", 1);
+  config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list_inline", 1);
+  fclose(fh);
+  ck_assert_call_ok(config_parse, conf, tmp);
+
+  chmod(tmp, 0);
+  ck_assert_call_fail(config_parse, conf, tmp);
+  unlink(tmp);
+}
+END_TEST
+
 static Suite *
 config_yaml_parse_suite(void)
 {
@@ -128,6 +154,7 @@ config_yaml_parse_suite(void)
   tcase_add_test(tc, test_config_yaml_parse);
   tcase_add_test(tc, test_yaml_empty);
   tcase_add_test(tc, test_yaml_invalid_data);
+  tcase_add_test(tc, test_yaml_file);
   suite_add_tcase(s, tc);
 
   return s;
