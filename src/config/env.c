@@ -38,7 +38,6 @@ int
 add_value_from_env_list(struct Config *conf, struct ConfigOption *opt,
                         const char *value)
 {
- int res;
  char *token, *saveptr;
  char *val = strdup(value);
  if (!val)
@@ -53,7 +52,7 @@ add_value_from_env_list(struct Config *conf, struct ConfigOption *opt,
  }
 
  free(val);
- return res;
+ return 0;
 }
 
 int

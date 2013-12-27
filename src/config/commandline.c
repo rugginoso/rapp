@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "common.h"
+#include "../logger.h"
 #include <rapp/rapp_version.h>
 
 #define ARG_INDEX_BASE 128
@@ -59,7 +60,6 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
   char *prefix = NULL;
   char *optname = NULL, *metavar = NULL;
   size_t prefix_length = 0, optname_length = 0;
-  int i = *index;
 
   if (strcmp(sect->name, RAPP_CONFIG_SECTION) != 0) {
     // not in core section, we need to prefix options
@@ -119,11 +119,9 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
 int
 config_generate_commandline(struct Config *conf)
 {
-  size_t argp_option_size = sizeof(struct argp_option);
   struct ConfigSection *s = NULL;
   int index = 0, group = 1, num_options = 0;
   const char *titlebase = "Options for ";
-  char *title;
   int title_len, titlebase_len;
 
   if (!conf)

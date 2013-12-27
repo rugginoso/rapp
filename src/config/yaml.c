@@ -67,7 +67,7 @@ config_set_value_from_yaml_scalar(struct Config *conf,
     DEBUG(conf, "%s has been locked by commandline", opt->name);
     return 0;
   }
-  return config_add_value_from_string(conf, opt, token->data.scalar.value);
+  return config_add_value_from_string(conf, opt, (const char*) token->data.scalar.value);
 }
 
 int
@@ -151,7 +151,7 @@ yaml_parse_key_value(struct Config *conf,
     return -1;
   }
 
-  name = strdup(token.data.scalar.value);
+  name = strdup((const char*) token.data.scalar.value);
   if (!name)
     return -1;
 
@@ -274,7 +274,7 @@ config_parse_main(struct Config *conf, yaml_parser_t *parser,
     const char *sourcename)
 {
   yaml_token_t token;
-  int done, ret = 0;
+  int ret = 0;
   if (yaml_parse_init(conf, sourcename, parser) != 0) {
     ret = -1;
     goto cleanup;
@@ -302,7 +302,7 @@ config_parse_main(struct Config *conf, yaml_parser_t *parser,
       ret = -1;
       goto cleanup;
     }
-    if (yaml_parse_section(conf, sourcename, token.data.scalar.value,
+    if (yaml_parse_section(conf, sourcename, (const char*) token.data.scalar.value,
           parser) != 0) {
       ret = -1;
       break;
@@ -362,7 +362,7 @@ config_parse_string(struct Config *conf, const char *source)
     CRITICAL(conf, "Cannot initialize YAML parser: %p", parser);
     return -1;
   }
-  yaml_parser_set_input_string(&parser, source, strlen(source));
+  yaml_parser_set_input_string(&parser, (const unsigned char*) source, strlen(source));
   return config_parse_main(conf, &parser, sourcename);
 }
 
