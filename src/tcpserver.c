@@ -4,12 +4,13 @@
  * (C) 2013-2014 the RApp devs. Licensed under GPLv2 with additional rights.
  *     see LICENSE for all the details.
  */
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <assert.h>
 
 #include <sys/types.h>
@@ -96,9 +97,13 @@ on_incoming_connection(int         server_fd,
 
   server = (struct TcpServer *)data;
 
-  if ((client_fd = accept(server_fd, NULL, NULL)) < 0) {
-    LOGGER_PERROR(server->logger, "accept");
-    return -1;
+  if ((client_fd = accept4(server_fd, NULL, NULL, SOCK_NONBLOCK)) < 0) {
+    if (errno != EAGAIN) {
+      LOGGER_PERROR(server->logger, "accept");
+      return -1;
+    }
+    else
+      return 0;
   }
 
   if ((connection = tcp_connection_with_fd(client_fd, server->logger, server->eloop)) == NULL) {
@@ -155,6 +160,12 @@ tcp_server_start_listen(struct TcpServer *server,
     return -1;
   }
   #endif
+
+  if (fcntl(server->listen_fd, F_SETFL, O_NONBLOCK) < 0) {
+    LOGGER_PERROR(server->logger, "fcntl");
+    freeaddrinfo(addrinfos);
+    return -1;
+  }
 
   if (bind(server->listen_fd, addrinfos->ai_addr, addrinfos->ai_addrlen) < 0) {
     LOGGER_PERROR(server->logger, "bind");

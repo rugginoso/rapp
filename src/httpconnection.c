@@ -52,8 +52,10 @@ on_read(struct TcpConnection *tcp_connection,
   http_connection = (struct HTTPConnection *)data;
 
   if ((got = tcp_connection_read_data(tcp_connection, buffer, BUFSIZE)) < 0) {
-    LOGGER_PERROR(http_connection->logger, "read");
-    http_connection->finish_callback(http_connection, http_connection->data);
+    if (errno != EAGAIN) {
+      LOGGER_PERROR(http_connection->logger, "read");
+      http_connection->finish_callback(http_connection, http_connection->data);
+    }
     return;
   }
 
@@ -80,7 +82,10 @@ on_write(struct TcpConnection *tcp_connection,
   http_connection = (struct HTTPConnection *)data;
 
   if ((got = http_response_read_data(http_connection->response, buffer, BUFSIZE)) > 0) {
-    tcp_connection_write_data(tcp_connection, buffer, got);
+    if (tcp_connection_write_data(tcp_connection, buffer, got) < 0) {
+      if (errno != EAGAIN)
+        LOGGER_PERROR(http_connection->logger, "write");
+    }
   }
   else {
     if (http_response_is_last(http_connection->response) != 0) {
