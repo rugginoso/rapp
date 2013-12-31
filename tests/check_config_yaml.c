@@ -22,18 +22,18 @@
 
 #define CHECK_STR(CONF, SECT, NAME, STR, EXPECTED, POS)         \
   do {                                                          \
-    config_get_nth_string(CONF, SECT, NAME, POS, &STR);         \
+    rapp_config_get_nth_string(CONF, SECT, NAME, POS, &STR);         \
     ck_assert_str_eq(STR, EXPECTED);                            \
     free(STR);                                                  \
   } while(0)
 
 #define CHECK_INT(CONF, SECT, NAME, VAL, EXPECTED, POS)         \
   do {                                                          \
-    config_get_nth_int(CONF, SECT, NAME, POS, &VAL);            \
+    rapp_config_get_nth_int(CONF, SECT, NAME, POS, &VAL);            \
     ck_assert_int_eq(VAL, EXPECTED);                            \
   } while(0)
 
-struct Config *conf;
+struct RappConfig *conf;
 
 void
 setup(void)
@@ -54,8 +54,8 @@ START_TEST(test_config_yaml_parse)
   char *vs;
   const char *c = "core";
   struct Logger *logger = logger_new_null();
-  struct Config *conf2 = config_new(logger);
-  struct Config *cp;
+  struct RappConfig *conf2 = config_new(logger);
+  struct RappConfig *cp;
   const char *yaml;
   int i;
 
@@ -67,14 +67,14 @@ START_TEST(test_config_yaml_parse)
       cp = conf2;
       yaml = yaml_good_inline;
     }
-    config_opt_add(cp, c, "address", PARAM_STRING, NULL, NULL);
-    config_opt_add(cp, c, "port", PARAM_INT, NULL, NULL);
-    config_opt_set_range_int(cp, c, "port", 1, 65535);
-    config_opt_add(cp, c, "test_list", PARAM_STRING, NULL, NULL);
-    config_opt_add(cp, c, "test_list_inline", PARAM_INT, NULL, NULL);
-    config_opt_add(cp, c, "test_bool", PARAM_BOOL, NULL, NULL);
-    config_opt_set_multivalued(cp, c, "test_list", 1);
-    config_opt_set_multivalued(cp, c, "test_list_inline", 1);
+    rapp_config_opt_add(cp, c, "address", PARAM_STRING, NULL, NULL);
+    rapp_config_opt_add(cp, c, "port", PARAM_INT, NULL, NULL);
+    rapp_config_opt_set_range_int(cp, c, "port", 1, 65535);
+    rapp_config_opt_add(cp, c, "test_list", PARAM_STRING, NULL, NULL);
+    rapp_config_opt_add(cp, c, "test_list_inline", PARAM_INT, NULL, NULL);
+    rapp_config_opt_add(cp, c, "test_bool", PARAM_BOOL, NULL, NULL);
+    rapp_config_opt_set_multivalued(cp, c, "test_list", 1);
+    rapp_config_opt_set_multivalued(cp, c, "test_list_inline", 1);
     ck_assert_call_ok(config_parse_string, cp, yaml);
     CHECK_STR(cp, c, "address", vs, "127.0.0.1", 0);
     CHECK_INT(cp, c, "port", vi, 8080, 0);
@@ -93,7 +93,7 @@ END_TEST
 
 START_TEST(test_yaml_empty)
 {
-  config_opt_add(conf, "core", "address", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_add(conf, "core", "address", PARAM_STRING, NULL, NULL);
   ck_assert_call_fail(config_parse_string, conf, yaml_no_stream);
   ck_assert_call_fail(config_parse_string, conf, yaml_empty_document);
   ck_assert_call_fail(config_parse_string, conf, yaml_document_no_mapping);
@@ -108,10 +108,10 @@ END_TEST
 
 START_TEST(test_yaml_invalid_data)
 {
-  config_opt_add(conf, "core", "intvalue", PARAM_INT, NULL, NULL);
-  config_opt_add(conf, "core", "boolvalue", PARAM_BOOL, NULL, NULL);
-  config_opt_add(conf, "core", "strvalue", PARAM_STRING, NULL, NULL);
-  config_opt_add(conf, "core", "singlevalue", PARAM_INT, NULL, NULL);
+  rapp_config_opt_add(conf, "core", "intvalue", PARAM_INT, NULL, NULL);
+  rapp_config_opt_add(conf, "core", "boolvalue", PARAM_BOOL, NULL, NULL);
+  rapp_config_opt_add(conf, "core", "strvalue", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_add(conf, "core", "singlevalue", PARAM_INT, NULL, NULL);
   ck_assert_call_fail(config_parse_string, conf, NULL);
   ck_assert_call_fail(config_parse_string, NULL, "");
   ck_assert_call_fail(config_parse_string, conf, yaml_wrong_int);
@@ -129,14 +129,14 @@ START_TEST(test_yaml_file)
   ck_assert_call_fail(config_parse, conf, "/path/to/config/that/should/not/exists");
 
   fputs(yaml_good, fh);
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "port", PARAM_INT, NULL, NULL);
-  config_opt_set_range_int(conf, RAPP_CONFIG_SECTION, "port", 1, 65535);
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list", PARAM_STRING, NULL, NULL);
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list_inline", PARAM_INT, NULL, NULL);
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_bool", PARAM_BOOL, NULL, NULL);
-  config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list", 1);
-  config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list_inline", 1);
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "port", PARAM_INT, NULL, NULL);
+  rapp_config_opt_set_range_int(conf, RAPP_CONFIG_SECTION, "port", 1, 65535);
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list_inline", PARAM_INT, NULL, NULL);
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "test_bool", PARAM_BOOL, NULL, NULL);
+  rapp_config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list", 1);
+  rapp_config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list_inline", 1);
   fclose(fh);
   ck_assert_call_ok(config_parse, conf, tmp);
 
@@ -163,14 +163,14 @@ START_TEST(test_yaml_dir)
   fclose(th);
 
 
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "port", PARAM_INT, NULL, NULL);
-  config_opt_set_range_int(conf, RAPP_CONFIG_SECTION, "port", 1, 65535);
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list", PARAM_STRING, NULL, NULL);
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list_inline", PARAM_INT, NULL, NULL);
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "test_bool", PARAM_BOOL, NULL, NULL);
-  config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list", 1);
-  config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list_inline", 1);
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "port", PARAM_INT, NULL, NULL);
+  rapp_config_opt_set_range_int(conf, RAPP_CONFIG_SECTION, "port", 1, 65535);
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "test_list_inline", PARAM_INT, NULL, NULL);
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "test_bool", PARAM_BOOL, NULL, NULL);
+  rapp_config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list", 1);
+  rapp_config_opt_set_multivalued(conf, RAPP_CONFIG_SECTION, "test_list_inline", 1);
 
   ck_assert_call_fail(config_scan_directory, conf, dir, ".txt");
   ck_assert_call_ok(config_scan_directory, conf, dir, ".yaml");

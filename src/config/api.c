@@ -12,7 +12,7 @@
 #include <sys/queue.h>
 #include "common.h"
 
-int validate_name(struct Config *conf, const char *name) {
+int validate_name(struct RappConfig *conf, const char *name) {
   const char *regex_name = "^[[:lower:]][_[:lower:]]*[[:lower:]]$";
   regex_t reg;
   int reti;
@@ -33,10 +33,10 @@ int validate_name(struct Config *conf, const char *name) {
 }
 
 int
-config_opt_add(struct Config *conf,
+rapp_config_opt_add(struct RappConfig *conf,
     const char *section,
     const char *name,
-    ConfigParamType type,
+    RappConfigParamType type,
     const char *help,
     const char *metavar)
 {
@@ -109,7 +109,7 @@ config_opt_add(struct Config *conf,
 }
 
 int
-config_opt_set_range_int(struct Config *conf,
+rapp_config_opt_set_range_int(struct RappConfig *conf,
     const char *section,
     const char *name,
     long value_min,
@@ -129,7 +129,7 @@ config_opt_set_range_int(struct Config *conf,
 }
 
 int
-config_opt_set_multivalued(struct Config *conf,
+rapp_config_opt_set_multivalued(struct RappConfig *conf,
     const char *section,
     const char *name,
     int flag)
@@ -142,7 +142,7 @@ config_opt_set_multivalued(struct Config *conf,
 }
 
 int
-config_get_nth_int(struct Config *conf, const char *section,
+rapp_config_get_nth_int(struct RappConfig *conf, const char *section,
     const char *name, int position,
     long *value)
 {
@@ -176,14 +176,14 @@ config_get_nth_int(struct Config *conf, const char *section,
 }
 
 int
-config_get_nth_bool(struct Config *conf, const char *section,
+rapp_config_get_nth_bool(struct RappConfig *conf, const char *section,
     const char *name, int position, int *value)
 {
-  return config_get_nth_int(conf, section, name, position, (long*) value);
+  return rapp_config_get_nth_int(conf, section, name, position, (long*) value);
 }
 
 int
-config_get_nth_string(struct Config *conf, const char *section,
+rapp_config_get_nth_string(struct RappConfig *conf, const char *section,
     const char *name, int position,
     char **value)
 {
@@ -216,7 +216,7 @@ config_get_nth_string(struct Config *conf, const char *section,
 }
 
 int
-config_get_num_values(struct Config *conf, const char *section,
+rapp_config_get_num_values(struct RappConfig *conf, const char *section,
     const char *name, int *num_values)
 {
   struct ConfigOption *opt = NULL;
@@ -226,7 +226,7 @@ config_get_num_values(struct Config *conf, const char *section,
 }
 
 int
-config_opt_set_default_string(struct Config *conf, const char *section,
+rapp_config_opt_set_default_string(struct RappConfig *conf, const char *section,
     const char *name, const char *value)
 {
   struct ConfigOption *opt = NULL;
@@ -242,7 +242,7 @@ config_opt_set_default_string(struct Config *conf, const char *section,
 }
 
 int
-config_opt_set_default_int(struct Config *conf, const char *section,
+rapp_config_opt_set_default_int(struct RappConfig *conf, const char *section,
     const char *name, long value)
 {
   struct ConfigOption *opt = NULL;
@@ -254,12 +254,12 @@ config_opt_set_default_int(struct Config *conf, const char *section,
 }
 
 int
-config_opt_set_default_bool(struct Config *conf, const char *section,
+rapp_config_opt_set_default_bool(struct RappConfig *conf, const char *section,
     const char *name, int value)
 {
   if (value < 0 || value > 1)
     return -1;
-  return config_opt_set_default_int(conf, section, name, value);
+  return rapp_config_opt_set_default_int(conf, section, name, value);
 }
 /*
  * vim: expandtab shiftwidth=2 tabstop=2:

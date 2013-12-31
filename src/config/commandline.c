@@ -36,7 +36,7 @@ static struct argp_option rappoptions[] = {
 const int rappoptions_len = sizeof(rappoptions) / sizeof(rappoptions[0]);
 
 void
-config_argp_options_destroy(struct Config *conf)
+config_argp_options_destroy(struct RappConfig *conf)
 {
   int i = 0;
 
@@ -65,7 +65,7 @@ replace_underscores(char *str)
 }
 
 int
-generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
+generate_argp_for_section(struct RappConfig *conf, struct ConfigSection *sect,
     int *index, int group)
 {
   struct ConfigOption *opt = NULL;
@@ -130,7 +130,7 @@ generate_argp_for_section(struct Config *conf, struct ConfigSection *sect,
 }
 
 int
-config_generate_commandline(struct Config *conf)
+config_generate_commandline(struct RappConfig *conf)
 {
   struct ConfigSection *s = NULL;
   int index = 0, group = 1, num_options = 0;
@@ -189,7 +189,7 @@ config_generate_commandline(struct Config *conf)
 error_t
 parse_commandline_opt(int key, char *arg, struct argp_state *state)
 {
-  struct Config *conf = state->input;
+  struct RappConfig *conf = state->input;
   struct ConfigOption *opt = NULL;
   int index = 0;
 
@@ -252,7 +252,7 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
 }
 
 int
-config_parse_commandline(struct Config *conf, int argc, char* argv[])
+config_parse_commandline(struct RappConfig *conf, int argc, char* argv[])
 {
   int i, index, res;
   struct argp *argp_conf = calloc(1, sizeof(struct argp));

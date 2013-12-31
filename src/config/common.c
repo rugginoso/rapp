@@ -19,10 +19,10 @@
 const char *regex_bool_str = "^yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF|1|0$";
 const char *regex_bool_true_str = "^yes|Yes|YES|true|True|TRUE|on|On|ON|1$";
 
-struct Config
+struct RappConfig
 *config_new(struct Logger *logger)
 {
-  struct Config *conf = calloc(1, sizeof(struct Config));
+  struct RappConfig *conf = calloc(1, sizeof(struct RappConfig));
   if (!conf)
     return NULL;
   TAILQ_INIT(&conf->sections);
@@ -34,7 +34,7 @@ struct Config
 }
 
 void
-config_destroy(struct Config* conf)
+config_destroy(struct RappConfig* conf)
 {
   struct ConfigSection *sect = NULL;
   assert(conf != NULL);
@@ -92,7 +92,7 @@ opt_add_value_string(struct ConfigOption *opt, const char *value)
 }
 
 int
-config_add_value_int(struct Config *conf, const char *section,
+config_add_value_int(struct RappConfig *conf, const char *section,
                      const char *name, long value)
 {
   struct ConfigOption *opt = NULL;
@@ -104,7 +104,7 @@ config_add_value_int(struct Config *conf, const char *section,
 }
 
 int
-config_add_value_string(struct Config *conf, const char *section,
+config_add_value_string(struct RappConfig *conf, const char *section,
                         const char *name, const char *value)
 {
   struct ConfigOption *opt = NULL;
@@ -117,7 +117,7 @@ config_add_value_string(struct Config *conf, const char *section,
 }
 
 int
-config_add_value_from_string(struct Config *conf, struct ConfigOption *opt,
+config_add_value_from_string(struct RappConfig *conf, struct ConfigOption *opt,
                              const char* value)
 {
   long val;
@@ -218,7 +218,7 @@ config_section_destroy(struct ConfigSection *sect)
 }
 
 struct ConfigSection*
-get_section(struct Config *conf, const char *section)
+get_section(struct RappConfig *conf, const char *section)
 {
   struct ConfigSection *sect = NULL;
   if(!section)
@@ -232,7 +232,7 @@ get_section(struct Config *conf, const char *section)
 }
 
 struct ConfigSection*
-section_create(struct Config *conf, const char *name)
+section_create(struct RappConfig *conf, const char *name)
 {
   struct ConfigSection *sect = calloc(1, sizeof(struct ConfigSection));
   if (!sect)

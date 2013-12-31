@@ -27,7 +27,7 @@ endswith(const char *str, const char *suffix)
 
 
 int
-yaml_parse_init(struct Config *conf, const char *filename,
+yaml_parse_init(struct RappConfig *conf, const char *filename,
                 yaml_parser_t *parser)
 {
   yaml_token_t token;
@@ -59,7 +59,7 @@ yaml_parse_init(struct Config *conf, const char *filename,
 }
 
 int
-config_set_value_from_yaml_scalar(struct Config *conf,
+config_set_value_from_yaml_scalar(struct RappConfig *conf,
     struct ConfigOption *opt,
     yaml_token_t *token)
 {
@@ -71,7 +71,7 @@ config_set_value_from_yaml_scalar(struct Config *conf,
 }
 
 int
-config_set_value_from_yaml_list(struct Config *conf,
+config_set_value_from_yaml_list(struct RappConfig *conf,
     struct ConfigOption *opt,
     yaml_parser_t *parser,
     yaml_token_t *token)
@@ -114,7 +114,7 @@ config_set_value_from_yaml_list(struct Config *conf,
 }
 
 int
-yaml_parse_key_value(struct Config *conf,
+yaml_parse_key_value(struct RappConfig *conf,
     struct ConfigSection *section,
     yaml_parser_t *parser,
     int *last)
@@ -227,7 +227,7 @@ yaml_skip_section(yaml_parser_t *parser)
 
 
 int
-yaml_parse_section(struct Config *conf,
+yaml_parse_section(struct RappConfig *conf,
     const char *filename,
     const char *sectionname,
     yaml_parser_t *parser)
@@ -270,7 +270,7 @@ yaml_parse_section(struct Config *conf,
 }
 
 int
-config_parse_main(struct Config *conf, yaml_parser_t *parser,
+config_parse_main(struct RappConfig *conf, yaml_parser_t *parser,
     const char *sourcename)
 {
   yaml_token_t token;
@@ -316,7 +316,7 @@ cleanup:
 }
 
 int
-config_parse(struct Config *conf, const char* filename)
+config_parse(struct RappConfig *conf, const char* filename)
 {
   yaml_parser_t parser;
   char *err, *cres;
@@ -350,7 +350,7 @@ config_parse(struct Config *conf, const char* filename)
 }
 
 int
-config_parse_string(struct Config *conf, const char *source)
+config_parse_string(struct RappConfig *conf, const char *source)
 {
   const char *sourcename = "<string>";
   yaml_parser_t parser;
@@ -367,7 +367,7 @@ config_parse_string(struct Config *conf, const char *source)
 }
 
 int
-config_scan_directory(struct Config *conf, const char* directory, const char* ext)
+config_scan_directory(struct RappConfig *conf, const char* directory, const char* ext)
 {
   struct dirent **namelist;
   char *err;

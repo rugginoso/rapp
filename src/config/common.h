@@ -66,7 +66,7 @@ struct ConfigValue {
 };
 
 struct ConfigOption {
-  ConfigParamType type;
+  RappConfigParamType type;
   char *help;
   char *name;
   int range_set;
@@ -93,7 +93,7 @@ struct ConfigSection {
   TAILQ_HEAD(ConfigOptionHead, ConfigOption) options;
 };
 
-struct Config {
+struct RappConfig {
   int num_sections;
   struct Logger *logger;
   struct ConfigOption **options_map;
@@ -102,33 +102,33 @@ struct Config {
   TAILQ_HEAD(ConfigSectionHead, ConfigSection) sections;
 };
 
-struct Config *config_new(struct Logger *logger);
-void config_destroy(struct Config *conf);
-int config_parse(struct Config *conf, const char* filename);
-int config_scan_directory(struct Config *conf, const char* directory,
+struct RappConfig *config_new(struct Logger *logger);
+void config_destroy(struct RappConfig *conf);
+int config_parse(struct RappConfig *conf, const char* filename);
+int config_scan_directory(struct RappConfig *conf, const char* directory,
                           const char *ext);
-int config_parse_string(struct Config *conf, const char *source);
+int config_parse_string(struct RappConfig *conf, const char *source);
 
-struct ConfigSection* get_section(struct Config *conf, const char *section);
-struct ConfigSection* section_create(struct Config *conf, const char *name);
+struct ConfigSection* get_section(struct RappConfig *conf, const char *section);
+struct ConfigSection* section_create(struct RappConfig *conf, const char *name);
 void config_section_destroy(struct ConfigSection *sect);
 
-int config_add_value_string(struct Config *conf, const char *section,
+int config_add_value_string(struct RappConfig *conf, const char *section,
                             const char *name, const char* value);
-int config_add_value_int(struct Config *conf, const char *section,
+int config_add_value_int(struct RappConfig *conf, const char *section,
     const char *name, long value);
-int config_add_value_from_string(struct Config *conf, struct ConfigOption *opt,
+int config_add_value_from_string(struct RappConfig *conf, struct ConfigOption *opt,
     const char *value);
 void config_option_remove_all_values(struct ConfigOption *opt);
 void config_option_destroy(struct ConfigOption *opt);
 
-void config_argp_options_destroy(struct Config *conf);
-int config_generate_commandline(struct Config *conf);
-int config_parse_commandline(struct Config *conf, int argc, char *argv[]);
+void config_argp_options_destroy(struct RappConfig *conf);
+int config_generate_commandline(struct RappConfig *conf);
+int config_parse_commandline(struct RappConfig *conf, int argc, char *argv[]);
 int config_parse_early_commandline(struct RappArguments *arguments,
                                    int argc, char* argv[]);
 
-int config_read_env(struct Config *conf);
+int config_read_env(struct RappConfig *conf);
 
 void uppercase(char *str);
 #endif /* CONFIG_COMMON_H */

@@ -35,7 +35,7 @@ get_env_name(char *sect, char *name, char **envname)
 }
 
 int
-add_value_from_env_list(struct Config *conf, struct ConfigOption *opt,
+add_value_from_env_list(struct RappConfig *conf, struct ConfigOption *opt,
                         const char *value)
 {
  char *token, *saveptr;
@@ -56,7 +56,7 @@ add_value_from_env_list(struct Config *conf, struct ConfigOption *opt,
 }
 
 int
-get_env_for_opt(struct Config *conf, struct ConfigOption *opt)
+get_env_for_opt(struct RappConfig *conf, struct ConfigOption *opt)
 {
   int res;
   char *envname;
@@ -94,7 +94,7 @@ get_env_for_opt(struct Config *conf, struct ConfigOption *opt)
 }
 
 int
-config_read_env(struct Config *conf)
+config_read_env(struct RappConfig *conf)
 {
   struct ConfigSection *s;
   struct ConfigOption *opt;

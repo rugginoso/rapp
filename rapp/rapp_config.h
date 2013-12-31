@@ -14,43 +14,43 @@ typedef enum {
     PARAM_BOOL,
     PARAM_INT,
     PARAM_STRING
-} ConfigParamType;
+} RappConfigParamType;
 
-struct Config;
+struct RappConfig;
 
 // PUBLIC
-int config_opt_add(struct Config *conf, const char *section,
-                   const char *name, ConfigParamType type,
+int rapp_config_opt_add(struct RappConfig *conf, const char *section,
+                   const char *name, RappConfigParamType type,
                    const char *help, const char* metavar);
-int config_opt_set_range_int(struct Config *conf, const char *section,
+int rapp_config_opt_set_range_int(struct RappConfig *conf, const char *section,
                              const char *name, long value_min,
                              long value_max);
-int config_opt_set_multivalued(struct Config *conf, const char *section,
+int rapp_config_opt_set_multivalued(struct RappConfig *conf, const char *section,
                                const char *name, int flag);
-int config_opt_set_default_bool(struct Config *conf, const char *section,
+int rapp_config_opt_set_default_bool(struct RappConfig *conf, const char *section,
                                 const char *name, int value);
-int config_opt_set_default_int(struct Config *conf, const char *section,
+int rapp_config_opt_set_default_int(struct RappConfig *conf, const char *section,
                                const char *name, long value);
-int config_opt_set_default_string(struct Config *conf, const char *section,
+int rapp_config_opt_set_default_string(struct RappConfig *conf, const char *section,
                                   const char *name, const char *value);
 
-int config_get_nth_bool(struct Config *conf, const char *section,
+int rapp_config_get_nth_bool(struct RappConfig *conf, const char *section,
                         const char *name, int position, int *value);
-int config_get_nth_int(struct Config *conf, const char *section,
+int rapp_config_get_nth_int(struct RappConfig *conf, const char *section,
                        const char *name, int position, long *value);
-int config_get_nth_string(struct Config *conf, const char *section,
+int rapp_config_get_nth_string(struct RappConfig *conf, const char *section,
                           const char *name, int position,
                           char **value);
-int config_get_num_values(struct Config *conf, const char *section,
+int rapp_config_get_num_values(struct RappConfig *conf, const char *section,
                          const char *name, int *num_values);
 
 
-#define config_get_bool(CONF, SECTION, NAME, VALUE) \
-            config_get_nth_bool(CONF, SECTION, NAME, 0, VALUE)
-#define config_get_int(CONF, SECTION, NAME, VALUE) \
-            config_get_nth_int(CONF, SECTION, NAME, 0, VALUE)
-#define config_get_string(CONF, SECTION, NAME, VALUE) \
-            config_get_nth_string(CONF, SECTION, NAME, 0, VALUE)
+#define rapp_config_get_bool(CONF, SECTION, NAME, VALUE) \
+            rapp_config_get_nth_bool(CONF, SECTION, NAME, 0, VALUE)
+#define rapp_config_get_int(CONF, SECTION, NAME, VALUE) \
+            rapp_config_get_nth_int(CONF, SECTION, NAME, 0, VALUE)
+#define rapp_config_get_string(CONF, SECTION, NAME, VALUE) \
+            rapp_config_get_nth_string(CONF, SECTION, NAME, 0, VALUE)
 
 #endif  /* CONFIG_H */
 

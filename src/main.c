@@ -42,7 +42,7 @@ main(int argc, char *argv[])
   struct HTTPServer *http_server = NULL;
   struct SignalHandler *signal_handler = NULL;
   struct Container *container = NULL;
-  struct Config *config = NULL;
+  struct RappConfig *config = NULL;
   enum RouteMatchMode match_mode = ROUTE_MATCH_FIRST;
   char *address;
   long port;
@@ -71,16 +71,16 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  config_opt_add(config, "core", "address", PARAM_STRING, "Address to listen to", NULL);
-  config_opt_add(config, "core", "port", PARAM_INT, "Port", NULL);
-  config_opt_add(config, "core", "config", PARAM_STRING, "Path to yaml config", "FILE");
-  config_opt_add(config, "core", "confd", PARAM_STRING, "Path to directory to scan for config", "DIR");
+  rapp_config_opt_add(config, "core", "address", PARAM_STRING, "Address to listen to", NULL);
+  rapp_config_opt_add(config, "core", "port", PARAM_INT, "Port", NULL);
+  rapp_config_opt_add(config, "core", "config", PARAM_STRING, "Path to yaml config", "FILE");
+  rapp_config_opt_add(config, "core", "confd", PARAM_STRING, "Path to directory to scan for config", "DIR");
 
-  config_opt_set_range_int(config, "core", "port", 0, 65535);
-  config_opt_set_default_string(config, "core", "address", "127.0.0.1");
-  config_opt_set_default_int(config, "core", "port", 8080);
-  config_opt_set_multivalued(config, "core", "config", 1);
-  config_opt_set_multivalued(config, "core", "confd", 1);
+  rapp_config_opt_set_range_int(config, "core", "port", 0, 65535);
+  rapp_config_opt_set_default_string(config, "core", "address", "127.0.0.1");
+  rapp_config_opt_set_default_int(config, "core", "port", 8080);
+  rapp_config_opt_set_multivalued(config, "core", "config", 1);
+  rapp_config_opt_set_multivalued(config, "core", "confd", 1);
 
   res = config_parse_commandline(config, argc, argv);
   if (res != 0) {
@@ -92,9 +92,9 @@ main(int argc, char *argv[])
   }
 
   // Scan configuration directories
-  config_get_num_values(config, "core", "confd", &num);
+  rapp_config_get_num_values(config, "core", "confd", &num);
   for (i = 0; i < num; i++) {
-    if (config_get_nth_string(config, "core", "confd", i, &confpath) != 0)
+    if (rapp_config_get_nth_string(config, "core", "confd", i, &confpath) != 0)
         exit(1);
     res = config_scan_directory(config, confpath, ".yaml");
     free(confpath);
@@ -103,9 +103,9 @@ main(int argc, char *argv[])
   }
 
   // Parsing individual configs
-  config_get_num_values(config, "core", "config", &num);
+  rapp_config_get_num_values(config, "core", "config", &num);
   for (i = 0; i < num; i++) {
-    if (config_get_nth_string(config, "core", "config", i, &confpath) != 0)
+    if (rapp_config_get_nth_string(config, "core", "config", i, &confpath) != 0)
         exit(1);
     res = config_parse(config, confpath);
     free(confpath);
@@ -117,8 +117,8 @@ main(int argc, char *argv[])
     logger_trace(logger, LOG_CRITICAL, "rapp", "No container provided.");
     exit(1);
   }
-  config_get_string(config, "core", "address", &address);
-  config_get_int(config, "core", "port", &port);
+  rapp_config_get_string(config, "core", "address", &address);
+  rapp_config_get_int(config, "core", "port", &port);
   logger_trace(logger, LOG_INFO, "rapp", "listening on %s", address);
   logger_trace(logger, LOG_INFO, "rapp", "listening on %d", port);
 

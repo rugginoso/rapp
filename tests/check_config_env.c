@@ -15,7 +15,7 @@
 
 #include "test_utils.h"
 
-struct Config *conf;
+struct RappConfig *conf;
 
 void
 setup(void)
@@ -41,14 +41,14 @@ START_TEST(test_config_env)
   putenv("RAPP_MY_SECTION_MY_OPTION=yes");
   ck_assert_call_ok(config_read_env, conf);
 
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "other", PARAM_STRING, NULL, NULL);
-  config_opt_add(conf, "my_section", "my_option", PARAM_STRING, NULL, NULL);
-  config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "other", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_add(conf, "my_section", "my_option", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
   ck_assert_call_ok(config_read_env, conf);
-  config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
+  rapp_config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
   ck_assert_str_eq(value, "0.0.0.0");
-  config_get_string(conf, "my_section", "my_option", &value);
+  rapp_config_get_string(conf, "my_section", "my_option", &value);
   ck_assert_str_eq(value, "yes");
 }
 END_TEST
@@ -58,11 +58,11 @@ START_TEST(test_config_env_override_conf)
   char *config_s = "---\ncore: {address: 127.0.0.1}";
   char *value;
   putenv("RAPP_ADDRESS=0.0.0.0");
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
-  config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
   ck_assert_call_ok(config_read_env, conf);
   ck_assert_call_ok(config_parse_string, conf, config_s);
-  config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
+  rapp_config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
   ck_assert_str_eq(value, "0.0.0.0");
 }
 END_TEST
@@ -72,11 +72,11 @@ START_TEST(test_config_env_overridden_by_commandline)
   char *cmdline[] = {"rapp", "--address", "127.0.0.1"};
   char *value;
   putenv("RAPP_ADDRESS=0.0.0.0");
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
-  config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "localhost");
   ck_assert_call_ok(config_parse_commandline, conf, 3, cmdline);
   ck_assert_call_ok(config_read_env, conf);
-  config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
+  rapp_config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
   ck_assert_str_eq(value, "127.0.0.1");
 }
 END_TEST
@@ -86,16 +86,16 @@ START_TEST(test_config_env_multivalue)
   int value;
   // set a string that starts and ends with : as edge cases
   putenv("RAPP_SECTION_OPTION=:1:2:3:");
-  config_opt_add(conf, "section", "option", PARAM_INT, NULL, NULL);
-  config_opt_set_multivalued(conf, "section", "option", 1);
+  rapp_config_opt_add(conf, "section", "option", PARAM_INT, NULL, NULL);
+  rapp_config_opt_set_multivalued(conf, "section", "option", 1);
   ck_assert_call_ok(config_read_env, conf);
-  config_get_num_values(conf, "section", "option", &value);
+  rapp_config_get_num_values(conf, "section", "option", &value);
   ck_assert_int_eq(3, value);
-  config_get_nth_int(conf, "section", "option", 0, (long *) &value);
+  rapp_config_get_nth_int(conf, "section", "option", 0, (long *) &value);
   ck_assert_int_eq(1, value);
-  config_get_nth_int(conf, "section", "option", 1, (long *) &value);
+  rapp_config_get_nth_int(conf, "section", "option", 1, (long *) &value);
   ck_assert_int_eq(2, value);
-  config_get_nth_int(conf, "section", "option", 2, (long *) &value);
+  rapp_config_get_nth_int(conf, "section", "option", 2, (long *) &value);
   ck_assert_int_eq(3, value);
 }
 END_TEST
@@ -104,9 +104,9 @@ START_TEST(test_config_env_bool_ok)
 {
   int value;
   putenv("RAPP_SECTION_OPTION=yes");
-  config_opt_add(conf, "section", "option", PARAM_BOOL, NULL, NULL);
+  rapp_config_opt_add(conf, "section", "option", PARAM_BOOL, NULL, NULL);
   ck_assert_call_ok(config_read_env, conf);
-  config_get_bool(conf, "section", "option", &value);
+  rapp_config_get_bool(conf, "section", "option", &value);
   ck_assert_int_eq(value, 1);
 }
 END_TEST
@@ -115,9 +115,9 @@ START_TEST(test_config_env_bool_fail)
 {
   int value;
   putenv("RAPP_SECTION_OPTION=2");
-  config_opt_add(conf, "section", "option", PARAM_BOOL, NULL, NULL);
+  rapp_config_opt_add(conf, "section", "option", PARAM_BOOL, NULL, NULL);
   ck_assert_call_ok(config_read_env, conf);
-  ck_assert_call_fail(config_get_bool, conf, "section", "option", &value);
+  ck_assert_call_fail(rapp_config_get_bool, conf, "section", "option", &value);
 }
 END_TEST
 

@@ -15,7 +15,7 @@
 
 #include "test_utils.h"
 
-struct Config *conf;
+struct RappConfig *conf;
 const char *argp_program_version;
 char *empty[] = {"rapp"};
 char *usage[] = {"rapp", "--usage"};
@@ -107,11 +107,11 @@ START_TEST(test_config_commandline)
   char *logoption[] = {"rapp", "--log-level", "debug"};
   char *opt_with_underscore[] = {"rapp", "--my-sect-my-opt", "1"};
   char *value;
-  config_opt_add(conf, "test", "option", PARAM_STRING, "doc", "meta");
-  config_opt_set_default_string(conf, "test", "option", "default");
+  rapp_config_opt_add(conf, "test", "option", PARAM_STRING, "doc", "meta");
+  rapp_config_opt_set_default_string(conf, "test", "option", "default");
 
   ck_assert_call_ok(config_parse_commandline, conf, 1, empty);
-  config_get_string(conf, "test", "option", &value);
+  rapp_config_get_string(conf, "test", "option", &value);
   ck_assert_str_eq(value, "default");
 
   // do not support being calling twice
@@ -120,19 +120,19 @@ START_TEST(test_config_commandline)
 
   // test core option has no prefix
   conf = config_new(logger);
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "option", PARAM_STRING, "doc", NULL);
-  config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "option", "default");
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "option", PARAM_STRING, "doc", NULL);
+  rapp_config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "option", "default");
   ck_assert_call_ok(config_parse_commandline, conf, 3, coreopt);
-  config_get_string(conf, RAPP_CONFIG_SECTION, "option", &value);
+  rapp_config_get_string(conf, RAPP_CONFIG_SECTION, "option", &value);
   ck_assert_str_eq(value, "value");
   config_destroy(conf);
 
   // test normal option
   conf = config_new(logger);
-  config_opt_add(conf, "test", "option", PARAM_STRING, NULL, "meta");
-  config_opt_set_default_string(conf, "test", "option", "default");
+  rapp_config_opt_add(conf, "test", "option", PARAM_STRING, NULL, "meta");
+  rapp_config_opt_set_default_string(conf, "test", "option", "default");
   ck_assert_call_ok(config_parse_commandline, conf, 3, withvalue);
-  config_get_string(conf, "test", "option", &value);
+  rapp_config_get_string(conf, "test", "option", &value);
   ck_assert_str_eq(value, "value");
   config_destroy(conf);
 
@@ -142,9 +142,9 @@ START_TEST(test_config_commandline)
   config_destroy(conf);
 
   conf = config_new(logger);
-  config_opt_add(conf, "my_sect", "my_opt", PARAM_STRING, 0, 0);
+  rapp_config_opt_add(conf, "my_sect", "my_opt", PARAM_STRING, 0, 0);
   ck_assert_call_ok(config_parse_commandline, conf, 3, opt_with_underscore);
-  ck_assert_call_ok(config_get_string, conf, "my_sect", "my_opt", &value);
+  ck_assert_call_ok(rapp_config_get_string, conf, "my_sect", "my_opt", &value);
   ck_assert_str_eq(value, "1");
 }
 END_TEST
@@ -173,11 +173,11 @@ START_TEST(test_config_commandline_override)
   char *value = NULL;
   char *address[] = {"rapp", "--address", "localhost"};
   const char *yaml = "---\ncore: {address: \"0.0.0.0\"}";
-  config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
-  config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "127.0.0.1");
+  rapp_config_opt_add(conf, RAPP_CONFIG_SECTION, "address", PARAM_STRING, NULL, NULL);
+  rapp_config_opt_set_default_string(conf, RAPP_CONFIG_SECTION, "address", "127.0.0.1");
   config_parse_commandline(conf, 3, address);
   ck_assert_call_ok(config_parse_string, conf, yaml);
-  config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
+  rapp_config_get_string(conf, RAPP_CONFIG_SECTION, "address", &value);
   ck_assert_str_eq(value, "localhost");
 }
 END_TEST
