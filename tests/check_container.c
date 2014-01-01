@@ -11,6 +11,7 @@
 
 #include "logger.h"
 #include "container.h"
+#include "config/common.h"
 
 #include "test_dlstubs.h"
 
@@ -19,12 +20,14 @@ START_TEST(test_container_new_dlopen_fail)
 {
   struct Logger *logger = NULL;
   struct Container *container = NULL;
+  struct RappConfig *config = NULL;
    struct Symbol syms[] = {
     { NULL, 0 }
   };
   dlstub_setup(DLSTUB_ERR_DLOPEN, syms);
   logger = logger_new_null();
-  container = container_new(logger, "dummy", 0, NULL);
+  config = config_new(logger);
+  container = container_new(logger, "dummy", config);
   ck_assert(container == NULL);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 0);
   logger_destroy(logger);
@@ -35,13 +38,15 @@ START_TEST(test_container_new_dlsym_fail_get_abi_version)
 {
   struct Logger *logger = NULL;
   struct Container *container = NULL;
+  struct RappConfig *config = NULL;
   struct Symbol syms[] = {
     { "rapp_get_abi_version", DLSTUB_ERR_DLSYM },
     { NULL, 0 }
   };
   dlstub_setup(DLSTUB_ERR_NONE, syms);
   logger = logger_new_null();
-  container = container_new(logger, "dummy", 0, NULL);
+  config = config_new(logger);
+  container = container_new(logger, "dummy", config);
   ck_assert(container == NULL);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 0);
   logger_destroy(logger);
@@ -52,16 +57,19 @@ START_TEST(test_container_new_abi_version_mismatch)
 {
   struct Logger *logger = NULL;
   struct Container *container = NULL;
+  struct RappConfig *config;
   struct Symbol syms[] = {
     { "rapp_get_abi_version", DLSTUB_ERR_PLUGIN },
     { NULL, 0 }
   };
   dlstub_setup(DLSTUB_ERR_NONE, syms);
   logger = logger_new_null();
-  container = container_new(logger, "dummy", 0, NULL);
+  config = config_new(logger);
+  container = container_new(logger, "dummy", config);
   ck_assert(container == NULL);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_create"), 0);
+  ck_assert_int_eq(dlstub_get_invoke_count("rapp_init"), 0);
   logger_destroy(logger);
 }
 END_TEST
@@ -70,25 +78,30 @@ START_TEST(test_container_new_dummy)
 {
   struct Logger *logger = NULL;
   struct Container *container = NULL;
+  struct RappConfig *config = NULL;
   struct Symbol syms[] = {
     { "rapp_get_abi_version", DLSTUB_ERR_NONE },
     { "rapp_create",          DLSTUB_ERR_NONE },
     { "rapp_destroy",         DLSTUB_ERR_NONE },
     { "rapp_serve",           DLSTUB_ERR_NONE },
+    { "rapp_init",            DLSTUB_ERR_NONE },
     { NULL, 0 }
   };
   dlstub_setup(DLSTUB_ERR_NONE, syms);
   logger = logger_new_null();
-  container = container_new(logger, "dummy", 0, NULL);
+  config = config_new(logger);
+  container = container_new(logger, "dummy", config);
   ck_assert(container != NULL);
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_get_abi_version"), 1);
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_create"), 1);
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_destroy"), 1);
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_serve"), 1);
+  ck_assert_int_eq(dlstub_get_lookup_count("rapp_init"), 1);
   container_destroy(container);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_create"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_destroy"), 1);
+  ck_assert_int_eq(dlstub_get_lookup_count("rapp_init"), 1);
   logger_destroy(logger);
 }
 END_TEST
@@ -97,16 +110,20 @@ START_TEST(test_container_serve_dummy)
 {
   struct Logger *logger = NULL;
   struct Container *container = NULL;
+  struct RappConfig *config = NULL;
   struct Symbol syms[] = {
     { "rapp_get_abi_version", DLSTUB_ERR_NONE },
     { "rapp_create",          DLSTUB_ERR_NONE },
     { "rapp_destroy",         DLSTUB_ERR_NONE },
     { "rapp_serve",           DLSTUB_ERR_NONE },
+    { "rapp_init",            DLSTUB_ERR_NONE },
     { NULL, 0 }
   };
   dlstub_setup(DLSTUB_ERR_NONE, syms);
   logger = logger_new_null();
-  container = container_new(logger, "dummy", 0, NULL);
+  config = config_new(logger);
+  container = container_new(logger, "dummy", config);
+  container_init(container, config);
   ck_assert(container != NULL);
   container_serve(container,
                   (struct HTTPRequest *)syms,
@@ -116,6 +133,7 @@ START_TEST(test_container_serve_dummy)
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_create"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_destroy"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_serve"), 1);
+  ck_assert_int_eq(dlstub_get_invoke_count("rapp_init"), 1);
   logger_destroy(logger);
 }
 END_TEST
@@ -124,16 +142,19 @@ START_TEST(test_container_logger_get)
 {
   struct Logger *logger = NULL;
   struct Container *container = NULL;
+  struct RappConfig *config = NULL;
   struct Symbol syms[] = {
     { "rapp_get_abi_version", DLSTUB_ERR_NONE },
     { "rapp_create",          DLSTUB_ERR_NONE },
     { "rapp_destroy",         DLSTUB_ERR_NONE },
     { "rapp_serve",           DLSTUB_ERR_NONE },
+    { "rapp_init",            DLSTUB_ERR_NONE },
     { NULL, 0 }
   };
   dlstub_setup(DLSTUB_ERR_NONE, syms);
   logger = logger_new_null();
-  container = container_new(logger, "dummy", 0, NULL);
+  config = config_new(logger);
+  container = container_new(logger, "dummy", config);
   ck_assert(container != NULL);
   ck_assert(dlstub_logger_get() == logger);
   container_destroy(container);
@@ -145,9 +166,12 @@ START_TEST(test_container_new_null_new_destroy)
 {
   struct Logger *logger = NULL;
   struct Container *container = NULL;
+  struct RappConfig *config = NULL;
   logger = logger_new_null();
+  config = config_new(logger);
   container = container_new_null(logger, "test");
   ck_assert(container != NULL);
+  container_init(container, config);
   container_destroy(container);
   logger_destroy(logger);
 }

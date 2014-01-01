@@ -14,6 +14,7 @@
 #include "httprequest.h"
 #include "httprouter.h"
 #include "logger.h"
+#include "config/common.h"
 
 
 START_TEST(test_httprouter_new_destroy)
@@ -81,6 +82,12 @@ debug_destroy(struct RappContainer *handle)
   return 0;
 }
 
+static int
+debug_init(struct RappContainer *handle, struct RappConfig *config)
+{
+  return 0;
+}
+
 static void
 check_default_container(enum RouteMatchMode match_mode)
 {
@@ -88,10 +95,12 @@ check_default_container(enum RouteMatchMode match_mode)
   struct Logger *logger = NULL;
   struct HTTPRouter *router = NULL;
   struct Container *debug = NULL;
+  struct RappConfig *config = NULL;
 
   struct RappContainer debug_data = { 0, 0 };
   logger = logger_new_null();
-  debug = container_new_custom(logger, "debug", debug_serve, debug_destroy, &debug_data);
+  config = config_new(logger);
+  debug = container_new_custom(logger, "debug", debug_init, debug_serve, debug_destroy, &debug_data);
 
   router = http_router_new(logger, ROUTE_MATCH_FIRST);
   ck_assert(router != NULL);
@@ -129,10 +138,12 @@ check_route(const char         *route,
   struct HTTPRequest *request = NULL;
   struct HTTPRouter *router = NULL;
   struct Container *debug = NULL;
+  struct RappConfig *config = NULL;
 
   struct RappContainer debug_data = { 0, 0 };
   logger = logger_new_null();
-  debug = container_new_custom(logger, "debug", debug_serve, debug_destroy, &debug_data);
+  config = config_new(logger);
+  debug = container_new_custom(logger, "debug", debug_init, debug_serve, debug_destroy, &debug_data);
 
   router = http_router_new(logger, match_mode);
   ck_assert(router != NULL);
@@ -188,6 +199,7 @@ check_many_routes(const char         *route_tmpl,
   int ret = 0;
   char buf[128] = { '\0' };
   struct Logger *logger = NULL;
+  struct RappConfig *config = NULL;
   struct HTTPRequest *request = NULL;
   struct HTTPRouter *router = NULL;
   struct Container **debug = NULL;
@@ -199,13 +211,14 @@ check_many_routes(const char         *route_tmpl,
   ck_assert(debug_data != NULL);
 
   logger = logger_new_null();
+  config = config_new(logger);
   router = http_router_new(logger, match_mode);
   ck_assert(router != NULL);
 
   /* setup */
   for (i = 0; i < routes_num; i++) {
     snprintf(buf, sizeof(buf), "debug#%02i", i);
-    debug[i] = container_new_custom(logger, buf, debug_serve, debug_destroy, &(debug_data[i]));
+    debug[i] = container_new_custom(logger, buf, debug_init, debug_serve, debug_destroy, &(debug_data[i]));
 
     snprintf(buf, sizeof(buf), route_tmpl, 5000+i);
     ret = http_router_bind(router, buf, debug[i]);
@@ -305,20 +318,23 @@ check_match_right_route(const char         *test_route,
 {
   char buf[32] = { '\0' }; /* FIXME */
   struct Logger *logger = NULL;
+  struct RappConfig *config = NULL;
   struct HTTPRequest *request = NULL;
   struct HTTPRouter *router = NULL;
   int ret = 0;
   int i = 0;
 
   logger = logger_new_null();
+  config = config_new(logger);
   router = http_router_new(logger, match_mode);
   ck_assert(router != NULL);
 
   /* setup */
   for (i = 0; test_data[i].route != NULL; i++) {
     snprintf(buf, sizeof(buf), "#%02i", i);
-    test_data[i].debug = container_new_custom(logger, buf, debug_serve, debug_destroy, &(test_data[i].debug_data));
+    test_data[i].debug = container_new_custom(logger, buf, debug_init, debug_serve, debug_destroy, &(test_data[i].debug_data));
 
+    container_init(test_data[i].debug, config);
     ret = http_router_bind(router, test_data[i].route, test_data[i].debug);
     ck_assert_int_eq(ret, 0);
   }
@@ -329,7 +345,7 @@ check_match_right_route(const char         *test_route,
                           (struct HTTPResponse *)request); /* FIXME */
   ck_assert_int_eq(ret, 0);
   http_request_destroy(request);
-  
+
   /* verify and clean */
   for (i = 0; test_data[i].route != NULL; i++) {
     int count = (i == expected) ?1 :0;
