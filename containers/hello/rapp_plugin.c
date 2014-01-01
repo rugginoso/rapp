@@ -52,20 +52,26 @@ rapp_serve(struct RappContainer *handle,
 int
 rapp_destroy(struct RappContainer *handle)
 {
+  free(handle->message);
   free(handle);
-
   return 0;
+}
+
+int
+rapp_init(struct RappContainer *handle, struct RappConfig *config)
+{
+  rapp_config_get_string(config, "hello", "message", &(handle->message));
 }
 
 struct RappContainer *
 rapp_create(void  *cookie,
-            int    argc,
-            char **argv,
+            struct RappConfig *config,
             int   *err)
 {
   struct RappContainer *handle = calloc(1, sizeof(struct RappContainer));
   if (handle) {
-    handle->message = "Hello world!";
+    rapp_config_opt_add(config, "hello", "message", PARAM_STRING, "Hello world message", "MESSAGE");
+    rapp_config_opt_set_default_string(config, "hello", "message", "Hello world!");
     *err = 0;
   } else {
     *err = -1;

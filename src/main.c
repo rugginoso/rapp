@@ -71,6 +71,15 @@ main(int argc, char *argv[])
     exit(1);
   }
 
+  if (arguments.container) {
+    container = container_new(logger, arguments.container, config);
+    if (!container) {
+      config_destroy(config);
+      logger_destroy(logger);
+      exit(1);
+    }
+  }
+
   rapp_config_opt_add(config, "core", "address", PARAM_STRING, "Address to listen to", NULL);
   rapp_config_opt_add(config, "core", "port", PARAM_INT, "Port", NULL);
   rapp_config_opt_add(config, "core", "config", PARAM_STRING, "Path to yaml config", "FILE");
@@ -117,18 +126,13 @@ main(int argc, char *argv[])
     logger_trace(logger, LOG_CRITICAL, "rapp", "No container provided.");
     exit(1);
   }
+
+  container_init(container, config);
   rapp_config_get_string(config, "core", "address", &address);
   rapp_config_get_int(config, "core", "port", &port);
+
   logger_trace(logger, LOG_INFO, "rapp", "listening on %s", address);
   logger_trace(logger, LOG_INFO, "rapp", "listening on %d", port);
-
-  container = container_new(logger, arguments.container, 0, NULL); // FIXME
-  if (!container) {
-    config_destroy(config);
-    logger_destroy(logger);
-    free(address);
-    exit(1);
-  }
 
   logger_trace(logger, LOG_INFO, "rapp",
                "rapp %s (rev %s) starting... (PID=%d)",
