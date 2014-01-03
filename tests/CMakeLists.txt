@@ -77,6 +77,10 @@ if(ENABLE_TESTS)
     target_link_libraries(check_config_env ${TEST_LIBS} ${LIBYAML_LIBRARIES})
     add_test(test_config_env ${EXECUTABLE_OUTPUT_PATH}/check_config_env)
 
+    add_executable(check_httprequestqueue check_httprequestqueue.c)
+    target_link_libraries(check_httprequestqueue ${TEST_LIBS})
+    add_test(test_httprequestqueue ${EXECUTABLE_OUTPUT_PATH}/check_httprequestqueue)
+
     add_executable(check_httprequest check_httprequest.c)
     target_link_libraries(check_httprequest ${TEST_LIBS})
     add_test(test_httprequest ${EXECUTABLE_OUTPUT_PATH}/check_httprequest)

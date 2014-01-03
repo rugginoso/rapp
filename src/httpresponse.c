@@ -30,6 +30,7 @@ struct HTTPResponse {
   size_t buffer_length;
 
   const char *server_name;
+  int is_last;
 
   struct Logger *logger;
 };
@@ -232,6 +233,12 @@ http_response_end_headers(struct HTTPResponse *response)
     return -1;
   total_length += ret;
 
+  if (response->is_last != 0) {
+    if ((ret = http_response_write_header(response, "Connection", "Close")) < 0)
+      return -1;
+    total_length += ret;
+  }
+
   if ((ret = http_response_append_data(response, HTTP_EOL, strlen(HTTP_EOL))) < 0)
     return -1;
   total_length += ret;
@@ -290,6 +297,23 @@ http_response_read_data(struct HTTPResponse *response,
   }
 
   return avaiable_length;
+}
+
+void
+http_response_set_last(struct HTTPResponse *response,
+                       int                  last)
+{
+  assert(response != NULL);
+
+  response->is_last = last;
+}
+
+int
+http_response_is_last(struct HTTPResponse *response)
+{
+  assert(response != NULL);
+
+  return response->is_last;
 }
 
 ssize_t

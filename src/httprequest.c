@@ -11,123 +11,28 @@
 #include <errno.h>
 #include <assert.h>
 
-#include <http_parser.h>
-
 #include "httprequest.h"
 #include "logger.h"
 #include "memory.h"
 
 
 struct HTTPRequest {
-  http_parser parser;
-  http_parser_settings parser_settings;
-  unsigned current_header;
+  enum HTTPMethod method;
 
   struct MemoryRange url_range;
   struct MemoryRange url_field_ranges[HTTP_URL_FIELD_MAX];
   struct HeaderMemoryRange headers_ranges[HTTP_REQUEST_MAX_HEADERS];
-  struct MemoryRange body_range;
+  unsigned current_header;
 
-  char *buffer;
-  size_t buffer_length;
+  char *headers_buffer;
 
-  HTTPRequestParseFinishCallback parse_finish_callback;
-  void *data;
+  char *body;
+  size_t body_length;
+
+  int is_last;
 
   struct Logger *logger;
 };
-
-static int
-on_url(http_parser *parser,
-       const char  *at,
-       size_t       length)
-{
-  struct HTTPRequest *request = NULL;
-  struct http_parser_url url;
-  int i = 0;
-
-  request = (struct HTTPRequest *)parser->data;
-
-  if (http_parser_parse_url(at, length, 0, &url) != 0)
-    return -1;
-
-  request->url_range.offset = at - request->buffer;
-  request->url_range.length = length;
-
-  while (i < HTTP_URL_FIELD_MAX) {
-    if (url.field_set & (1 << i)) {
-      request->url_field_ranges[i].offset = (at - request->buffer) + url.field_data[i].off;
-      request->url_field_ranges[i].length = url.field_data[i].len;
-    }
-
-    i++;
-  }
-
-  return 0;
-}
-
-static int
-on_header_field(http_parser *parser,
-                const char  *at,
-                size_t       length)
-{
-  struct HTTPRequest *request = NULL;
-
-  request = (struct HTTPRequest *)parser->data;
-
-  if (request->current_header >= HTTP_REQUEST_MAX_HEADERS)
-    return -1;
-
-  request->headers_ranges[request->current_header].key.offset = at - request->buffer;
-  request->headers_ranges[request->current_header].key.length = length;
-
-  return 0;
-}
-
-static int
-on_header_value(http_parser *parser,
-                const char  *at,
-                size_t       length)
-{
-  struct HTTPRequest *request = NULL;
-
-  request = (struct HTTPRequest *)parser->data;
-
-  request->headers_ranges[request->current_header].value.offset = at - request->buffer;
-  request->headers_ranges[request->current_header].value.length = length;
-
-  request->current_header++;
-
-  return 0;
-}
-
-static int
-on_body(http_parser *parser,
-        const char  *at,
-        size_t       length)
-{
-  struct HTTPRequest *request = NULL;
-
-  request = (struct HTTPRequest *)parser->data;
-
-  request->body_range.offset = at - request->buffer;
-  request->body_range.length = length;
-
-  return 0;
-}
-
-static int
-on_message_complete(http_parser *parser)
-{
-  struct HTTPRequest *request = NULL;
-
-  request = (struct HTTPRequest *)parser->data;
-
-  if (request->parse_finish_callback != NULL)
-    request->parse_finish_callback(request, request->data);
-
-  return 0;
-}
 
 struct HTTPRequest *
 http_request_new(struct Logger *logger)
@@ -139,15 +44,6 @@ http_request_new(struct Logger *logger)
     return NULL;
   }
 
-  http_parser_init(&(request->parser), HTTP_REQUEST);
-  request->parser.data = request;
-
-  request->parser_settings.on_url = on_url;
-  request->parser_settings.on_header_field = on_header_field;
-  request->parser_settings.on_header_value = on_header_value;
-  request->parser_settings.on_body = on_body;
-  request->parser_settings.on_message_complete = on_message_complete;
-
   request->logger = logger;
 
   return request;
@@ -158,63 +54,48 @@ http_request_destroy(struct HTTPRequest *request)
 {
   assert(request != NULL);
 
-  if (request->buffer && request->buffer_length > 0)
-    memory_destroy(request->buffer);
+  if (request->headers_buffer != NULL)
+    memory_destroy(request->headers_buffer);
+
+  if (request->body != NULL)
+    memory_destroy(request->body);
 
   memory_destroy(request);
 }
 
-void
-http_request_set_parse_finish_callback(struct HTTPRequest            *request,
-                                       HTTPRequestParseFinishCallback callback,
-                                       void                          *data)
-{
-  assert(request != NULL);
-
-  request->parse_finish_callback = callback;
-  request->data = data;
-}
-
 int
-http_request_append_data(struct HTTPRequest *request,
-                         void               *data,
-                         size_t              length)
+http_request_set_headers_buffer(struct HTTPRequest *request,
+                                const char         *buffer,
+                                size_t              length)
 {
   assert(request != NULL);
-  assert(data != NULL);
+  assert(buffer != NULL);
   assert(length > 0);
 
-  ssize_t parsed = -1;
-
-  if ((request->buffer = memory_resize(request->buffer, request->buffer_length + length)) == NULL) {
-    LOGGER_PERROR(request->logger, "memory_resize");
+  if ((request->headers_buffer = memory_create(length)) == NULL) {
+    LOGGER_PERROR(request->logger, "memory_create");
     return -1;
   }
-  memcpy(&(request->buffer[request->buffer_length]), data, length);
-
-  parsed = http_parser_execute(&(request->parser),
-                               &(request->parser_settings),
-                               &(request->buffer[request->buffer_length]),
-                               length);
-
-  request->buffer_length += length;
-
-  if (parsed != length) {
-    logger_trace(request->logger, LOG_ERROR, "httprequest", "parser error: %s: %s",
-                                                            http_errno_name(request->parser.http_errno),
-                                                            http_errno_description(request->parser.http_errno));
-    return -1;
-  }
+  memcpy(request->headers_buffer, buffer, length);
 
   return 0;
 }
 
 const char *
-http_request_get_buffer(struct HTTPRequest *request)
+http_request_get_headers_buffer(struct HTTPRequest *request)
 {
   assert(request != NULL);
 
-  return request->buffer;
+  return request->headers_buffer;
+}
+
+void
+http_request_set_method(struct HTTPRequest *request,
+                        enum HTTPMethod     method)
+{
+  assert(request != NULL);
+
+  request->method = method;
 }
 
 enum HTTPMethod
@@ -222,7 +103,18 @@ http_request_get_method(struct HTTPRequest *request)
 {
   assert(request != NULL);
 
-  return request->parser.method;
+  return request->method;
+}
+
+void
+http_request_set_url_range(struct HTTPRequest *request,
+                           size_t              offset,
+                           size_t              length)
+{
+  assert(request != NULL);
+
+  request->url_range.offset = offset;
+  request->url_range.length = length;
 }
 
 void
@@ -233,6 +125,18 @@ http_request_get_url_range(struct HTTPRequest *request,
   assert(range != NULL);
 
   *range = request->url_range;
+}
+
+void
+http_request_set_url_field_range(struct HTTPRequest *request,
+                                 enum HTTPURLField   field,
+                                 size_t              offset,
+                                 size_t              length)
+{
+  assert(request != NULL);
+
+  request->url_field_ranges[field].offset = offset;
+  request->url_field_ranges[field].length = length;
 }
 
 int
@@ -249,6 +153,32 @@ http_request_get_url_field_range(struct HTTPRequest *request,
   *range = request->url_field_ranges[field];
 
   return 0;
+}
+
+void
+http_request_set_header_key_range(struct HTTPRequest *request,
+                                  unsigned            header_index,
+                                  size_t              offset,
+                                  size_t              length)
+{
+  assert(request != NULL);
+
+  request->headers_ranges[header_index].key.offset = offset;
+  request->headers_ranges[header_index].key.length = length;
+}
+
+void
+http_request_set_header_value_range(struct HTTPRequest *request,
+                                    unsigned            header_index,
+                                    size_t              offset,
+                                    size_t              length)
+{
+  assert(request != NULL);
+
+  request->headers_ranges[header_index].value.offset = offset;
+  request->headers_ranges[header_index].value.length = length;
+
+  request->current_header++;
 }
 
 int
@@ -269,7 +199,7 @@ http_request_get_header_value_range(struct HTTPRequest *request,
 
     current_header_name = alloca(current_header_name_length + 1);
 
-    memcpy(current_header_name, &(request->buffer[request->headers_ranges[i].key.offset]), current_header_name_length);
+    memcpy(current_header_name, &(request->headers_buffer[request->headers_ranges[i].key.offset]), current_header_name_length);
     current_header_name[current_header_name_length] = 0;
 
     if (strcasecmp(header_name, current_header_name) == 0) {
@@ -296,16 +226,58 @@ http_request_get_headers_ranges(struct HTTPRequest        *request,
   *n_ranges = request->current_header;
 }
 
-void
-http_request_get_body_range(struct HTTPRequest *request,
-                            struct MemoryRange *range)
+const char *
+http_request_get_body(struct HTTPRequest *request)
 {
   assert(request != NULL);
-  assert(range != NULL);
 
-  *range = request->body_range;
+  return request->body;
 }
 
+int
+http_request_set_body_length(struct HTTPRequest *request,
+                             size_t              length)
+{
+  assert(request != NULL);
+  assert(length > 0);
+
+  if ((request->body = memory_create(length)) == NULL) {
+    LOGGER_PERROR(request->logger, "memory_create");
+    return -1;
+  }
+
+  return 0;
+}
+
+void
+http_request_append_body_data(struct HTTPRequest *request,
+                              const char         *data,
+                              size_t              length)
+{
+    assert(request != NULL);
+    assert(data != NULL);
+    assert(length > 0);
+
+    memcpy(&(request->body[request->body_length]), data, length);
+    request->body_length += length;
+}
+
+void
+http_request_set_last(struct HTTPRequest *request,
+                      int                 last)
+{
+  assert(request != NULL);
+
+  request->is_last = last;
+}
+
+int
+http_request_is_last(struct HTTPRequest *request)
+{
+  assert(request != NULL);
+
+  return request->is_last;
+}
 
 struct HTTPRequest *
 http_request_new_fake_url(struct Logger *logger,
@@ -325,12 +297,10 @@ http_request_new_fake_url(struct Logger *logger,
 
   if ((request = http_request_new(logger)) == NULL) {
     memory_destroy(request_url);
-    /* logger_trace() already done inside http_request_new */
     return NULL;
   }
 
-  request->buffer = request_url;
-  request->buffer_length = request_len;
+  request->headers_buffer = request_url;
   request->url_range.offset = 0;
   request->url_range.length = request_len;
   return request;

@@ -16,6 +16,9 @@ struct TcpConnection;
 struct HTTPResponse* http_response_new(struct Logger *logger, const char *server_name);
 void http_response_destroy(struct HTTPResponse *response);
 
+void http_response_set_last(struct HTTPResponse *response, int last);
+int http_response_is_last(struct HTTPResponse *response);
+
 ssize_t http_response_read_data(struct HTTPResponse *response, void *data, size_t length);
 
 #endif /* HTTTPRESPONSE_H */
