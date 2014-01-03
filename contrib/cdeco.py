@@ -15,7 +15,7 @@ def decorate(srcpath):
         "/*\n",
         " * %s - is part of RApp.\n" % srcname,
         " * RApp is a modular web application container made for linux and for speed.\n",
-        " * (C) 2013 the RApp devs. Licensed under GPLv2 with additional rights.\n",
+        " * (C) 2014 the RApp devs. Licensed under GPLv2 with additional rights.\n",
         " *     see LICENSE for all the details.\n",
         " */\n"
     ]
