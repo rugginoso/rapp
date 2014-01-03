@@ -87,16 +87,16 @@ event_loop_run(struct ELoop *eloop)
     for (i = 0; i < nfds; i++) {
       eloop_callback = events[i].data.ptr;
 
+      if (events[i].events & EPOLLRDHUP && eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE]) {
+        eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE](eloop_callback->fd, eloop_callback->datas[ELOOP_CALLBACK_CLOSE]);
+      }
+
       if (events[i].events & EPOLLIN && eloop_callback->callbacks[ELOOP_CALLBACK_READ]) {
         eloop_callback->callbacks[ELOOP_CALLBACK_READ](eloop_callback->fd, eloop_callback->datas[ELOOP_CALLBACK_READ]);
       }
 
       if (events[i].events & EPOLLOUT && eloop_callback->callbacks[ELOOP_CALLBACK_WRITE]) {
         eloop_callback->callbacks[ELOOP_CALLBACK_WRITE](eloop_callback->fd, eloop_callback->datas[ELOOP_CALLBACK_WRITE]);
-      }
-
-      if (events[i].events & EPOLLRDHUP && eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE]) {
-        eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE](eloop_callback->fd, eloop_callback->datas[ELOOP_CALLBACK_CLOSE]);
       }
     }
     collector_collect(eloop->collector);
