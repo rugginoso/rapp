@@ -45,7 +45,7 @@ do {                                                                          \
     WARN(conf, "missing or unset parameter %p", conf);                        \
     return 1;                                                                 \
   }                                                                           \
-  struct ConfigSection* s = get_section((conf), (section));                   \
+  struct ConfigSection* s = config_section_get((conf), (section));            \
   if (!s) {                                                                   \
     WARN(conf, "No such section: %s", (section));                             \
     return 1;                                                                 \
@@ -112,8 +112,8 @@ int config_parse(struct RappConfig *conf, const char* filename);
 int config_scan_directory(struct RappConfig *conf, const char* directory, const char *ext);
 int config_parse_string(struct RappConfig *conf, const char *source);
 
-struct ConfigSection* get_section(struct RappConfig *conf, const char *section);
-struct ConfigSection* section_create(struct RappConfig *conf, const char *name);
+struct ConfigSection* config_section_get(struct RappConfig *conf, const char *section);
+struct ConfigSection* config_section_create(struct RappConfig *conf, const char *name);
 void config_section_destroy(struct ConfigSection *sect);
 
 int config_add_value_string(struct RappConfig *conf, const char *section, const char *name, const char* value);

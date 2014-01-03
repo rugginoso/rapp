@@ -37,7 +37,7 @@ struct ConfigOption*
 get_test_option(void) {
   struct ConfigSection *sect;
   struct ConfigOption *opt;
-  sect = get_section(conf, S);
+  sect = config_section_get(conf, S);
   for (opt=sect->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {
     if (strcmp(opt->name, N) == 0)
       return opt;
@@ -57,7 +57,7 @@ START_TEST(test_config_create)
   ck_assert_call_fail(rapp_config_opt_add, NULL, S, N, PS, NULL, NULL);
   ck_assert_call_fail(rapp_config_opt_add, conf, NULL, N, PS, NULL, NULL);
   ck_assert_call_fail(rapp_config_opt_add, conf, S, NULL, PS, NULL, NULL);
-  struct ConfigSection *sect = get_section(conf, NULL);
+  struct ConfigSection *sect = config_section_get(conf, NULL);
   ck_assert(sect == NULL);
 
   // setting properties on non-existing option

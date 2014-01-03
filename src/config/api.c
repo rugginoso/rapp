@@ -57,9 +57,9 @@ rapp_config_opt_add(struct RappConfig   *conf,
   if (validate_name(conf, section) != 0)
     return -1;
 
-  sect = get_section(conf, section);
+  sect = config_section_get(conf, section);
   if (!sect) {
-    sect = section_create(conf, section);
+    sect = config_section_create(conf, section);
     if (!sect)
       return -1;
   }

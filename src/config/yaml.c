@@ -238,7 +238,7 @@ yaml_parse_section(struct RappConfig *conf,
 
   yaml_token_t token;
   int last;
-  struct ConfigSection* section = get_section(conf, sectionname);
+  struct ConfigSection* section = config_section_get(conf, sectionname);
   if (!section) {
     INFO(conf, "Skipping unkown section %s", sectionname);
     if (yaml_skip_section(parser) != 0)
@@ -358,7 +358,7 @@ int
 config_parse_string(struct RappConfig *conf,
                     const char        *source)
 {
-  const char *sourcename = "<string>";
+  const char sourcename[] = "<string>";
   yaml_parser_t parser;
 
   if (!source || !conf)
@@ -412,6 +412,7 @@ config_scan_directory(struct RappConfig *conf,
   free(namelist);
   return res;
 }
+
 /*
  * vim: expandtab shiftwidth=2 tabstop=2:
  */

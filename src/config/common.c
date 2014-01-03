@@ -227,8 +227,8 @@ config_section_destroy(struct ConfigSection *sect)
 }
 
 struct ConfigSection*
-get_section(struct RappConfig *conf,
-            const char        *section)
+config_section_get(struct RappConfig *conf,
+                   const char        *section)
 {
   struct ConfigSection *sect = NULL;
   if(!section)
@@ -242,7 +242,7 @@ get_section(struct RappConfig *conf,
 }
 
 struct ConfigSection*
-section_create(struct RappConfig *conf,
+config_section_create(struct RappConfig *conf,
                const char        *name)
 {
   struct ConfigSection *sect = calloc(1, sizeof(struct ConfigSection));
