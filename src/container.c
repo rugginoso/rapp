@@ -25,6 +25,7 @@ struct Container {
 
   RappServeCallback serve;
   RappDestroyCallback destroy;
+  RappInitCallBack init;
 };
 
 static int
@@ -70,14 +71,13 @@ get_symbol(struct Logger *logger,
 }
 
 
-typedef void *(*PluginCreateFunc)(void *cookie, int ac, char **av, int *err);
+typedef void *(*PluginCreateFunc)(void *cookie, struct RappConfig *config, int *err);
 
 static struct Container *
 container_make(void          *plugin,
                struct Logger *logger,
                const char    *name,
-               int            ac,
-               char         **av)
+               struct RappConfig *config)
 {
   PluginCreateFunc plugin_create = NULL;
   struct Container *container = NULL;
@@ -104,7 +104,7 @@ container_make(void          *plugin,
     return NULL;
   }
 
-  if ((handle = plugin_create(container, ac, av, &error)) == NULL) {
+  if ((handle = plugin_create(container, config, &error)) == NULL) {
     free(container->name);
     free(container);
     logger_trace(logger, LOG_ERROR, "loader", "plugin[%s] creation failed error=%i", name, error);
@@ -114,6 +114,7 @@ container_make(void          *plugin,
   container->handle = handle;
   container->serve = dlsym(plugin, "rapp_serve");
   container->destroy = dlsym(plugin, "rapp_destroy");
+  container->init = dlsym(plugin, "rapp_init");
 
   logger_trace(logger, LOG_INFO, "loader", "loaded plugin[%s] id=%p (%p)", container->name, container, container->plugin);
 
@@ -126,8 +127,7 @@ typedef int (*PluginGetAbiVersionFunc)(void);
 struct Container *
 container_new(struct Logger *logger,
               const char    *name,
-              int            ac,
-              char         **av)
+              struct RappConfig *config)
 {
   void *plugin = NULL;
   PluginGetAbiVersionFunc plugin_get_abi_version = NULL;
@@ -135,6 +135,7 @@ container_new(struct Logger *logger,
 
   assert(logger != NULL);
   assert(name != NULL);
+  assert(config != NULL);
 
   logger_trace(logger, LOG_INFO, "loader",
                "loading plugin[%s]", name);
@@ -157,7 +158,17 @@ container_new(struct Logger *logger,
     return NULL;
   }
 
-  return container_make(plugin, logger, name, ac, av);
+  return container_make(plugin, logger, name, config);
+}
+
+int
+container_init(struct Container *container, struct RappConfig *config)
+{
+  assert(container != NULL);
+  assert(config != NULL);
+  logger_trace(container->logger, LOG_DEBUG, "loader", "loading config for plugin[%s] id=%p (%p)", container->name, container, container->plugin);
+
+  return container->init(container->handle, config);
 }
 
 void
@@ -213,9 +224,18 @@ null_destroy(struct RappContainer *handle)
   return 0;
 }
 
+static int
+null_init(struct RappContainer *handle, struct RappConfig *config)
+{
+  assert(handle);
+  assert(config);
+  return 0;
+}
+
 struct Container *
 container_new_custom(struct Logger      *logger,
                      const char         *tag,
+                     RappInitCallBack    init,
                      RappServeCallback   serve,
                      RappDestroyCallback destroy,
                      void                *user_data)
@@ -235,6 +255,7 @@ container_new_custom(struct Logger      *logger,
   container->plugin = NULL;
   container->handle = user_data;
   container->logger = logger;
+  container->init = init;
   container->serve = serve;
   container->destroy = destroy;
   return container;
@@ -244,7 +265,7 @@ struct Container *
 container_new_null(struct Logger *logger,
                    const char    *tag)
 {
-  return container_new_custom(logger, tag, null_serve, null_destroy, logger);
+  return container_new_custom(logger, tag, null_init, null_serve, null_destroy, logger);
 }
 
 /*

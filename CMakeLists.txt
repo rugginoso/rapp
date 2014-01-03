@@ -33,11 +33,6 @@ CHECK_SYMBOL_EXISTS(SO_REUSEPORT sys/socket.h SO_REUSEPORT_FOUND)
 
 configure_file(${CMAKE_SOURCE_DIR}/config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 
-find_package(LIBYAML)
-#if (NOT LIBYAML_FOUND)
-#  message(FATAL_ERROR "please install libyaml from your package manager or from http://pyyaml.org")
-#endif (NOT LIBYAML_FOUND)
-
 option(ENABLE_TESTS "compile testsuite")
 
 if(ENABLE_TESTS)
@@ -54,5 +49,8 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 add_subdirectory(containers/hello)
+find_package(LIBYAML REQUIRED)
+include_directories(${LIBYAML_INCLUDE_DIR})
+
 add_subdirectory(src)
 add_subdirectory(tests)

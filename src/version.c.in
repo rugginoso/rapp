@@ -6,6 +6,7 @@
 #define FULL_VERSION VERSION "." GIT_SHA1
 #define BANNER "RApp-" FULL_VERSION
 
+
 const char*
 rapp_get_version_full(void)
 {

@@ -124,6 +124,16 @@ dummy_destroy(void *handle)
 }
 
 static int
+dummy_init(void* handle, void *config)
+{
+  mark_invoked("rapp_init");
+  if (has_flag("rapp_init", DLSTUB_ERR_PLUGIN)) {
+    return -1;
+  }
+  return 0;
+}
+
+static int
 dummy_serve(void *handle,
             void *http_request,
             void *response)
@@ -147,6 +157,8 @@ lookup_sym(const char *sym)
     return &dummy_destroy;
   } else if (!strcmp(sym, "rapp_serve")) {
     return &dummy_serve;
+  } else if (!strcmp(sym, "rapp_init")) {
+    return &dummy_init;
   }
   return NULL;
 }

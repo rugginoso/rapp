@@ -12,13 +12,14 @@
 #include "rapp_httpresponse.h"
 #include "rapp_logger.h"
 #include "rapp_version.h"
+#include "rapp_config.h"
 
 struct RappContainer;
 
-// FIXME until we settle on the configuration handling
-struct RappContainer *rapp_create(void *cookie, int ac, char **av, int *err);
+struct RappContainer *rapp_create(void *cookie, struct RappConfig *config, int *err);
 
 int rapp_destroy(struct RappContainer *handle);
+int rapp_init(struct RappContainer *handle, struct RappConfig *config);
 
 int rapp_serve(struct RappContainer *handle,
                struct HTTPRequest *http_request,

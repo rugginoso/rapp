@@ -14,18 +14,18 @@
 
 
 typedef int (*RappServeCallback)(struct RappContainer *handle, struct HTTPRequest *http_request, struct HTTPResponse *response);
-
+typedef int (*RappInitCallBack)(struct RappContainer *handle, struct RappConfig *config);
 typedef int (*RappDestroyCallback)(struct RappContainer *handle);
 
 struct Container;
 
-struct Container *container_new(struct Logger *logger, const char *name, int ac, char **av);
+struct Container *container_new(struct Logger *logger, const char *name, struct RappConfig *config);
 void container_destroy(struct Container *container);
-
+int container_init(struct Container *container, struct RappConfig *config);
 int container_serve(struct Container *container, struct HTTPRequest *http_request, struct HTTPResponse *response);
 
 struct Container *container_new_null(struct Logger *logger, const char *tag);
-struct Container *container_new_custom(struct Logger *logger, const char *tag, RappServeCallback serve, RappDestroyCallback destroy, void *user_data);
+struct Container *container_new_custom(struct Logger *logger, const char *tag, RappInitCallBack init, RappServeCallback serve, RappDestroyCallback destroy, void *user_data);
 
 #endif /* CONTAINER_H */
 /*
