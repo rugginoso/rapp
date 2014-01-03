@@ -58,15 +58,16 @@ rapp_destroy(struct RappContainer *handle)
 }
 
 int
-rapp_init(struct RappContainer *handle, struct RappConfig *config)
+rapp_init(struct RappContainer *handle,
+          struct RappConfig    *config)
 {
   rapp_config_get_string(config, "hello", "message", &(handle->message));
 }
 
 struct RappContainer *
-rapp_create(void  *cookie,
+rapp_create(void              *cookie,
             struct RappConfig *config,
-            int   *err)
+            int               *err)
 {
   struct RappContainer *handle = calloc(1, sizeof(struct RappContainer));
   if (handle) {
