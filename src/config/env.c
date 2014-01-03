@@ -13,12 +13,12 @@
 #define PREFIX "RAPP_"
 #define PREFIX_LEN 5
 
-int
-get_env_name(char *sect,
-             char *name,
+static int
+get_env_name(const char *sect,
+             const char *name,
              char **envname)
 {
-  size_t len;
+  size_t len = 0;
   if (strcmp(sect, RAPP_CONFIG_SECTION) != 0) {
     len = (strlen(name) + strlen(sect) + PREFIX_LEN + 2);
     *envname = malloc(sizeof(char) * len);
@@ -28,7 +28,7 @@ get_env_name(char *sect,
 
   } else {
     len = (strlen(name) + PREFIX_LEN + 1);
-    *envname = malloc(sizeof(char) * len);
+    *envname = malloc(len);
     if (!*envname)
       return -1;
     snprintf(*envname, len, "%s%s", PREFIX, name);
@@ -38,12 +38,13 @@ get_env_name(char *sect,
   return 0;
 }
 
-int
+static int
 add_value_from_env_list(struct RappConfig   *conf,
                         struct ConfigOption *opt,
                         const char          *value)
 {
- char *token, *saveptr;
+ char *token = NULL;
+ char *saveptr = NULL;
  char *val = strdup(value);
  if (!val)
    return -1;
@@ -60,13 +61,13 @@ add_value_from_env_list(struct RappConfig   *conf,
  return 0;
 }
 
-int
+static int
 get_env_for_opt(struct RappConfig   *conf,
                 struct ConfigOption *opt)
 {
   int res;
-  char *envname;
-  const char *value;
+  char *envname = NULL;
+  const char *value = NULL;
   /* if the option has been set in commandline, skip it */
   if (opt->no_override == 1)
     return 0;
@@ -102,20 +103,21 @@ get_env_for_opt(struct RappConfig   *conf,
 int
 config_read_env(struct RappConfig *conf)
 {
-  struct ConfigSection *s;
-  struct ConfigOption *opt;
+  struct ConfigSection *s = NULL;
+  struct ConfigOption *opt = NULL;
 
   if (!conf)
     return -1;
 
-  for(s=conf->sections.tqh_first; s != NULL; s = s->entries.tqe_next) {
-    for (opt=s->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {
+  for(s = conf->sections.tqh_first; s != NULL; s = s->entries.tqe_next) {
+    for (opt = s->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {
       if (get_env_for_opt(conf, opt) != 0)
         DEBUG(conf, "Error while reading env var for %s.%s", s->name, opt->name);
     }
   }
   return 0;
 }
+
 /*
  * vim: expandtab shiftwidth=2 tabstop=2:
  */
