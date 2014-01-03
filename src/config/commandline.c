@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../logger.h"
+#include "src/logger.h"
 #include "common.h"
 #include <rapp/rapp_version.h>
 
@@ -53,7 +53,7 @@ config_argp_options_destroy(struct RappConfig *conf)
   free(conf->options_map);
 }
 
-void
+static void
 replace_underscores(char *str)
 {
   if (!str)
@@ -65,7 +65,7 @@ replace_underscores(char *str)
   }
 }
 
-int
+static int
 generate_argp_for_section(struct RappConfig    *conf,
                           struct ConfigSection *sect,
                           int                  *index,
@@ -73,22 +73,24 @@ generate_argp_for_section(struct RappConfig    *conf,
 {
   struct ConfigOption *opt = NULL;
   char *prefix = NULL;
-  char *optname = NULL, *metavar = NULL;
-  size_t prefix_length = 0, optname_length = 0;
+  char *optname = NULL;
+  char *metavar = NULL;
+  size_t prefix_length = 0;
+  size_t optname_length = 0;
 
   if (strcmp(sect->name, RAPP_CONFIG_SECTION) != 0) {
     // not in core section, we need to prefix options
     // +2: \0 and - as separator from optname
     prefix_length = (strlen(sect->name) + 2) * sizeof(char);
-    prefix = (char*) malloc(prefix_length);
+    prefix = malloc(prefix_length);
     if (!prefix)
       return -1;
     snprintf(prefix, prefix_length, "%s-", sect->name);
   }
 
-  for (opt=sect->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {
+  for (opt = sect->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {
     optname_length = prefix_length + sizeof(char) * strlen(opt->name) + 1;
-    optname = (char *) malloc(optname_length);
+    optname = malloc(optname_length);
     if (!optname) {
       return -1;
     }
@@ -137,7 +139,7 @@ config_generate_commandline(struct RappConfig *conf)
 {
   struct ConfigSection *s = NULL;
   int index = 0, group = 1, num_options = 0;
-  const char *titlebase = "Options for ";
+  const char titlebase[] = "Options for ";
   int title_len, titlebase_len;
 
   if (!conf)
@@ -189,7 +191,7 @@ config_generate_commandline(struct RappConfig *conf)
   return 0;
 }
 
-error_t
+static error_t
 parse_commandline_opt(int               key,
                       char              *arg,
                       struct argp_state *state)
@@ -289,8 +291,7 @@ config_parse_commandline(struct RappConfig *conf,
   return res;
 }
 
-
-error_t
+static error_t
 parse_early_opt(int               key,
                 char              *arg,
                 struct argp_state *state)
@@ -359,21 +360,18 @@ config_parse_early_commandline(struct RappArguments *arguments,
                                char                 *argv[])
 {
   struct argp argp = {rappoptions, parse_early_opt, 0, 0};
-  int res;
   argp_program_version = rapp_get_version_full();
-  if (argc == 0 || !argv)
+  if (argc == 0 || argv == 0)
     return -1;
 
-  // defaults;
+  /* defaults; */
   arguments->loglevel = LOG_INFO;
   arguments->logoutput_is_console = 1;
   arguments->logoutput = stderr;
   arguments->lognocolor = 0;
   arguments->container = NULL;
 
-  res = argp_parse(&argp, argc, argv, ARGP_SILENT, 0,
-      arguments);
-  return res;
+  return argp_parse(&argp, argc, argv, ARGP_SILENT, 0, arguments);
 }
 
 /*
