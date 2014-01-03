@@ -18,7 +18,7 @@
 #include "logger.h"
 #include "memory.h"
 
-#define MAX_EVENTS 10
+#define MAX_EVENTS 1024
 
 
 struct ELoop {
