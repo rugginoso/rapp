@@ -109,32 +109,28 @@ struct RappConfig {
 struct RappConfig *config_new(struct Logger *logger);
 void config_destroy(struct RappConfig *conf);
 int config_parse(struct RappConfig *conf, const char* filename);
-int config_scan_directory(struct RappConfig *conf, const char* directory,
-                          const char *ext);
+int config_scan_directory(struct RappConfig *conf, const char* directory, const char *ext);
 int config_parse_string(struct RappConfig *conf, const char *source);
 
 struct ConfigSection* get_section(struct RappConfig *conf, const char *section);
 struct ConfigSection* section_create(struct RappConfig *conf, const char *name);
 void config_section_destroy(struct ConfigSection *sect);
 
-int config_add_value_string(struct RappConfig *conf, const char *section,
-                            const char *name, const char* value);
-int config_add_value_int(struct RappConfig *conf, const char *section,
-    const char *name, long value);
-int config_add_value_from_string(struct RappConfig *conf, struct ConfigOption *opt,
-    const char *value);
+int config_add_value_string(struct RappConfig *conf, const char *section, const char *name, const char* value);
+int config_add_value_int(struct RappConfig *conf, const char *section, const char *name, long value);
+int config_add_value_from_string(struct RappConfig *conf, struct ConfigOption *opt, const char *value);
 void config_option_remove_all_values(struct ConfigOption *opt);
 void config_option_destroy(struct ConfigOption *opt);
 
 void config_argp_options_destroy(struct RappConfig *conf);
 int config_generate_commandline(struct RappConfig *conf);
 int config_parse_commandline(struct RappConfig *conf, int argc, char *argv[]);
-int config_parse_early_commandline(struct RappArguments *arguments,
-                                   int argc, char* argv[]);
+int config_parse_early_commandline(struct RappArguments *arguments, int argc, char* argv[]);
 
 int config_read_env(struct RappConfig *conf);
 
 void uppercase(char *str);
+
 #endif /* CONFIG_COMMON_H */
 
 /*

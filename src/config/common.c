@@ -5,7 +5,6 @@
  *     see LICENSE for all the details.
  */
 
-#include "common.h"
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -13,18 +12,22 @@
 #include <regex.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <sys/queue.h>
 
-// shamelessly stolen from pyyaml - http://bit.ly/Jhm0C0
-const char *regex_bool_str = "^yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF|1|0$";
-const char *regex_bool_true_str = "^yes|Yes|YES|true|True|TRUE|on|On|ON|1$";
+#include "common.h"
+
+
+/* shamelessly stolen from pyyaml - http://bit.ly/Jhm0C0 */
+const char regex_bool_str[] = "^yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF|1|0$";
+const char regex_bool_true_str[] = "^yes|Yes|YES|true|True|TRUE|on|On|ON|1$";
+
 
 struct RappConfig
 *config_new(struct Logger *logger)
 {
   struct RappConfig *conf = calloc(1, sizeof(struct RappConfig));
-  if (!conf)
-    return NULL;
+  assert(conf);
   TAILQ_INIT(&conf->sections);
   conf->num_sections = 0;
   conf->logger = logger;
@@ -63,8 +66,7 @@ opt_add_value_int(struct ConfigOption *opt,
     return -1;
   }
   cv = calloc(1, sizeof(struct ConfigValue));
-  if (!cv)
-    return -1;
+  assert(cv != NULL);
   cv->value.intvalue = value;
   opt->num_values++;
   TAILQ_INSERT_TAIL(&opt->values, cv, entries);
@@ -82,8 +84,7 @@ opt_add_value_string(struct ConfigOption *opt,
   if (!value || opt->type != PARAM_STRING)
     return -1;
   cv = calloc(1, sizeof(struct ConfigValue));
-  if (!cv)
-    return -1;
+  assert(cv != NULL);
   cv->value.strvalue = strdup(value);
   if (!cv->value.strvalue) {
     free(cv);
@@ -147,7 +148,7 @@ config_add_value_from_string(struct RappConfig   *conf,
         return -1;
       }
       reti = regexec(&regex_bool, value, 0, NULL, 0);
-      if (reti == 0) {  // MATCH
+      if (reti == 0) {  /* MATCH */
         DEBUG(conf, "MATCH %s.%s as boolean : %s", opt->section->name, opt->name, value);
         reti = regcomp(&regex_bool, regex_bool_true_str, REG_EXTENDED);
         val = reti ? 0 : 1;
