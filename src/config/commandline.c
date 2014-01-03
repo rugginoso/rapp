@@ -7,10 +7,11 @@
 
 #include <argp.h>
 #include <assert.h>
-#include <string.h>
 #include <stdlib.h>
-#include "common.h"
+#include <string.h>
+
 #include "../logger.h"
+#include "common.h"
 #include <rapp/rapp_version.h>
 
 #define ARG_INDEX_BASE 128
@@ -65,8 +66,10 @@ replace_underscores(char *str)
 }
 
 int
-generate_argp_for_section(struct RappConfig *conf, struct ConfigSection *sect,
-    int *index, int group)
+generate_argp_for_section(struct RappConfig    *conf,
+                          struct ConfigSection *sect,
+                          int                  *index,
+                          int                  group)
 {
   struct ConfigOption *opt = NULL;
   char *prefix = NULL;
@@ -187,7 +190,9 @@ config_generate_commandline(struct RappConfig *conf)
 }
 
 error_t
-parse_commandline_opt(int key, char *arg, struct argp_state *state)
+parse_commandline_opt(int               key,
+                      char              *arg,
+                      struct argp_state *state)
 {
   struct RappConfig *conf = state->input;
   struct ConfigOption *opt = NULL;
@@ -252,7 +257,9 @@ parse_commandline_opt(int key, char *arg, struct argp_state *state)
 }
 
 int
-config_parse_commandline(struct RappConfig *conf, int argc, char* argv[])
+config_parse_commandline(struct RappConfig *conf,
+                         int               argc,
+                         char              *argv[])
 {
   int i, index, res;
   struct argp *argp_conf = calloc(1, sizeof(struct argp));
@@ -284,9 +291,12 @@ config_parse_commandline(struct RappConfig *conf, int argc, char* argv[])
 
 
 error_t
-parse_early_opt(int key, char *arg, struct argp_state *state) {
+parse_early_opt(int               key,
+                char              *arg,
+                struct argp_state *state)
+{
   struct RappArguments *arguments = state->input;
-  int lvl;
+  int lvl = 0;
   switch(key) {
     case ARG_LOGLEVEL:
       if (!arg)
@@ -345,7 +355,8 @@ parse_early_opt(int key, char *arg, struct argp_state *state) {
 
 int
 config_parse_early_commandline(struct RappArguments *arguments,
-                               int argc, char* argv[])
+                               int                  argc,
+                               char                 *argv[])
 {
   struct argp argp = {rappoptions, parse_early_opt, 0, 0};
   int res;

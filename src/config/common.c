@@ -5,6 +5,7 @@
  *     see LICENSE for all the details.
  */
 
+#include "common.h"
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -13,7 +14,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/queue.h>
-#include "common.h"
 
 // shamelessly stolen from pyyaml - http://bit.ly/Jhm0C0
 const char *regex_bool_str = "^yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF|1|0$";
@@ -48,9 +48,11 @@ config_destroy(struct RappConfig* conf)
 }
 
 int
-opt_add_value_int(struct ConfigOption *opt, long value)
+opt_add_value_int(struct ConfigOption *opt,
+                  long                value)
 {
   struct ConfigValue *cv = NULL;
+
   if (opt->type != PARAM_BOOL && opt->type != PARAM_INT) {
     return -1;
   }
@@ -70,7 +72,8 @@ opt_add_value_int(struct ConfigOption *opt, long value)
 }
 
 int
-opt_add_value_string(struct ConfigOption *opt, const char *value)
+opt_add_value_string(struct ConfigOption *opt,
+                     const char          *value)
 {
   struct ConfigValue *cv = NULL;
   if (opt->multivalued == 0 && opt->num_values > 0) {
@@ -92,8 +95,10 @@ opt_add_value_string(struct ConfigOption *opt, const char *value)
 }
 
 int
-config_add_value_int(struct RappConfig *conf, const char *section,
-                     const char *name, long value)
+config_add_value_int(struct RappConfig *conf,
+                     const char        *section,
+                     const char        *name,
+                     long              value)
 {
   struct ConfigOption *opt = NULL;
   GET_OPTION(opt, conf, section, name);
@@ -104,8 +109,10 @@ config_add_value_int(struct RappConfig *conf, const char *section,
 }
 
 int
-config_add_value_string(struct RappConfig *conf, const char *section,
-                        const char *name, const char *value)
+config_add_value_string(struct RappConfig *conf,
+                        const char        *section,
+                        const char        *name,
+                        const char        *value)
 {
   struct ConfigOption *opt = NULL;
   GET_OPTION(opt, conf, section, name);
@@ -117,8 +124,9 @@ config_add_value_string(struct RappConfig *conf, const char *section,
 }
 
 int
-config_add_value_from_string(struct RappConfig *conf, struct ConfigOption *opt,
-                             const char* value)
+config_add_value_from_string(struct RappConfig   *conf,
+                             struct ConfigOption *opt,
+                             const char          *value)
 {
   long val;
   char *endptr;
@@ -218,7 +226,8 @@ config_section_destroy(struct ConfigSection *sect)
 }
 
 struct ConfigSection*
-get_section(struct RappConfig *conf, const char *section)
+get_section(struct RappConfig *conf,
+            const char        *section)
 {
   struct ConfigSection *sect = NULL;
   if(!section)
@@ -232,7 +241,8 @@ get_section(struct RappConfig *conf, const char *section)
 }
 
 struct ConfigSection*
-section_create(struct RappConfig *conf, const char *name)
+section_create(struct RappConfig *conf,
+               const char        *name)
 {
   struct ConfigSection *sect = calloc(1, sizeof(struct ConfigSection));
   if (!sect)

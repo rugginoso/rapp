@@ -7,12 +7,16 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "common.h"
+
 #define PREFIX "RAPP_"
 #define PREFIX_LEN 5
 
 int
-get_env_name(char *sect, char *name, char **envname)
+get_env_name(char *sect,
+             char *name,
+             char **envname)
 {
   size_t len;
   if (strcmp(sect, RAPP_CONFIG_SECTION) != 0) {
@@ -35,8 +39,9 @@ get_env_name(char *sect, char *name, char **envname)
 }
 
 int
-add_value_from_env_list(struct RappConfig *conf, struct ConfigOption *opt,
-                        const char *value)
+add_value_from_env_list(struct RappConfig   *conf,
+                        struct ConfigOption *opt,
+                        const char          *value)
 {
  char *token, *saveptr;
  char *val = strdup(value);
@@ -56,7 +61,8 @@ add_value_from_env_list(struct RappConfig *conf, struct ConfigOption *opt,
 }
 
 int
-get_env_for_opt(struct RappConfig *conf, struct ConfigOption *opt)
+get_env_for_opt(struct RappConfig   *conf,
+                struct ConfigOption *opt)
 {
   int res;
   char *envname;
@@ -84,7 +90,7 @@ get_env_for_opt(struct RappConfig *conf, struct ConfigOption *opt)
     res = config_add_value_from_string(conf, opt, value);
   }
 
-  // set no override so values in config files does not
+  // set no override so values in config files do not
   // override env value;
   if (res == 0)
     opt->no_override = 1;

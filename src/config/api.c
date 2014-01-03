@@ -7,23 +7,27 @@
 
 #include <limits.h>
 #include <regex.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/queue.h>
 #include "common.h"
 
-int validate_name(struct RappConfig *conf, const char *name) {
+int validate_name(struct RappConfig *conf,
+                  const char        *name)
+{
   const char *regex_name = "^[[:lower:]][_[:lower:]]*[[:lower:]]$";
+  int reti = 0;
   regex_t reg;
-  int reti;
+
   if (!name)
     return -1;
 
   reti = regcomp(&reg, regex_name, REG_EXTENDED);
-  if (reti) {
+  if (reti != 0) {
     CRITICAL(conf, "Cannot compile expr '%s'", regex_name);
     return -1;
   }
+
   reti = regexec(&reg, name, 0, NULL, 0);
   if (reti != 0) {
     ERROR(conf, "'%s' is not a valid config name.", name);
@@ -33,12 +37,12 @@ int validate_name(struct RappConfig *conf, const char *name) {
 }
 
 int
-rapp_config_opt_add(struct RappConfig *conf,
-    const char *section,
-    const char *name,
-    RappConfigParamType type,
-    const char *help,
-    const char *metavar)
+rapp_config_opt_add(struct RappConfig   *conf,
+                    const char          *section,
+                    const char          *name,
+                    RappConfigParamType type,
+                    const char          *help,
+                    const char          *metavar)
 {
   struct ConfigSection *sect = NULL;
   size_t size = sizeof(struct ConfigOption);
@@ -110,10 +114,10 @@ rapp_config_opt_add(struct RappConfig *conf,
 
 int
 rapp_config_opt_set_range_int(struct RappConfig *conf,
-    const char *section,
-    const char *name,
-    long value_min,
-    long value_max)
+                              const char        *section,
+                              const char        *name,
+                              long              value_min,
+                              long              value_max)
 {
   struct ConfigOption *opt = NULL;
   GET_OPTION(opt, conf, section, name);
@@ -124,15 +128,16 @@ rapp_config_opt_set_range_int(struct RappConfig *conf,
   opt->value_min = value_min;
   opt->value_max = value_max;
   opt->range_set = 1;
-  DEBUG(conf, "Set range for '%s.%s' to [%d,%d]", section, name, value_min, value_max);
+  DEBUG(conf, "Set range for '%s.%s' to [%d,%d]", section, name,
+        value_min, value_max);
   return 0;
 }
 
 int
 rapp_config_opt_set_multivalued(struct RappConfig *conf,
-    const char *section,
-    const char *name,
-    int flag)
+                                const char        *section,
+                                const char        *name,
+                                int               flag)
 {
   struct ConfigOption *opt = NULL;
   GET_OPTION(opt, conf, section, name);
@@ -142,13 +147,16 @@ rapp_config_opt_set_multivalued(struct RappConfig *conf,
 }
 
 int
-rapp_config_get_nth_int(struct RappConfig *conf, const char *section,
-    const char *name, int position,
-    long *value)
+rapp_config_get_nth_int(struct RappConfig *conf,
+                        const char        *section,
+                        const char        *name,
+                        int               position,
+                        long              *value)
 {
   struct ConfigOption *opt = NULL;
   struct ConfigValue *cv = NULL;
   int i = 0;
+
   if (position < 0)
     return -1;
   GET_OPTION(opt, conf, section, name);
@@ -176,26 +184,34 @@ rapp_config_get_nth_int(struct RappConfig *conf, const char *section,
 }
 
 int
-rapp_config_get_nth_bool(struct RappConfig *conf, const char *section,
-    const char *name, int position, int *value)
+rapp_config_get_nth_bool(struct RappConfig *conf,
+                         const char        *section,
+                         const char        *name,
+                         int               position,
+                         int               *value)
 {
   return rapp_config_get_nth_int(conf, section, name, position, (long*) value);
 }
 
 int
-rapp_config_get_nth_string(struct RappConfig *conf, const char *section,
-    const char *name, int position,
-    char **value)
+rapp_config_get_nth_string(struct RappConfig *conf,
+                           const char        *section,
+                           const char        *name,
+                           int               position,
+                           char              **value)
 {
   struct ConfigOption *opt = NULL;
   struct ConfigValue *cv = NULL;
   int i = 0;
   *value = NULL;
+
   if (position < 0)
     return -1;
+
   GET_OPTION(opt, conf, section, name);
   if (opt->type != PARAM_STRING || (opt->multivalued == 0 && position != 0))
     return -1;
+
   if (opt->num_values == 0 && opt->default_set) {
     if (position == 0) {
       *value = strdup(opt->default_value.strvalue);
@@ -204,20 +220,25 @@ rapp_config_get_nth_string(struct RappConfig *conf, const char *section,
     // position > 0, return error, even if default is set
     return -1;
   }
+
   if(position >= opt->num_values)
     return -1;
+
   cv = opt->values.tqh_first;
   while(i < position) {
     cv = cv->entries.tqe_next;
     i++;
   }
   *value = strdup(cv->value.strvalue);
+
   return 0;
 }
 
 int
-rapp_config_get_num_values(struct RappConfig *conf, const char *section,
-    const char *name, int *num_values)
+rapp_config_get_num_values(struct RappConfig *conf,
+                           const char        *section,
+                           const char        *name,
+                           int               *num_values)
 {
   struct ConfigOption *opt = NULL;
   GET_OPTION(opt, conf, section, name);
@@ -226,10 +247,13 @@ rapp_config_get_num_values(struct RappConfig *conf, const char *section,
 }
 
 int
-rapp_config_opt_set_default_string(struct RappConfig *conf, const char *section,
-    const char *name, const char *value)
+rapp_config_opt_set_default_string(struct RappConfig *conf,
+                                   const char        *section,
+                                   const char        *name,
+                                   const char        *value)
 {
   struct ConfigOption *opt = NULL;
+
   if (!value)
     return -1;
   GET_OPTION(opt, conf, section, name);
@@ -242,10 +266,13 @@ rapp_config_opt_set_default_string(struct RappConfig *conf, const char *section,
 }
 
 int
-rapp_config_opt_set_default_int(struct RappConfig *conf, const char *section,
-    const char *name, long value)
+rapp_config_opt_set_default_int(struct RappConfig *conf,
+                                const char        *section,
+                                const char        *name,
+                                long              value)
 {
   struct ConfigOption *opt = NULL;
+
   GET_OPTION(opt, conf, section, name);
   opt->default_value.intvalue = value;
   opt->default_set = 1;
@@ -254,8 +281,10 @@ rapp_config_opt_set_default_int(struct RappConfig *conf, const char *section,
 }
 
 int
-rapp_config_opt_set_default_bool(struct RappConfig *conf, const char *section,
-    const char *name, int value)
+rapp_config_opt_set_default_bool(struct RappConfig *conf,
+                                 const char        *section,
+                                 const char        *name,
+                                 int               value)
 {
   if (value < 0 || value > 1)
     return -1;
@@ -264,4 +293,5 @@ rapp_config_opt_set_default_bool(struct RappConfig *conf, const char *section,
 /*
  * vim: expandtab shiftwidth=2 tabstop=2:
  */
+
 
