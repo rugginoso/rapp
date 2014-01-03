@@ -11,6 +11,7 @@
 
 /* include the header(s) of the tested code right after */
 #include <config/common.h>
+#include <rapp/rapp_version.h>
 #include <logger.h>
 
 #include "test_utils.h"

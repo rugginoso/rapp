@@ -124,8 +124,11 @@ END_TEST
 
 START_TEST(test_yaml_file)
 {
-  char *tmp = tmpnam(0);
-  FILE *fh = fopen(tmp, "w");
+  char tmp[16] = { '\0' };
+  FILE *fh = NULL;
+  snprintf(tmp, sizeof(tmp), "%s", "rapptmpXXXXXX");
+  mkstemp(tmp);
+  fh = fopen(tmp, "w");
   ck_assert_call_fail(config_parse, conf, "/path/to/config/that/should/not/exists");
 
   fputs(yaml_good, fh);
