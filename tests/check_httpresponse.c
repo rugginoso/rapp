@@ -36,7 +36,7 @@ static char *
 http_datetime()
 {
   time_t now;
-  char *datetime = malloc(32);
+  char *datetime = calloc(1, 32);
 
   time(&now);
 

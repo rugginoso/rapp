@@ -99,7 +99,7 @@ logger_trace_console(void       *user_data,
      * we use malloc/fprintf instead of malloc because
      * we want custom error messages
      */
-    msg = malloc(size);
+    msg = calloc(1, size);
     if (msg != NULL) {
       is_dynbuf = 1;
     } else {
