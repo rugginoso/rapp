@@ -24,7 +24,6 @@ if(ENABLE_TESTS)
 
     add_executable(check_stub check_stub.c)
     target_link_libraries(check_stub ${LIBCHECK_LIBRARY} ${LIBCHECK_DEPS})
-    add_test(test_stub ${EXECUTABLE_OUTPUT_PATH}/check_stub)
 
     # collector
     add_executable(check_collector check_collector.c)
