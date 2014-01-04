@@ -18,7 +18,6 @@ set(RAPP_CORE_SOURCES
     httprouter.c
     httpserver.c
     logger.c
-    memory.c
     signalhandler.c
     tcpconnection.c
     tcpserver.c
@@ -26,7 +25,8 @@ set(RAPP_CORE_SOURCES
     ${HTTP_PARSER_SOURCES})
 
 add_library(rapp_core STATIC ${RAPP_CORE_SOURCES})
-add_executable(rapp main.c)
+add_executable(rapp main.c memory.c)
+# memory.c MUST be outside of rapp_core and must be executable-specific.
 
 set_target_properties(rapp_core PROPERTIES COMPILE_FLAGS "-Wall -export-dynamic")
 
