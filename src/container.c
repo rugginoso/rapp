@@ -74,9 +74,9 @@ get_symbol(struct Logger *logger,
 typedef void *(*PluginCreateFunc)(void *cookie, struct RappConfig *config, int *err);
 
 static struct Container *
-container_make(void          *plugin,
-               struct Logger *logger,
-               const char    *name,
+container_make(void              *plugin,
+               struct Logger     *logger,
+               const char        *name,
                struct RappConfig *config)
 {
   PluginCreateFunc plugin_create = NULL;
@@ -241,6 +241,11 @@ container_new_custom(struct Logger      *logger,
                      void                *user_data)
 {
   struct Container *container = NULL;
+
+  assert(init != NULL);
+  assert(serve != NULL);
+  assert(destroy != NULL);
+
   if ((container = calloc(1, sizeof(struct Container))) == NULL) {
     LOGGER_PERROR(logger, "calloc");
     return NULL;
