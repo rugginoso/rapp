@@ -14,6 +14,9 @@
 #include "logger.h"
 #include "httpresponse.h"
 
+#include "test_memstubs.h"
+
+
 struct HTTPResponse *response = NULL;
 struct Logger *logger = NULL;
 
@@ -194,6 +197,26 @@ START_TEST(test_httpresponse_write_error_by_code_appends_error_page)
 }
 END_TEST
 
+START_TEST(test_httpresponse_new_fails)
+{
+  struct Logger *logger = logger_new_null();
+  struct HTTPResponse *response = NULL;
+  memstub_failure_enable(0, 1);
+  response = http_response_new(logger, "test");
+  ck_assert(response == NULL);
+}
+END_TEST
+
+START_TEST(test_httpresponse_append_data_fails)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(0, 1);
+  res = http_response_append_data(response, "free me", 7);
+  ck_assert(res < 0);
+}
+END_TEST
+
+
 static Suite *
 httpresponse_suite(void)
 {
@@ -210,6 +233,8 @@ httpresponse_suite(void)
   tcase_add_test(tc, test_httpresponse_write_status_line_by_code_appends_statusline);
   tcase_add_test(tc, test_httpresponse_write_status_line_by_code_return_error_on_invalid_code);
   tcase_add_test(tc, test_httpresponse_write_error_by_code_appends_error_page);
+  tcase_add_test(tc, test_httpresponse_new_fails);
+  tcase_add_test(tc, test_httpresponse_append_data_fails);
   suite_add_tcase(s, tc);
 
   return s;

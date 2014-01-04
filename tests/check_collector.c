@@ -11,6 +11,7 @@
 #include <logger.h>
 #include <collector.h>
 
+#include "test_memstubs.h"
 #include "test_utils.h"
 
 
@@ -43,6 +44,32 @@ void teardown()
   logger_destroy(logger);
 }
 
+START_TEST(test_collector_new_fails)
+{
+  struct Logger *logger = NULL;
+  struct Collector *collector = NULL;
+
+  logger = logger_new_null();
+  memstub_failure_enable(0, 1);
+  collector = collector_new(logger);
+  ck_assert(collector == NULL);
+}
+END_TEST
+
+START_TEST(test_collector_schedule_free_fails)
+{
+  int err = 0;
+  struct Logger *logger = NULL;
+  struct Collector *collector = NULL;
+
+  logger = logger_new_null();
+  collector = collector_new(logger);
+  memstub_failure_enable(0, 1);
+  err = collector_schedule_free(collector, free_func, MESSAGE);
+  ck_assert_int_eq(err, -1);
+}
+END_TEST
+
 START_TEST(test_collector_calls_free_func_on_collect)
 {
   collector_schedule_free(collector, free_func, MESSAGE);
@@ -50,7 +77,6 @@ START_TEST(test_collector_calls_free_func_on_collect)
   collector_collect(collector);
 
   ck_assert_str_eq(buf, MESSAGE);
-
 }
 END_TEST
 
@@ -76,6 +102,8 @@ collector_suite(void)
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_collector_calls_free_func_on_collect);
   tcase_add_test(tc, test_collector_calls_free_func_only_one_time_per_object);
+  tcase_add_test(tc, test_collector_new_fails);
+  tcase_add_test(tc, test_collector_schedule_free_fails);
   suite_add_tcase(s, tc);
 
   return s;

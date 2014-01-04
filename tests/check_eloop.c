@@ -12,6 +12,8 @@
 
 #include <logger.h>
 #include <eloop.h>
+
+#include "test_memstubs.h"
 #include "test_utils.h"
 
 #define MESSAGE "Hello world!"
@@ -139,6 +141,16 @@ START_TEST(test_eloop_calls_free_func_when_is_scheduled)
 }
 END_TEST
 
+START_TEST(test_eloop_new_fails)
+{
+  struct Logger *logger = logger_new_null();
+  struct ELoop *eloop = NULL;
+  memstub_failure_enable(0, 1);
+  eloop = event_loop_new(logger);
+  ck_assert(eloop == NULL);
+}
+END_TEST
+
 static Suite *
 eloop_suite(void)
 {
@@ -150,6 +162,7 @@ eloop_suite(void)
   tcase_add_test(tc, test_eloop_calls_write_func_when_fd_becomes_writable);
   tcase_add_test(tc, test_eloop_calls_close_func_when_fd_is_closed);
   tcase_add_test(tc, test_eloop_calls_free_func_when_is_scheduled);
+  tcase_add_test(tc, test_eloop_new_fails);
   suite_add_tcase(s, tc);
 
   return s;

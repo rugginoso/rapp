@@ -17,6 +17,7 @@
 #include <eloop.h>
 #include <tcpserver.h>
 
+#include "test_memstubs.h"
 #include "test_utils.h"
 
 #define HOST "localhost"
@@ -125,6 +126,17 @@ void teardown(void)
   logger_destroy(logger);
 }
 
+START_TEST(test_tcp_server_new_fails)
+{
+  struct Logger *logger = logger_new_null();
+  struct ELoop *eloop = event_loop_new(logger);
+  struct TcpServer *tcp_server = NULL;
+  memstub_failure_enable(0, 1);
+  tcp_server = tcp_server_new(logger, eloop);
+  ck_assert(tcp_server == NULL);
+}
+END_TEST
+
 START_TEST(test_tcp_server_calls_callback_when_accepts_new_connections)
 {
   int ret;
@@ -172,6 +184,7 @@ tcp_server_suite(void)
   tcase_add_test(tc, test_tcp_server_calls_callback_when_accepts_new_connections);
   tcase_add_test(tc, test_tcp_server_dont_bind_on_not_existent_address);
   tcase_add_test(tc, test_tcp_server_dont_bind_on_used_port);
+  tcase_add_test(tc, test_tcp_server_new_fails);
 
   suite_add_tcase(s, tc);
 

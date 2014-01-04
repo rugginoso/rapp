@@ -98,10 +98,56 @@ START_TEST(test_container_new_dummy)
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_serve"), 1);
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_init"), 1);
   container_destroy(container);
-  ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 1);
-  ck_assert_int_eq(dlstub_get_invoke_count("rapp_create"), 1);
-  ck_assert_int_eq(dlstub_get_invoke_count("rapp_destroy"), 1);
-  ck_assert_int_eq(dlstub_get_lookup_count("rapp_init"), 1);
+  logger_destroy(logger);
+}
+END_TEST
+
+START_TEST(test_container_new_dummy_memfail1)
+{
+  struct Logger *logger = NULL;
+  struct Container *container = NULL;
+  struct RappConfig *config = NULL;
+  struct Symbol syms[] = {
+    { "rapp_get_abi_version", DLSTUB_ERR_NONE },
+    { "rapp_create",          DLSTUB_ERR_NONE },
+    { "rapp_destroy",         DLSTUB_ERR_NONE },
+    { "rapp_serve",           DLSTUB_ERR_NONE },
+    { "rapp_init",            DLSTUB_ERR_NONE },
+    { NULL, 0 }
+  };
+  dlstub_setup(DLSTUB_ERR_NONE, syms);
+  logger = logger_new_null();
+  config = config_new(logger);
+  memstub_failure_enable(1, 1);
+  container = container_new(logger, "dummy", config);
+  ck_assert(container == NULL);
+  ck_assert_int_eq(dlstub_get_lookup_count("rapp_get_abi_version"), 1);
+  ck_assert_int_eq(dlstub_get_lookup_count("rapp_create"), 1);
+  logger_destroy(logger);
+}
+END_TEST
+
+START_TEST(test_container_new_dummy_memfail2)
+{
+  struct Logger *logger = NULL;
+  struct Container *container = NULL;
+  struct RappConfig *config = NULL;
+  struct Symbol syms[] = {
+    { "rapp_get_abi_version", DLSTUB_ERR_NONE },
+    { "rapp_create",          DLSTUB_ERR_NONE },
+    { "rapp_destroy",         DLSTUB_ERR_NONE },
+    { "rapp_serve",           DLSTUB_ERR_NONE },
+    { "rapp_init",            DLSTUB_ERR_NONE },
+    { NULL, 0 }
+  };
+  dlstub_setup(DLSTUB_ERR_NONE, syms);
+  logger = logger_new_null();
+  config = config_new(logger);
+  memstub_failure_enable(2, 1);
+  container = container_new(logger, "dummy", config);
+  ck_assert(container == NULL);
+  ck_assert_int_eq(dlstub_get_lookup_count("rapp_get_abi_version"), 1);
+  ck_assert_int_eq(dlstub_get_lookup_count("rapp_create"), 1);
   logger_destroy(logger);
 }
 END_TEST
@@ -198,6 +244,62 @@ START_TEST(test_container_new_null_serve)
 }
 END_TEST
 
+struct RappContainer {
+  int invoke_count;
+  int serve_ret;
+};
+
+static int
+debug_serve(struct RappContainer      *handle,
+            struct HTTPRequest        *http_request,
+            struct HTTPResponse       *response)
+{
+  handle->invoke_count++;
+  return handle->serve_ret;
+}
+
+static int
+debug_destroy(struct RappContainer *handle)
+{
+  return 0;
+}
+
+static int
+debug_init(struct RappContainer *handle, struct RappConfig *config)
+{
+  return 0;
+}
+
+
+START_TEST(test_container_custom_new_fail1)
+{
+  struct Logger *logger = NULL;
+  struct Container *container = NULL;
+  struct RappConfig *config = NULL;
+
+  struct RappContainer debug_data = { 0, 0 };
+  logger = logger_new_null();
+  config = config_new(logger);
+  memstub_failure_enable(1, 1);
+  container = container_new_custom(logger, "debug", debug_init, debug_serve, debug_destroy, &debug_data);
+  ck_assert(container == NULL);
+}
+END_TEST
+
+START_TEST(test_container_custom_new_fail2)
+{
+  struct Logger *logger = NULL;
+  struct Container *container = NULL;
+  struct RappConfig *config = NULL;
+
+  struct RappContainer debug_data = { 0, 0 };
+  logger = logger_new_null();
+  config = config_new(logger);
+  memstub_failure_enable(2, 1);
+  container = container_new_custom(logger, "debug", debug_init, debug_serve, debug_destroy, &debug_data);
+  ck_assert(container == NULL);
+}
+END_TEST
 
 static Suite *
 container_suite(void)
@@ -213,6 +315,10 @@ container_suite(void)
   tcase_add_test(tc, test_container_logger_get);
   tcase_add_test(tc, test_container_new_null_new_destroy);
   tcase_add_test(tc, test_container_new_null_serve);
+  tcase_add_test(tc, test_container_custom_new_fail1);
+  tcase_add_test(tc, test_container_custom_new_fail2);
+  tcase_add_test(tc, test_container_new_dummy_memfail1);
+  tcase_add_test(tc, test_container_new_dummy_memfail2);
   suite_add_tcase(s, tc);
 
   return s;
