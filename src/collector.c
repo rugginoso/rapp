@@ -54,9 +54,10 @@ collector_destroy(struct Collector *collector)
   memory_destroy(collector);
 }
 
-void collector_schedule_free(struct Collector  *collector,
-                             CollectorFreeFunc  free_func,
-                             void              *data)
+int
+collector_schedule_free(struct Collector  *collector,
+                        CollectorFreeFunc  free_func,
+                        void              *data)
 {
   struct CollectEntry *entry = NULL;
 
@@ -67,18 +68,19 @@ void collector_schedule_free(struct Collector  *collector,
   // Look for already added object
   for (entry = collector->collect_entries_list; entry != NULL; entry = entry->next) {
     if (entry->data == data)
-      return;
+      return 0;
   }
 
   if ((entry = memory_create(sizeof(struct CollectEntry))) == NULL) {
     LOGGER_PERROR(collector->logger, "memory_create");
-    return;
+    return -1;
   }
 
   entry->free_func = free_func;
   entry->data = data;
   entry->next = collector->collect_entries_list;
   collector->collect_entries_list = entry;
+  return 0;
 }
 
 void
