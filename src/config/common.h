@@ -13,8 +13,6 @@
 
 #include "src/logger.h"
 
-#define RAPP_CONFIG_SECTION "core"
-
 #define LOG(conf, level, fmt, ...) logger_trace(conf->logger, level, "config", fmt, __VA_ARGS__)
 #define INFO(conf, fmt, ...) LOG(conf, LOG_INFO, fmt, __VA_ARGS__)
 #define WARN(conf, fmt, ...) LOG(conf, LOG_WARNING, fmt, __VA_ARGS__)
