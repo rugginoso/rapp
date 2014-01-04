@@ -164,8 +164,8 @@ config_generate_commandline(struct RappConfig *conf)
   }
 
   // Allocate space for static options as well
-  conf->options = memory_create(num_options + rappoptions_len * (sizeof(struct argp_option)));
-  conf->options_map = memory_create(num_options + rappoptions_len * (sizeof(struct ConfigOption*)));
+  conf->options = memory_create((num_options + rappoptions_len) * (sizeof(struct argp_option)));
+  conf->options_map = memory_create((num_options + rappoptions_len) * (sizeof(struct ConfigOption*)));
 
   // now, add arguments for each sections
   for (s=conf->sections.tqh_first; s != NULL; s=s->entries.tqe_next) {
