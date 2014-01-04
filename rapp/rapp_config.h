@@ -9,6 +9,9 @@
 #define RAPP_CONFIG_H
 
 
+#define RAPP_CONFIG_SECTION "core"
+/* in the case a plugin want to get a setting from the core setting. */
+
 typedef enum {
     PARAM_BOOL,
     PARAM_INT,
