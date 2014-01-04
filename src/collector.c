@@ -12,8 +12,9 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "logger.h"
 #include "collector.h"
+#include "logger.h"
+#include "memory.h"
 
 struct CollectEntry {
   CollectorFreeFunc free_func;
@@ -33,8 +34,8 @@ collector_new(struct Logger *logger)
 {
   struct Collector *collector = NULL;
 
-  if ((collector = calloc(1, sizeof(struct Collector))) == NULL) {
-    LOGGER_PERROR(logger, "calloc");
+  if ((collector = memory_create(sizeof(struct Collector))) == NULL) {
+    LOGGER_PERROR(logger, "memory_create");
     return NULL;
   }
 
@@ -50,7 +51,7 @@ collector_destroy(struct Collector *collector)
 
   collector_collect(collector);
 
-  free(collector);
+  memory_destroy(collector);
 }
 
 void collector_schedule_free(struct Collector  *collector,
@@ -69,8 +70,8 @@ void collector_schedule_free(struct Collector  *collector,
       return;
   }
 
-  if ((entry = calloc(1, sizeof(struct CollectEntry))) == NULL) {
-    LOGGER_PERROR(collector->logger, "calloc");
+  if ((entry = memory_create(sizeof(struct CollectEntry))) == NULL) {
+    LOGGER_PERROR(collector->logger, "memory_create");
     return;
   }
 
@@ -92,7 +93,7 @@ collector_collect(struct Collector *collector)
 
     collector->collect_entries_list->free_func(collector->collect_entries_list->data);
 
-    free(collector->collect_entries_list);
+    memory_destroy(collector->collect_entries_list);
 
     collector->collect_entries_list = next;
   }

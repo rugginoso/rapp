@@ -11,12 +11,13 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "logger.h"
-#include "tcpconnection.h"
 #include "httprequest.h"
 #include "httpresponse.h"
 #include "httpconnection.h"
 #include "httprouter.h"
+#include "logger.h"
+#include "memory.h"
+#include "tcpconnection.h"
 #include "rapp/rapp_version.h"
 
 
@@ -118,20 +119,20 @@ http_connection_new(struct Logger        *logger,
 
   assert(tcp_connection != NULL);
 
-  if ((http_connection = calloc(1, sizeof(struct HTTPConnection))) == NULL) {
-    LOGGER_PERROR(logger, "calloc");
+  if ((http_connection = memory_create(sizeof(struct HTTPConnection))) == NULL) {
+    LOGGER_PERROR(logger, "memory_create");
     return NULL;
   }
 
   if ((http_connection->request = http_request_new(logger)) == NULL) {
-    free(http_connection);
+    memory_destroy(http_connection);
     return NULL;
   }
   http_request_set_parse_finish_callback(http_connection->request, on_parse_finish, http_connection);
 
   if ((http_connection->response = http_response_new(logger, rapp_get_banner())) == NULL) {
-    free(http_connection->request);
-    free(http_connection);
+    memory_destroy(http_connection->request);
+    memory_destroy(http_connection);
     return NULL;
   }
 
@@ -159,7 +160,7 @@ http_connection_destroy(struct HTTPConnection *http_connection)
   if (http_connection->response != NULL)
     http_response_destroy(http_connection->response);
 
-  free(http_connection);
+  memory_destroy(http_connection);
 }
 
 void

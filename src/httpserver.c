@@ -11,12 +11,13 @@
 #include <string.h>
 #include <assert.h>
 
-#include "logger.h"
 #include "eloop.h"
-#include "tcpserver.h"
 #include "httpconnection.h"
 #include "httprouter.h"
 #include "httpserver.h"
+#include "logger.h"
+#include "memory.h"
+#include "tcpserver.h"
 
 
 struct HTTPServer {
@@ -65,13 +66,13 @@ http_server_new(struct Logger     *logger,
 {
   struct HTTPServer *http_server = NULL;
 
-  if ((http_server = calloc(1, sizeof(struct HTTPServer))) == NULL) {
-    LOGGER_PERROR(logger, "calloc");
+  if ((http_server = memory_create(sizeof(struct HTTPServer))) == NULL) {
+    LOGGER_PERROR(logger, "memory_create");
     return NULL;
   }
 
   if ((http_server->tcp_server = tcp_server_new(logger, eloop)) == NULL) {
-    free(http_server);
+    memory_destroy(http_server);
     return NULL;
   }
 
@@ -92,7 +93,7 @@ http_server_destroy(struct HTTPServer *http_server)
   if (http_server->tcp_server != NULL)
     tcp_server_destroy(http_server->tcp_server);
 
-  free(http_server);
+  memory_destroy(http_server);
 }
 
 int http_server_start(struct HTTPServer *http_server,

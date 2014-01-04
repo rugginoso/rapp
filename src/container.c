@@ -14,6 +14,7 @@
 #include <errno.h>
 
 #include "container.h"
+#include "memory.h"
 
 
 struct Container {
@@ -90,7 +91,7 @@ container_make(void          *plugin,
   if (get_symbol(logger, plugin, "rapp_create", (void *)&plugin_create) != 0)
     return NULL;
 
-  if ((container = calloc(1, sizeof(struct Container))) == NULL) {
+  if ((container = memory_create(sizeof(struct Container))) == NULL) {
     logger_trace(logger, LOG_ERROR, "loader", "plugin[%s] alloc failed error=%s", name, strerror(errno));
     return NULL;
   }
@@ -98,15 +99,15 @@ container_make(void          *plugin,
   container->logger = logger;
   container->plugin = plugin;
 
-  if ((container->name = strdup(name)) == NULL) {
-    free(container);
+  if ((container->name = memory_strdup(name)) == NULL) {
+    memory_destroy(container);
     logger_trace(logger, LOG_ERROR, "loader", "plugin[%s] name alloc failed error=%s", name, strerror(errno));
     return NULL;
   }
 
   if ((handle = plugin_create(container, config, &error)) == NULL) {
-    free(container->name);
-    free(container);
+    memory_destroy(container->name);
+    memory_destroy(container);
     logger_trace(logger, LOG_ERROR, "loader", "plugin[%s] creation failed error=%i", name, error);
     return NULL;
   }
@@ -184,8 +185,8 @@ container_destroy(struct Container *container)
       dlclose(container->plugin);
 
     logger_trace(container->logger, LOG_INFO, "loader", "unloaded plugin[%s]", container->name);
-    free(container->name);
-    free(container);  /* caveat emptor! */
+    memory_destroy(container->name);
+    memory_destroy(container);  /* caveat emptor! */
   }
 }
 
@@ -241,14 +242,15 @@ container_new_custom(struct Logger      *logger,
                      void                *user_data)
 {
   struct Container *container = NULL;
-  if ((container = calloc(1, sizeof(struct Container))) == NULL) {
-    LOGGER_PERROR(logger, "calloc");
+
+  if ((container = memory_create(sizeof(struct Container))) == NULL) {
+    LOGGER_PERROR(logger, "memory_create");
     return NULL;
   }
 
-  if ((container->name = strdup(tag)) == NULL) {
-    LOGGER_PERROR(logger, "strdup");
-    free(container);
+  if ((container->name = memory_strdup(tag)) == NULL) {
+    LOGGER_PERROR(logger, "memory_strdup");
+    memory_destroy(container);
     return NULL;
   }
 

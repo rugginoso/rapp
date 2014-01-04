@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "src/memory.h"
 #include "common.h"
 
 #define PREFIX "RAPP_"
@@ -45,7 +46,7 @@ add_value_from_env_list(struct RappConfig   *conf,
 {
  char *token = NULL;
  char *saveptr = NULL;
- char *val = strdup(value);
+ char *val = memory_strdup(value);
  if (!val)
    return -1;
 

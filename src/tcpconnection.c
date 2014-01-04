@@ -15,9 +15,11 @@
 #include <sys/socket.h>
 #include <sys/sendfile.h>
 
-#include "logger.h"
-#include "tcpconnection.h"
 #include "eloop.h"
+#include "logger.h"
+#include "memory.h"
+#include "tcpconnection.h"
+
 
 struct TcpConnection
 {
@@ -41,8 +43,8 @@ tcp_connection_with_fd(int            fd,
   assert(logger != NULL);
   assert(eloop != NULL);
 
-  if ((connection = calloc(1, sizeof(struct TcpConnection))) == NULL) {
-    LOGGER_PERROR(logger, "calloc");
+  if ((connection = memory_create(sizeof(struct TcpConnection))) == NULL) {
+    LOGGER_PERROR(logger, "memory_create");
     return NULL;
   }
 
@@ -60,7 +62,7 @@ tcp_connection_destroy(struct TcpConnection *connection)
 
   if (connection->fd != -1)
     tcp_connection_close(connection);
-  free(connection);
+  memory_destroy(connection);
 }
 
 void

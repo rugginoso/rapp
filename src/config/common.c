@@ -15,6 +15,7 @@
 
 #include <sys/queue.h>
 
+#include "src/memory.h"
 #include "common.h"
 
 
@@ -26,7 +27,7 @@ const char regex_bool_true_str[] = "^yes|Yes|YES|true|True|TRUE|on|On|ON|1$";
 struct RappConfig
 *config_new(struct Logger *logger)
 {
-  struct RappConfig *conf = calloc(1, sizeof(struct RappConfig));
+  struct RappConfig *conf = memory_create(sizeof(struct RappConfig));
   assert(conf);
   TAILQ_INIT(&conf->sections);
   conf->num_sections = 0;
@@ -47,7 +48,7 @@ config_destroy(struct RappConfig* conf)
     config_section_destroy(sect);
   }
   config_argp_options_destroy(conf);
-  free(conf);
+  memory_destroy(conf);
 }
 
 int
@@ -65,7 +66,7 @@ opt_add_value_int(struct ConfigOption *opt,
   if (opt->range_set == 1 && (opt->value_min > value || opt->value_max < value)) {
     return -1;
   }
-  cv = calloc(1, sizeof(struct ConfigValue));
+  cv = memory_create(sizeof(struct ConfigValue));
   assert(cv != NULL);
   cv->value.intvalue = value;
   opt->num_values++;
@@ -83,11 +84,11 @@ opt_add_value_string(struct ConfigOption *opt,
   }
   if (!value || opt->type != PARAM_STRING)
     return -1;
-  cv = calloc(1, sizeof(struct ConfigValue));
+  cv = memory_create(sizeof(struct ConfigValue));
   assert(cv != NULL);
-  cv->value.strvalue = strdup(value);
+  cv->value.strvalue = memory_strdup(value);
   if (!cv->value.strvalue) {
-    free(cv);
+    memory_destroy(cv);
     return -1;
   }
   opt->num_values++;
@@ -193,8 +194,8 @@ config_option_remove_all_values(struct ConfigOption *opt)
     cv = opt->values.tqh_first;
     TAILQ_REMOVE(&opt->values, opt->values.tqh_first, entries);
     if (opt->type == PARAM_STRING)
-      free(cv->value.strvalue);
-    free(cv);
+      memory_destroy(cv->value.strvalue);
+    memory_destroy(cv);
     opt->num_values--;
   }
 }
@@ -203,14 +204,14 @@ void
 config_option_destroy(struct ConfigOption *opt)
 {
   config_option_remove_all_values(opt);
-  free(opt->name);
+  memory_destroy(opt->name);
   if (opt->default_set && opt->type == PARAM_STRING)
-    free(opt->default_value.strvalue);
+    memory_destroy(opt->default_value.strvalue);
   if (opt->help)
-    free(opt->help);
+    memory_destroy(opt->help);
   if (opt->metavar)
-    free(opt->metavar);
-  free(opt);
+    memory_destroy(opt->metavar);
+  memory_destroy(opt);
 }
 
 void
@@ -222,8 +223,8 @@ config_section_destroy(struct ConfigSection *sect)
     TAILQ_REMOVE(&sect->options, sect->options.tqh_first, entries);
     config_option_destroy(opt);
   }
-  free(sect->name);
-  free(sect);
+  memory_destroy(sect->name);
+  memory_destroy(sect);
 }
 
 struct ConfigSection*
@@ -245,13 +246,13 @@ struct ConfigSection*
 config_section_create(struct RappConfig *conf,
                const char        *name)
 {
-  struct ConfigSection *sect = calloc(1, sizeof(struct ConfigSection));
+  struct ConfigSection *sect = memory_create(sizeof(struct ConfigSection));
   if (!sect)
     return NULL;
   TAILQ_INIT(&sect->options);
-  sect->name = strdup(name);
+  sect->name = memory_strdup(name);
   if (!sect->name) {
-    free(sect);
+    memory_destroy(sect);
     return NULL;
   }
   TAILQ_INSERT_TAIL(&conf->sections, sect, entries);

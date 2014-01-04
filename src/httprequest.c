@@ -13,8 +13,9 @@
 
 #include <http_parser.h>
 
-#include "logger.h"
 #include "httprequest.h"
+#include "logger.h"
+#include "memory.h"
 
 
 struct HTTPRequest {
@@ -133,8 +134,8 @@ http_request_new(struct Logger *logger)
 {
   struct HTTPRequest *request = NULL;
 
-  if ((request = calloc(1, sizeof(struct HTTPRequest))) == NULL) {
-    LOGGER_PERROR(logger, "calloc");
+  if ((request = memory_create(sizeof(struct HTTPRequest))) == NULL) {
+    LOGGER_PERROR(logger, "memory_create");
     return NULL;
   }
 
@@ -158,9 +159,9 @@ http_request_destroy(struct HTTPRequest *request)
   assert(request != NULL);
 
   if (request->buffer && request->buffer_length > 0)
-    free(request->buffer);
+    memory_destroy(request->buffer);
 
-  free(request);
+  memory_destroy(request);
 }
 
 void
@@ -185,8 +186,8 @@ http_request_append_data(struct HTTPRequest *request,
 
   ssize_t parsed = -1;
 
-  if ((request->buffer = realloc(request->buffer, request->buffer_length + length)) == NULL) {
-    LOGGER_PERROR(request->logger, "realloc");
+  if ((request->buffer = memory_resize(request->buffer, request->buffer_length + length)) == NULL) {
+    LOGGER_PERROR(request->logger, "memory_resize");
     return -1;
   }
   memcpy(&(request->buffer[request->buffer_length]), data, length);
@@ -317,13 +318,13 @@ http_request_new_fake_url(struct Logger *logger,
   assert(url);
 
   request_len = strlen(url);
-  if ((request_url = strdup(url)) == NULL) {
-    LOGGER_PERROR(logger, "strdup");
+  if ((request_url = memory_strdup(url)) == NULL) {
+    LOGGER_PERROR(logger, "memory_strdup");
     return NULL;
   }
 
   if ((request = http_request_new(logger)) == NULL) {
-    free(request_url);
+    memory_destroy(request_url);
     /* logger_trace() already done inside http_request_new */
     return NULL;
   }

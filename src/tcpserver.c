@@ -18,10 +18,12 @@
 
 #include <config.h>
 
-#include "logger.h"
-#include "tcpserver.h"
-#include "tcpconnection.h"
 #include "eloop.h"
+#include "logger.h"
+#include "memory.h"
+#include "tcpconnection.h"
+#include "tcpserver.h"
+
 
 #define BACKLOG 1024
 #define STRLEN(s) (sizeof(s)/sizeof(s[0]))
@@ -45,8 +47,8 @@ tcp_server_new(struct Logger *logger,
 
   assert(eloop != NULL);
 
-  if ((server = calloc(1, sizeof(struct TcpServer))) == NULL) {
-    LOGGER_PERROR(logger, "calloc");
+  if ((server = memory_create(sizeof(struct TcpServer))) == NULL) {
+    LOGGER_PERROR(logger, "memory_create");
     return NULL;
   }
 
@@ -67,7 +69,7 @@ tcp_server_destroy(struct TcpServer *server)
     close(server->listen_fd);
   }
 
-  free(server);
+  memory_destroy(server);
 }
 
 void

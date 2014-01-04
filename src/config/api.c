@@ -10,7 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/queue.h>
+
+#include "src/memory.h"
 #include "common.h"
+
 
 int validate_name(struct RappConfig *conf,
                   const char        *name)
@@ -63,20 +66,20 @@ rapp_config_opt_add(struct RappConfig   *conf,
     if (!sect)
       return -1;
   }
-  opt = (struct ConfigOption*) calloc(1, size);
+  opt = memory_create(size);
   if (!opt) {
     return -1;
   }
   opt->section = sect;
   opt->type = type;
   if (help) {
-    opt->help = strdup(help);
+    opt->help = memory_strdup(help);
     if (!opt->help) {
       free(opt);
       return -1;
     }
   }
-  opt->name = strdup(name);
+  opt->name = memory_strdup(name);
   if (!opt->name) {
     if (opt->help)
       free(opt->help);
@@ -102,7 +105,7 @@ rapp_config_opt_add(struct RappConfig   *conf,
       break;
   }
   if (metavar && type != PARAM_BOOL)
-    opt->metavar = strdup(metavar);
+    opt->metavar = memory_strdup(metavar);
   opt->multivalued = 0;
   opt->num_values = 0;
   opt->default_set = 0;
@@ -214,7 +217,7 @@ rapp_config_get_nth_string(struct RappConfig *conf,
 
   if (opt->num_values == 0 && opt->default_set) {
     if (position == 0) {
-      *value = strdup(opt->default_value.strvalue);
+      *value = memory_strdup(opt->default_value.strvalue);
       return 0;
     }
     // position > 0, return error, even if default is set
@@ -229,7 +232,7 @@ rapp_config_get_nth_string(struct RappConfig *conf,
     cv = cv->entries.tqe_next;
     i++;
   }
-  *value = strdup(cv->value.strvalue);
+  *value = memory_strdup(cv->value.strvalue);
 
   return 0;
 }
@@ -257,7 +260,7 @@ rapp_config_opt_set_default_string(struct RappConfig *conf,
   if (!value)
     return -1;
   GET_OPTION(opt, conf, section, name);
-  opt->default_value.strvalue = strdup(value);
+  opt->default_value.strvalue = memory_strdup(value);
   if (!opt->default_value.strvalue)
     return -1;
   opt->default_set = 1;

@@ -12,8 +12,9 @@
 #include <time.h>
 #include <assert.h>
 
-#include "logger.h"
 #include "httpresponse.h"
+#include "logger.h"
+#include "memory.h"
 
 /* code + space + message + NULL */
 #define STATUSLINE_LEN 36
@@ -121,8 +122,8 @@ http_response_new(struct Logger *logger, const char *server_name)
   assert(logger != NULL);
   assert(server_name != NULL);
 
-  if ((response = calloc(1, sizeof(struct HTTPResponse))) == NULL) {
-    LOGGER_PERROR(logger, "calloc");
+  if ((response = memory_create(sizeof(struct HTTPResponse))) == NULL) {
+    LOGGER_PERROR(logger, "memory_create");
     return NULL;
   }
 
@@ -138,9 +139,9 @@ http_response_destroy(struct HTTPResponse *response)
   assert(response != NULL);
 
   if (response->buffer != NULL && response->buffer_length != 0)
-    free(response->buffer);
+    memory_destroy(response->buffer);
 
-  free(response);
+  memory_destroy(response);
 }
 
 static const char *
@@ -194,11 +195,11 @@ http_response_write_header(struct HTTPResponse *response,
   assert(key != NULL);
   assert(value != NULL);
 
-  if (asprintf(&header, "%s: %s" HTTP_EOL, key, value) < 0)
+  if (memory_asprintf(&header, "%s: %s" HTTP_EOL, key, value) < 0)
     return -1;
 
   ret = http_response_append_data(response, header, strlen(header));
-  free(header);
+  memory_destroy(header);
 
   return ret;
 }
@@ -247,8 +248,8 @@ http_response_append_data(struct HTTPResponse *response,
   assert(data != NULL);
   assert(length > 0);
 
-  if ((response->buffer = realloc(response->buffer, response->buffer_length + length)) == NULL) {
-    LOGGER_PERROR(response->logger, "realloc");
+  if ((response->buffer = memory_resize(response->buffer, response->buffer_length + length)) == NULL) {
+    LOGGER_PERROR(response->logger, "memory_resize");
     return -1;
   }
 
@@ -277,13 +278,13 @@ http_response_read_data(struct HTTPResponse *response,
   response->buffer_length -= avaiable_length;
 
   if (response->buffer_length == 0) {
-    free(response->buffer);
+    memory_destroy(response->buffer);
     response->buffer = NULL;
   }
   else {
     memmove(response->buffer, &(response->buffer[avaiable_length]), response->buffer_length);
-    if ((response->buffer = realloc(response->buffer, response->buffer_length)) == NULL) {
-      LOGGER_PERROR(response->logger, "realloc");
+    if ((response->buffer = memory_resize(response->buffer, response->buffer_length)) == NULL) {
+      LOGGER_PERROR(response->logger, "memory_resize");
       return -1;
     }
   }
@@ -306,52 +307,52 @@ http_response_write_error_by_code(struct HTTPResponse *response,
   if ((message = status_message_by_code(code)) == NULL)
     return -1;
 
-  if (asprintf(&body, error_body, message, message) < 0) {
-    LOGGER_PERROR(response->logger, "asprintf: body");
+  if (memory_asprintf(&body, error_body, message, message) < 0) {
+    LOGGER_PERROR(response->logger, "memory_asprintf: body");
     return -1;
   }
 
-  if (asprintf(&len_s, "%lu", strlen(body)) < 0) {
-    LOGGER_PERROR(response->logger, "asprintf: len_s");
-    free(body);
+  if (memory_asprintf(&len_s, "%lu", strlen(body)) < 0) {
+    LOGGER_PERROR(response->logger, "memory_asprintf: len_s");
+    memory_destroy(body);
     return -1;
   }
 
   if ((ret = http_response_write_status_line_by_code(response, code)) < 0) {
-    free(body);
-    free(len_s);
+    memory_destroy(body);
+    memory_destroy(len_s);
     return -1;
   }
   total_length += ret;
 
   if ((ret = http_response_write_header(response, "Content-Type", "text/html")) < 0) {
-    free(body);
-    free(len_s);
+    memory_destroy(body);
+    memory_destroy(len_s);
     return -1;
   }
   total_length += ret;
 
   if ((ret = http_response_write_header(response, "Content-Length", len_s)) < 0) {
-    free(body);
-    free(len_s);
+    memory_destroy(body);
+    memory_destroy(len_s);
     return -1;
   }
-  free(len_s);
+  memory_destroy(len_s);
   total_length += ret;
 
   if ((ret = http_response_end_headers(response)) < 0) {
-    free(body);
+    memory_destroy(body);
     return -1;
   }
   total_length += ret;
 
   if ((ret = http_response_append_data(response, body, strlen(body))) < 0) {
-    free(body);
+    memory_destroy(body);
     return -1;
   }
   total_length += ret;
 
-  free(body);
+  memory_destroy(body);
 
   return total_length;
 }

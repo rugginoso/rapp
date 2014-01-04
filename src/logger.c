@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 
 #include "logger.h"
+#include "memory.h"
 
 
 struct Logger {
@@ -95,11 +96,7 @@ logger_trace_console(void       *user_data,
   size = LOG_TEMPLATE_LEN + strlen(tag) + strlen(fmt) + 1;
 
   if (size > sizeof(buf)) {
-    /*
-     * we use malloc/fprintf instead of malloc because
-     * we want custom error messages
-     */
-    msg = calloc(1, size);
+    msg = memory_create(size);
     if (msg != NULL) {
       is_dynbuf = 1;
     } else {
@@ -119,7 +116,7 @@ logger_trace_console(void       *user_data,
   vfprintf(user_data, msg, ap);
 
   if (is_dynbuf) {
-    free(msg);
+    memory_destroy(msg);
   }
   return ret;
 }
@@ -214,8 +211,8 @@ logger_new_fp(LogLevel max_level,
 
   assert(sink != NULL);
 
-  if ((logger = calloc(1, sizeof(struct Logger))) == NULL) {
-    logger_panic("calloc: %s", strerror(errno));
+  if ((logger = memory_create(sizeof(struct Logger))) == NULL) {
+    logger_panic("memory_create: %s", strerror(errno));
     return NULL;
   }
 
@@ -254,8 +251,8 @@ logger_make(LogLevel           lev,
   assert(logger_handler != NULL);
   /* it is allowed for user_data to be NULL! */
 
-  if ((logger = calloc(1, sizeof(struct Logger))) == NULL) {
-    logger_panic("calloc: %s", strerror(errno));
+  if ((logger = memory_create(sizeof(struct Logger))) == NULL) {
+    logger_panic("memory_create: %s", strerror(errno));
     return NULL;
   }
 
@@ -342,7 +339,7 @@ logger_destroy(struct Logger *logger)
 
   err = logger->close(logger);
   if (!err) {
-     free(logger);
+     memory_destroy(logger);
   }
 }
 

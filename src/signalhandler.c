@@ -16,8 +16,9 @@
 #include <bits/signum.h>
 #include <sys/signalfd.h>
 
-#include "logger.h"
 #include "eloop.h"
+#include "logger.h"
+#include "memory.h"
 #include "signalhandler.h"
 
 
@@ -60,8 +61,8 @@ signal_handler_new(struct Logger *logger,
 {
   struct SignalHandler *signal_handler = NULL;
 
-  if ((signal_handler = calloc(1, sizeof(struct SignalHandler))) == NULL) {
-    LOGGER_PERROR(logger, "calloc");
+  if ((signal_handler = memory_create(sizeof(struct SignalHandler))) == NULL) {
+    LOGGER_PERROR(logger, "memory_create");
     return NULL;
   }
 
@@ -69,14 +70,14 @@ signal_handler_new(struct Logger *logger,
 
   if ((signal_handler->fd = signalfd(-1, &(signal_handler->sigmask), 0)) < 0) {
     LOGGER_PERROR(logger, "signalfd");
-    free(signal_handler);
+    memory_destroy(signal_handler);
     return NULL;
   }
 
   if (event_loop_add_fd_watch(eloop, signal_handler->fd, ELOOP_CALLBACK_READ, on_signal, signal_handler) < 0) {
     /* error already logged */
     close(signal_handler->fd);
-    free(signal_handler);
+    memory_destroy(signal_handler);
     return NULL;
   }
 
@@ -96,7 +97,7 @@ signal_handler_destroy(struct SignalHandler *signal_handler)
     close(signal_handler->fd);
   }
 
-  free(signal_handler);
+  memory_destroy(signal_handler);
 }
 
 int
