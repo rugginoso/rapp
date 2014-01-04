@@ -18,6 +18,7 @@ set(RAPP_CORE_SOURCES
     httprouter.c
     httpserver.c
     logger.c
+    memory.c
     signalhandler.c
     tcpconnection.c
     tcpserver.c
