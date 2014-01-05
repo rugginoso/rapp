@@ -216,6 +216,106 @@ START_TEST(test_httpresponse_append_data_fails)
 }
 END_TEST
 
+START_TEST(test_httpresponse_write_header_fails)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(0, 1);
+  res = http_response_write_header(response, "key", "value");
+  ck_assert(res < 0);
+}
+END_TEST
+
+START_TEST(test_httpresponse_end_headers_fails1)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(1, 1);
+  res = http_response_end_headers(response);
+  ck_assert(res < 0);
+}
+END_TEST
+
+START_TEST(test_httpresponse_end_headers_fails2)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(2, 1);
+  res = http_response_end_headers(response);
+  ck_assert(res < 0);
+}
+END_TEST
+
+START_TEST(test_httpresponse_end_headers_fails3)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(3, 1);
+  res = http_response_end_headers(response);
+  ck_assert(res < 0);
+}
+END_TEST
+
+START_TEST(test_httpresponse_write_error_by_code_bad_code)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(0, 1);
+  res = http_response_write_error_by_code(response, 999);
+  ck_assert(res < 0);
+}
+END_TEST
+
+
+START_TEST(test_httpresponse_write_error_by_code_fails1)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(1, 1);
+  res = http_response_write_error_by_code(response, 500);
+  ck_assert(res < 0);
+}
+END_TEST
+
+START_TEST(test_httpresponse_write_error_by_code_fails2)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(2, 1);
+  res = http_response_write_error_by_code(response, 500);
+  ck_assert(res < 0);
+}
+END_TEST
+
+START_TEST(test_httpresponse_write_error_by_code_fails3)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(3, 1);
+  res = http_response_write_error_by_code(response, 500);
+  ck_assert(res < 0);
+}
+END_TEST
+
+START_TEST(test_httpresponse_write_error_by_code_fails4)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(4, 1);
+  res = http_response_write_error_by_code(response, 500);
+  ck_assert(res < 0);
+}
+END_TEST
+
+START_TEST(test_httpresponse_write_error_by_code_fails5)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(5, 1);
+  res = http_response_write_error_by_code(response, 500);
+  ck_assert(res < 0);
+}
+END_TEST
+
+START_TEST(test_httpresponse_write_error_by_code_fails6)
+{
+  ssize_t res = 0;
+  memstub_failure_enable(6, 1);
+  res = http_response_write_error_by_code(response, 500);
+  ck_assert(res < 0);
+}
+END_TEST
+
 
 static Suite *
 httpresponse_suite(void)
@@ -235,6 +335,17 @@ httpresponse_suite(void)
   tcase_add_test(tc, test_httpresponse_write_error_by_code_appends_error_page);
   tcase_add_test(tc, test_httpresponse_new_fails);
   tcase_add_test(tc, test_httpresponse_append_data_fails);
+  tcase_add_test(tc, test_httpresponse_write_header_fails);
+  tcase_add_test(tc, test_httpresponse_end_headers_fails1);
+  tcase_add_test(tc, test_httpresponse_end_headers_fails2);
+  tcase_add_test(tc, test_httpresponse_end_headers_fails3);
+  tcase_add_test(tc, test_httpresponse_write_error_by_code_bad_code);
+  tcase_add_test(tc, test_httpresponse_write_error_by_code_fails1);
+  tcase_add_test(tc, test_httpresponse_write_error_by_code_fails2);
+  tcase_add_test(tc, test_httpresponse_write_error_by_code_fails3);
+  tcase_add_test(tc, test_httpresponse_write_error_by_code_fails4);
+  tcase_add_test(tc, test_httpresponse_write_error_by_code_fails5);
+  tcase_add_test(tc, test_httpresponse_write_error_by_code_fails6);
   suite_add_tcase(s, tc);
 
   return s;
