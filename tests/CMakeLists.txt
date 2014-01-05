@@ -161,5 +161,14 @@ if(ENABLE_TESTS)
     )
     add_test(test_httprouter ${EXECUTABLE_OUTPUT_PATH}/check_httprouter)
 
+    add_executable(check_version check_version.c)
+    target_link_libraries(check_version
+        rapp_core
+	rapp_test
+	${LIBCHECK_LIBRARY}
+	${LIBCHECK_DEPS}
+    )
+    add_test(test_version ${EXECUTABLE_OUTPUT_PATH}/check_version)
+
 endif(ENABLE_TESTS)
 
