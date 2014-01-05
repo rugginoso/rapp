@@ -1,6 +1,10 @@
 
 set(HTTP_PARSER_DIR ${PROJECT_SOURCE_DIR}/contrib/http-parser)
 set(HTTP_PARSER_SOURCES ${HTTP_PARSER_DIR}/http_parser.c)
+
+set(PICORO_DIR ${PROJECT_SOURCE_DIR}/contrib/picoro/)
+set(PICORO_SOURCES ${PICORO_DIR}/picoro.c)
+
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.c.in" "${CMAKE_CURRENT_SOURCE_DIR}/version.c" @ONLY)
 
 set(RAPP_CORE_SOURCES
@@ -22,7 +26,8 @@ set(RAPP_CORE_SOURCES
     tcpconnection.c
     tcpserver.c
     version.c
-    ${HTTP_PARSER_SOURCES})
+    ${HTTP_PARSER_SOURCES}
+    ${PICORO_SOURCES})
 
 add_library(rapp_core STATIC ${RAPP_CORE_SOURCES})
 add_executable(rapp main.c memory.c)
