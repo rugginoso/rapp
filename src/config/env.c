@@ -22,7 +22,7 @@ get_env_name(const char *sect,
   size_t len = 0;
   if (strcmp(sect, RAPP_CONFIG_SECTION) != 0) {
     len = (strlen(name) + strlen(sect) + PREFIX_LEN + 2);
-    *envname = malloc(sizeof(char) * len);
+    *envname = memory_create(len);
     if (!*envname)
       return -1;
     snprintf(*envname, len, "%s%s_%s", PREFIX, sect, name);

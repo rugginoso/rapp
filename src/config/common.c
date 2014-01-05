@@ -24,15 +24,23 @@ const char regex_bool_str[] = "^yes|Yes|YES|no|No|NO|true|True|TRUE|false|False|
 const char regex_bool_true_str[] = "^yes|Yes|YES|true|True|TRUE|on|On|ON|1$";
 
 
-struct RappConfig
-*config_new(struct Logger *logger)
+struct RappConfig *
+config_new(struct Logger *logger)
 {
-  struct RappConfig *conf = memory_create(sizeof(struct RappConfig));
-  assert(conf);
+  struct RappConfig *conf = NULL;
+
+  assert(logger != NULL);
+
+  if ((conf = memory_create(sizeof(struct RappConfig))) == NULL) {
+    LOGGER_PERROR(logger, "memory_create");
+    return NULL;
+  }
+
   TAILQ_INIT(&conf->sections);
   conf->num_sections = 0;
   conf->logger = logger;
   conf->options = NULL;
+
   DEBUG(conf, "Successfully initialized empty config object %p", conf);
   return conf;
 }
@@ -51,41 +59,38 @@ config_destroy(struct RappConfig* conf)
   memory_destroy(conf);
 }
 
-int
+static int
 opt_add_value_int(struct ConfigOption *opt,
                   long                value)
 {
   struct ConfigValue *cv = NULL;
 
-  if (opt->type != PARAM_BOOL && opt->type != PARAM_INT) {
+  if (opt->type != PARAM_BOOL && opt->type != PARAM_INT)
     return -1;
-  }
-  if (opt->multivalued == 0 && opt->num_values > 0) {
+  if (opt->multivalued == 0 && opt->num_values > 0)
     return -1;
-  }
-  if (opt->range_set == 1 && (opt->value_min > value || opt->value_max < value)) {
+  if (opt->range_set == 1 && (opt->value_min > value || opt->value_max < value))
     return -1;
-  }
-  cv = memory_create(sizeof(struct ConfigValue));
-  assert(cv != NULL);
+  if ((cv = memory_create(sizeof(struct ConfigValue))) == NULL)
+    return -1;
   cv->value.intvalue = value;
   opt->num_values++;
   TAILQ_INSERT_TAIL(&opt->values, cv, entries);
   return 0;
 }
 
-int
+static int
 opt_add_value_string(struct ConfigOption *opt,
                      const char          *value)
 {
   struct ConfigValue *cv = NULL;
-  if (opt->multivalued == 0 && opt->num_values > 0) {
+  if (opt->multivalued == 0 && opt->num_values > 0)
     return -1;
-  }
   if (!value || opt->type != PARAM_STRING)
     return -1;
   cv = memory_create(sizeof(struct ConfigValue));
-  assert(cv != NULL);
+  if ((cv = memory_create(sizeof(struct ConfigValue))) == NULL)
+    return -1;
   cv->value.strvalue = memory_strdup(value);
   if (!cv->value.strvalue) {
     memory_destroy(cv);

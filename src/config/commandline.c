@@ -85,7 +85,7 @@ generate_argp_for_section(struct RappConfig    *conf,
     // not in core section, we need to prefix options
     // +2: \0 and - as separator from optname
     prefix_length = (strlen(sect->name) + 2) * sizeof(char);
-    prefix = malloc(prefix_length);
+    prefix = memory_create(prefix_length);
     if (!prefix)
       return -1;
     snprintf(prefix, prefix_length, "%s-", sect->name);
@@ -93,7 +93,7 @@ generate_argp_for_section(struct RappConfig    *conf,
 
   for (opt = sect->options.tqh_first; opt != NULL; opt=opt->entries.tqe_next) {
     optname_length = prefix_length + sizeof(char) * strlen(opt->name) + 1;
-    optname = malloc(optname_length);
+    optname = memory_create(optname_length);
     if (!optname) {
       return -1;
     }
@@ -174,7 +174,7 @@ config_generate_commandline(struct RappConfig *conf)
     conf->options[index].flags = OPTION_DOC;
     // +4: '\0', '' and :
     title_len = strlen(s->name) + titlebase_len + 4;
-    conf->options[index].doc = malloc(title_len * sizeof(char));
+    conf->options[index].doc = memory_create(title_len);
     snprintf((char *)conf->options[index].doc, title_len, "%s'%s':",
         titlebase, s->name);
     index++;

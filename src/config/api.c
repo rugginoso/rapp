@@ -15,6 +15,7 @@
 #include "common.h"
 
 
+static
 int validate_name(struct RappConfig *conf,
                   const char        *name)
 {
