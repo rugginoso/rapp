@@ -15,7 +15,7 @@
 #include "src/memory.h"
 #include "common.h"
 
-int
+static int
 endswith(const char *str,
          const char *suffix)
 {
@@ -29,13 +29,13 @@ endswith(const char *str,
 }
 
 
-int
+static int
 yaml_parse_init(struct RappConfig *conf,
                 const char        *filename,
                 yaml_parser_t     *parser)
 {
   yaml_token_t token;
-  // we should get the STREAM_START first
+  /* we should get the STREAM_START first */
   yaml_parser_scan(parser, &token);
   if (token.type != YAML_STREAM_START_TOKEN) {
     CRITICAL(conf, "Malformed yaml file %s: no stream start",
@@ -43,7 +43,7 @@ yaml_parse_init(struct RappConfig *conf,
     return -1;
   }
 
-  // read the first token. This must be a start of doc token
+  /* read the first token. This must be a start of doc token */
   yaml_token_delete(&token);
   yaml_parser_scan(parser, &token);
   if (token.type != YAML_DOCUMENT_START_TOKEN) {
@@ -51,7 +51,7 @@ yaml_parse_init(struct RappConfig *conf,
         filename);
     return -1;
   }
-  // config format is a global mapping of mappings
+  /* config format is a global mapping of mappings */
   yaml_token_delete(&token);
   yaml_parser_scan(parser, &token);
   if (token.type != YAML_BLOCK_MAPPING_START_TOKEN) {
@@ -62,7 +62,7 @@ yaml_parse_init(struct RappConfig *conf,
   return 0;
 }
 
-int
+static int
 config_set_value_from_yaml_scalar(struct RappConfig   *conf,
                                   struct ConfigOption *opt,
                                   yaml_token_t        *token)
@@ -74,7 +74,7 @@ config_set_value_from_yaml_scalar(struct RappConfig   *conf,
   return config_add_value_from_string(conf, opt, (const char*) token->data.scalar.value);
 }
 
-int
+static int
 config_set_value_from_yaml_list(struct RappConfig   *conf,
                                 struct ConfigOption *opt,
                                 yaml_parser_t       *parser,
@@ -85,8 +85,8 @@ config_set_value_from_yaml_list(struct RappConfig   *conf,
         opt->section->name, opt->name);
     return -1;
   }
-  // sequences are BLOCK_ENTRY/SCALAR values
-  // read block entry
+  /* sequences are BLOCK_ENTRY/SCALAR values */
+  /* read block entry */
   yaml_token_delete(token);
   yaml_parser_scan(parser, token);
   while (token->type == YAML_BLOCK_ENTRY_TOKEN ||
@@ -94,7 +94,7 @@ config_set_value_from_yaml_list(struct RappConfig   *conf,
       token->type == YAML_FLOW_ENTRY_TOKEN) {
 
     if (token->type != YAML_SCALAR_TOKEN) {
-      // read scalar
+      /* read scalar */
       yaml_token_delete(token);
       yaml_parser_scan(parser, token);
       if (token->type != YAML_SCALAR_TOKEN) {
@@ -105,7 +105,7 @@ config_set_value_from_yaml_list(struct RappConfig   *conf,
     if (config_set_value_from_yaml_scalar(conf, opt, token) != 0) {
       return -1;
     }
-    // read block entry
+    /* read block entry */
     yaml_token_delete(token);
     yaml_parser_scan(parser, token);
   }
@@ -117,7 +117,7 @@ config_set_value_from_yaml_list(struct RappConfig   *conf,
   return 0;
 }
 
-int
+static int
 yaml_parse_key_value(struct RappConfig    *conf,
                      struct ConfigSection *section,
                      yaml_parser_t        *parser,
@@ -216,7 +216,7 @@ yaml_parse_key_value(struct RappConfig    *conf,
   return 0;
 }
 
-int
+static int
 yaml_skip_section(yaml_parser_t *parser)
 {
   yaml_token_t token;
@@ -230,7 +230,7 @@ yaml_skip_section(yaml_parser_t *parser)
 }
 
 
-int
+static int
 yaml_parse_section(struct RappConfig *conf,
                    const char        *filename,
                    const char        *sectionname,
@@ -273,7 +273,7 @@ yaml_parse_section(struct RappConfig *conf,
   return 0;
 }
 
-int
+static int
 config_parse_main(struct RappConfig *conf,
                   yaml_parser_t     *parser,
                   const char        *sourcename)

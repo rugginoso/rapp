@@ -19,7 +19,7 @@ static
 int validate_name(struct RappConfig *conf,
                   const char        *name)
 {
-  const char *regex_name = "^[[:lower:]][_[:lower:]]*[[:lower:]]$";
+  const char regex_name[] = "^[[:lower:]][_[:lower:]]*[[:lower:]]$";
   int reti = 0;
   regex_t reg;
 
@@ -39,6 +39,30 @@ int validate_name(struct RappConfig *conf,
   }
   return 0;
 }
+
+static void
+opt_setup_values(struct ConfigOption *opt,
+          RappConfigParamType type)
+{
+  switch (type) {
+    case PARAM_BOOL:
+      opt->value_min = 0;
+      opt->value_max = 1;
+      opt->default_value.intvalue = 0;
+      opt->range_set = 1;
+      break;
+    case PARAM_INT:
+      opt->value_min = LONG_MIN;
+      opt->value_max = LONG_MAX;
+      opt->default_value.intvalue = 0;
+      break;
+    case PARAM_STRING:
+      opt->default_value.strvalue = NULL;
+      opt->value_min = opt->value_max = 0;
+      break;
+  }
+}
+
 
 int
 rapp_config_opt_add(struct RappConfig   *conf,
@@ -88,23 +112,7 @@ rapp_config_opt_add(struct RappConfig   *conf,
     return -1;
   }
   TAILQ_INIT(&opt->values);
-  switch (type) {
-    case PARAM_BOOL:
-      opt->value_min = 0;
-      opt->value_max = 1;
-      opt->default_value.intvalue = 0;
-      opt->range_set = 1;
-      break;
-    case PARAM_INT:
-      opt->value_min = LONG_MIN;
-      opt->value_max = LONG_MAX;
-      opt->default_value.intvalue = 0;
-      break;
-    case PARAM_STRING:
-      opt->default_value.strvalue = NULL;
-      opt->value_min = opt->value_max = 0;
-      break;
-  }
+  opt_setup_values(opt, type);
   if (metavar && type != PARAM_BOOL)
     opt->metavar = memory_strdup(metavar);
   opt->multivalued = 0;
@@ -194,6 +202,7 @@ rapp_config_get_nth_bool(struct RappConfig *conf,
                          int               position,
                          int               *value)
 {
+  /* XXX: what if sizeof(int) < sizeof(long) ? */
   return rapp_config_get_nth_int(conf, section, name, position, (long*) value);
 }
 
