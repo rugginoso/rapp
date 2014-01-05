@@ -14,6 +14,9 @@
 #include <eloop.h>
 #include <signalhandler.h>
 
+#include "test_memstubs.h"
+
+
 struct ELoop *eloop = NULL;
 struct SignalHandler *signal_handler = NULL;
 struct Logger *logger = NULL;
@@ -76,6 +79,15 @@ START_TEST(test_signal_handler_dont_calls_callback_when_signal_handler_was_remov
 }
 END_TEST
 
+START_TEST(test_signal_handler_new_fails)
+{
+  struct SignalHandler *signal_handler = NULL;
+  memstub_failure_enable(0, 1);
+  signal_handler = signal_handler_new(logger, eloop);
+  ck_assert(signal_handler == NULL);
+}
+END_TEST
+
 static Suite *
 signal_handler_suite(void)
 {
@@ -85,6 +97,7 @@ signal_handler_suite(void)
   tcase_add_checked_fixture (tc, setup, teardown);
   tcase_add_test(tc, test_signal_handler_calls_callback_when_signal_arrives);
   tcase_add_test(tc, test_signal_handler_dont_calls_callback_when_signal_handler_was_removed);
+  tcase_add_test(tc, test_signal_handler_new_fails);
   suite_add_tcase(s, tc);
 
   return s;
