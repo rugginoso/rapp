@@ -11,8 +11,9 @@
 #include <string.h>
 #include <errno.h>
 
-#include "httprouter.h"
 #include "container.h"
+#include "httprouter.h"
+#include "memory.h"
 
 #define ROUTE_BASE_LEN 14
 #define ROUTE_GROUP_LEN 30
@@ -59,8 +60,8 @@ http_router_new(struct Logger      *logger,
     return NULL;
   }
 
-  if ((router = calloc(1, sizeof(struct HTTPRouter))) == NULL) {
-    LOGGER_PERROR(router->logger, "calloc");
+  if ((router = memory_create(sizeof(struct HTTPRouter))) == NULL) {
+    LOGGER_PERROR(router->logger, "memory_create");
     container_destroy(null);
     return NULL;
   }
@@ -82,7 +83,7 @@ route_pack_clean(struct RoutePack *pack)
 
   for (i = 0; i < pack->binding_num; i++)
     if (pack->bindings[i].route != pack->bindings[i].name)
-      free(pack->bindings[i].route);
+      memory_destroy(pack->bindings[i].route);
 }
 
 /*
@@ -99,7 +100,7 @@ route_pack_destroy(struct RoutePack *pack)
 
   next = pack->next;
   route_pack_clean(pack);
-  free(pack);
+  memory_destroy(pack);
   route_pack_destroy(next);
 }
 
@@ -113,7 +114,7 @@ route_pack_bind(struct RoutePack *pack,
   assert(pack);
 
   if (pack->binding_num == ROUTE_GROUP_LEN) {
-    pack->next = calloc(1, sizeof(struct RoutePack));
+    pack->next = memory_create(sizeof(struct RoutePack));
     last = route_pack_bind(pack->next, route, container);
   } else {
     struct RouteBinding *binding = &(pack->bindings[pack->binding_num]);
@@ -122,7 +123,7 @@ route_pack_bind(struct RoutePack *pack,
       strcpy(binding->name, route);
       binding->route = binding->name;
     } else {
-      binding->route = strdup(route);
+      binding->route = memory_strdup(route);
     }
     binding->container = container;
     pack->binding_num++;
@@ -139,7 +140,7 @@ http_router_destroy(struct HTTPRouter *router)
   container_destroy(router->null);
   route_pack_clean(&router->pack);
   route_pack_destroy(router->pack.next);
-  free(router);
+  memory_destroy(router);
 }
 
 int

@@ -11,8 +11,10 @@
 #include <string.h>
 
 #include "src/logger.h"
+#include "src/memory.h"
 #include "common.h"
 #include <rapp/rapp_version.h>
+
 
 #define ARG_INDEX_BASE 128
 #define ARG_LOGLEVEL ARG_INDEX_BASE + 0
@@ -20,6 +22,7 @@
 #define ARG_LOGNOCOLOR ARG_INDEX_BASE + 2
 #define ARG_LOAD ARG_INDEX_BASE + 3
 #define ARG_INDEX_OFFSET 150
+
 
 const char *argp_program_version;
 static struct argp_option rappoptions[] = {
@@ -43,14 +46,14 @@ config_argp_options_destroy(struct RappConfig *conf)
 
   for (i = 0; i < conf->num_argp_options; i++) {
     if (conf->options[i].name)
-      free((char *)conf->options[i].name);
+      memory_destroy((char *)conf->options[i].name);
     if (conf->options[i].arg)
-      free((char *)conf->options[i].arg);
+      memory_destroy((char *)conf->options[i].arg);
     if (conf->options[i].doc)
-      free((char *)conf->options[i].doc);
+      memory_destroy((char *)conf->options[i].doc);
   }
-  free(conf->options);
-  free(conf->options_map);
+  memory_destroy(conf->options);
+  memory_destroy(conf->options_map);
 }
 
 static void
@@ -106,17 +109,17 @@ generate_argp_for_section(struct RappConfig    *conf,
     // Do not set arg for bools
     if (opt->type != PARAM_BOOL) {
       if (!opt->metavar) {
-        metavar = strdup(opt->name);
+        metavar = memory_strdup(opt->name);
         uppercase(metavar);
         conf->options[*index].arg = metavar;
       } else {
-        conf->options[*index].arg = strdup(opt->metavar);
+        conf->options[*index].arg = memory_strdup(opt->metavar);
       }
     }
     conf->options[*index].group = group;
 
     if (opt->help)
-      conf->options[*index].doc = strdup(opt->help);
+      conf->options[*index].doc = memory_strdup(opt->help);
 
     conf->options_map[*index] = opt;
 
@@ -129,7 +132,7 @@ generate_argp_for_section(struct RappConfig    *conf,
   }
 
   if (prefix)
-    free(prefix);
+    memory_destroy(prefix);
 
   return 0;
 }
@@ -161,10 +164,8 @@ config_generate_commandline(struct RappConfig *conf)
   }
 
   // Allocate space for static options as well
-  conf->options = calloc(num_options + rappoptions_len,
-      (sizeof(struct argp_option)));
-  conf->options_map = calloc(num_options + rappoptions_len,
-      (sizeof(struct ConfigOption*)));
+  conf->options = memory_create((num_options + rappoptions_len) * (sizeof(struct argp_option)));
+  conf->options_map = memory_create((num_options + rappoptions_len) * (sizeof(struct ConfigOption*)));
 
   // now, add arguments for each sections
   for (s=conf->sections.tqh_first; s != NULL; s=s->entries.tqe_next) {
@@ -264,7 +265,7 @@ config_parse_commandline(struct RappConfig *conf,
                          char              *argv[])
 {
   int i, index, res;
-  struct argp *argp_conf = calloc(1, sizeof(struct argp));
+  struct argp *argp_conf = memory_create(sizeof(struct argp));
   if (!argp_conf)
     return -1;
 
@@ -287,7 +288,7 @@ config_parse_commandline(struct RappConfig *conf,
   argp_conf->args_doc = "- Quick description for Rapp goes here";
   argp_conf->doc = "Documentation for Rapp goes here";
   res = argp_parse(argp_conf, argc, argv, 0, NULL, conf);
-  free(argp_conf);
+  memory_destroy(argp_conf);
   return res;
 }
 
@@ -344,7 +345,7 @@ parse_early_opt(int               key,
     case ARG_LOAD:
       if (!arg)
         return EINVAL;
-      arguments->container = strdup(arg);
+      arguments->container = memory_strdup(arg);
       break;
 
     default:

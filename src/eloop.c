@@ -13,8 +13,10 @@
 #include <assert.h>
 
 #include <sys/epoll.h>
-#include "logger.h"
+
 #include "eloop.h"
+#include "logger.h"
+#include "memory.h"
 
 #define MAX_EVENTS 10
 
@@ -42,8 +44,8 @@ event_loop_new(struct Logger *logger)
 {
   struct ELoop *eloop = NULL;
 
-  if ((eloop = calloc(1, sizeof(struct ELoop))) == NULL) {
-    LOGGER_PERROR(logger, "calloc");
+  if ((eloop = memory_create(sizeof(struct ELoop))) == NULL) {
+    LOGGER_PERROR(logger, "memory_create");
     return NULL;
   }
 
@@ -68,7 +70,7 @@ event_loop_destroy(struct ELoop *eloop)
     collector_destroy(eloop->collector);
 
   close(eloop->epollfd);
-  free(eloop);
+  memory_destroy(eloop);
 }
 
 int
@@ -167,8 +169,8 @@ event_loop_add_fd_watch(struct ELoop                 *eloop,
   assert(callback != NULL);
 
   if (find_callback_by_fd(eloop, fd, &ec, NULL) < 0) {
-    if ((ec = calloc(1, sizeof(struct ELoopCallback))) == NULL) {
-      LOGGER_PERROR(eloop->logger, "calloc");
+    if ((ec = memory_create(sizeof(struct ELoopCallback))) == NULL) {
+      LOGGER_PERROR(eloop->logger, "memory_create");
       return -1;
     }
 
@@ -219,7 +221,7 @@ event_loop_remove_fd_watch(struct ELoop                 *eloop,
       eloop->callbacks_list = ec->next;
     else
       pec->next = ec->next;
-    free(ec);
+    memory_destroy(ec);
   }
 
   return epoll_ctl(eloop->epollfd, epoll_operation, fd, &(ec->ev));

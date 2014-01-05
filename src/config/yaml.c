@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <yaml.h>
 
+#include "src/memory.h"
 #include "common.h"
 
 int
@@ -154,7 +155,7 @@ yaml_parse_key_value(struct RappConfig    *conf,
     return -1;
   }
 
-  name = strdup((const char*) token.data.scalar.value);
+  name = memory_strdup((const char*) token.data.scalar.value);
   if (!name)
     return -1;
 

@@ -14,6 +14,7 @@
 #include <eloop.h>
 #include <tcpconnection.h>
 
+#include "test_memstubs.h"
 #include "test_utils.h"
 
 #define HOST "localhost"
@@ -137,6 +138,15 @@ START_TEST(test_tcp_connection_sendfile)
 }
 END_TEST
 
+START_TEST(test_tcp_connection_fails)
+{
+  struct TcpConnection *tcp_connection = NULL;
+  memstub_failure_enable(0, 1);
+  tcp_connection = tcp_connection_with_fd(fileno(stderr), logger, eloop);
+  ck_assert(tcp_connection == NULL);
+}
+END_TEST
+
 static Suite *
 tcp_connection_suite(void)
 {
@@ -148,6 +158,7 @@ tcp_connection_suite(void)
   tcase_add_test(tc, test_tcp_connection_calls_write_callback_when_can_read);
   tcase_add_test(tc, test_tcp_connection_calls_close_callback_when_the_peer_disconnects);
   tcase_add_test(tc, test_tcp_connection_sendfile);
+  tcase_add_test(tc, test_tcp_connection_fails);
   suite_add_tcase(s, tc);
 
   return s;
