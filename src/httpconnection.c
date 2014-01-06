@@ -14,6 +14,7 @@
 #include "logger.h"
 #include "tcpconnection.h"
 #include "httprequestqueue.h"
+#include "httprequest.h"
 #include "httpresponse.h"
 #include "httpconnection.h"
 #include "httprouter.h"
