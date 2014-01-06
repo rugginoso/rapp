@@ -18,7 +18,7 @@
 #include "logger.h"
 #include "memory.h"
 
-#define MAX_EVENTS 10
+#define MAX_EVENTS 1024
 
 
 struct ELoop {
@@ -87,16 +87,16 @@ event_loop_run(struct ELoop *eloop)
     for (i = 0; i < nfds; i++) {
       eloop_callback = events[i].data.ptr;
 
+      if (events[i].events & EPOLLRDHUP && eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE]) {
+        eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE](eloop_callback->fd, eloop_callback->datas[ELOOP_CALLBACK_CLOSE]);
+      }
+
       if (events[i].events & EPOLLIN && eloop_callback->callbacks[ELOOP_CALLBACK_READ]) {
         eloop_callback->callbacks[ELOOP_CALLBACK_READ](eloop_callback->fd, eloop_callback->datas[ELOOP_CALLBACK_READ]);
       }
 
       if (events[i].events & EPOLLOUT && eloop_callback->callbacks[ELOOP_CALLBACK_WRITE]) {
         eloop_callback->callbacks[ELOOP_CALLBACK_WRITE](eloop_callback->fd, eloop_callback->datas[ELOOP_CALLBACK_WRITE]);
-      }
-
-      if (events[i].events & EPOLLRDHUP && eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE]) {
-        eloop_callback->callbacks[ELOOP_CALLBACK_CLOSE](eloop_callback->fd, eloop_callback->datas[ELOOP_CALLBACK_CLOSE]);
       }
     }
     collector_collect(eloop->collector);
@@ -202,6 +202,7 @@ event_loop_remove_fd_watch(struct ELoop                 *eloop,
   struct ELoopCallback *ec = NULL;
   struct ELoopCallback *pec = NULL;
   int epoll_operation = EPOLL_CTL_MOD;
+  struct epoll_event *ev = NULL;
 
   assert(eloop != NULL);
   assert(fd > -1);
@@ -213,6 +214,7 @@ event_loop_remove_fd_watch(struct ELoop                 *eloop,
   ec->datas[callback_type] = NULL;
 
   ec->ev.events &= ~(eloop_callback_type_to_epoll_event(callback_type));
+  ev = &(ec->ev);
 
   if (ec->ev.events == 0) {
     epoll_operation = EPOLL_CTL_DEL;
@@ -222,9 +224,10 @@ event_loop_remove_fd_watch(struct ELoop                 *eloop,
     else
       pec->next = ec->next;
     memory_destroy(ec);
+    ev = NULL;
   }
 
-  return epoll_ctl(eloop->epollfd, epoll_operation, fd, &(ec->ev));
+  return epoll_ctl(eloop->epollfd, epoll_operation, fd, ev);
 }
 
 void

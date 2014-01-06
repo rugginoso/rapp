@@ -74,7 +74,7 @@ enum HTTPURLField {
 
 struct HTTPRequest;
 
-const char *http_request_get_buffer(struct HTTPRequest *request);
+const char *http_request_get_headers_buffer(struct HTTPRequest *request);
 
 enum HTTPMethod http_request_get_method(struct HTTPRequest *request);
 
@@ -84,7 +84,7 @@ int http_request_get_url_field_range(struct HTTPRequest *request, enum HTTPURLFi
 int http_request_get_header_value_range(struct HTTPRequest *request, const char *header_name, struct MemoryRange *range);
 void http_request_get_headers_ranges(struct HTTPRequest *request, struct HeaderMemoryRange **ranges, unsigned *n_ranges);
 
-void http_request_get_body_range(struct HTTPRequest *request, struct MemoryRange *range);
+const char *http_request_get_body(struct HTTPRequest *request);
 
 #endif /* RAPP_HTTPREQUEST_H */
 /*

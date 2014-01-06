@@ -15,6 +15,7 @@ set(RAPP_CORE_SOURCES
     httpconnection.c
     httpresponse.c
     httprequest.c
+    httprequestqueue.c
     httprouter.c
     httpserver.c
     logger.c

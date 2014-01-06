@@ -56,7 +56,7 @@ http_router_new(struct Logger      *logger,
   assert(logger);
 
   if ((null = container_new_null(logger, "default")) == NULL) {
-    /* error already logged */ 
+    /* error already logged */
     return NULL;
   }
 
@@ -218,7 +218,7 @@ http_router_serve(struct HTTPRouter         *router,
   }
 
   container = router->null;
-  raw_req = http_request_get_buffer(request);
+  raw_req = http_request_get_headers_buffer(request);
   http_request_get_url_range(request, &uri_range);
   for (pack = &router->pack; !found && pack != NULL; pack = pack->next) {
     int i = 0;

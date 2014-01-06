@@ -11,6 +11,9 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "logger.h"
+#include "tcpconnection.h"
+#include "httprequestqueue.h"
 #include "httprequest.h"
 #include "httpresponse.h"
 #include "httpconnection.h"
@@ -29,7 +32,7 @@ struct HTTPConnection {
   HTTPConnectionFinishCallback finish_callback;
   void *data;
 
-  struct HTTPRequest *request;
+  struct HTTPRequestQueue *request_queue;
   struct HTTPResponse *response;
 
   struct HTTPRouter *router;
@@ -58,8 +61,10 @@ on_read(struct TcpConnection *tcp_connection,
     return;
   }
 
-  if (http_request_append_data(http_connection->request, buffer, got) < 0)
+  if (http_request_queue_append_data(http_connection->request_queue, buffer, got) < 0) {
+    logger_trace(http_connection->logger, LOG_ERROR, "httpconnection", "Error appending data to queue");
     http_connection->finish_callback(http_connection, http_connection->data);
+  }
 }
 
 static void
@@ -78,7 +83,10 @@ on_write(struct TcpConnection *tcp_connection,
     tcp_connection_write_data(tcp_connection, buffer, got);
   }
   else {
-    http_connection->finish_callback(http_connection, http_connection->data);
+    if (http_response_is_last(http_connection->response) != 0) {
+      tcp_connection_close(tcp_connection);
+      http_connection->finish_callback(http_connection, http_connection->data);
+    }
   }
 }
 
@@ -92,22 +100,33 @@ on_close(struct TcpConnection *tcp_connection,
 
   http_connection = (struct HTTPConnection *)data;
 
+  tcp_connection_close(tcp_connection);
   http_connection->finish_callback(http_connection, http_connection->data);
 }
 
 static void
-on_parse_finish(struct HTTPRequest *request,
-                void               *data)
+on_new_request(struct HTTPRequestQueue *request_queue,
+                void                   *data)
 {
   struct HTTPConnection *http_connection = NULL;
+  struct HTTPRequest *request = NULL;
 
   assert(data != NULL);
 
   http_connection = (struct HTTPConnection *)data;
 
-  tcp_connection_set_callbacks(http_connection->tcp_connection, NULL, on_write, on_close, http_connection);
+  request = http_request_queue_get_next_request(request_queue);
+  http_response_set_last(http_connection->response, http_request_is_last(request));
 
-  http_router_serve(http_connection->router, request, http_connection->response);
+  if (request != NULL) {
+    http_router_serve(http_connection->router, request, http_connection->response);
+    http_request_destroy(request);
+  }
+  else {
+    http_request_destroy(request);
+    logger_trace(http_connection->logger, LOG_ERROR, "httpconnection", "NULL request");
+    http_connection->finish_callback(http_connection, http_connection->data);
+  }
 }
 
 struct HTTPConnection *
@@ -124,14 +143,14 @@ http_connection_new(struct Logger        *logger,
     return NULL;
   }
 
-  if ((http_connection->request = http_request_new(logger)) == NULL) {
+  if ((http_connection->request_queue = http_request_queue_new(logger)) == NULL) {
     memory_destroy(http_connection);
     return NULL;
   }
-  http_request_set_parse_finish_callback(http_connection->request, on_parse_finish, http_connection);
+  http_request_queue_set_new_request_callback(http_connection->request_queue, on_new_request, http_connection);
 
   if ((http_connection->response = http_response_new(logger, rapp_get_banner())) == NULL) {
-    memory_destroy(http_connection->request);
+    memory_destroy(http_connection->request_queue);
     memory_destroy(http_connection);
     return NULL;
   }
@@ -139,7 +158,7 @@ http_connection_new(struct Logger        *logger,
   http_connection->router = router;
 
   http_connection->tcp_connection = tcp_connection;
-  tcp_connection_set_callbacks(http_connection->tcp_connection, on_read, NULL, on_close, http_connection);
+  tcp_connection_set_callbacks(http_connection->tcp_connection, on_read, on_write, on_close, http_connection);
 
   http_connection->logger = logger;
 
@@ -154,8 +173,8 @@ http_connection_destroy(struct HTTPConnection *http_connection)
   if (http_connection->tcp_connection != NULL)
     tcp_connection_destroy(http_connection->tcp_connection);
 
-  if (http_connection->request != NULL)
-    http_request_destroy(http_connection->request);
+  if (http_connection->request_queue != NULL)
+    http_request_queue_destroy(http_connection->request_queue);
 
   if (http_connection->response != NULL)
     http_response_destroy(http_connection->response);
