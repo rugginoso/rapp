@@ -42,6 +42,43 @@ flushing, RApp makes uses of coroutines.
 2. Evaluation of the coroutine libraries
 ----------------------------------------
 
+Requisites:
+
+RApp will use N+1 coroutines, where N is the number of registered container
+for any given run. Plus the one for the main thread, which also runs the
+event loop.
+
+Given the purpose of RApp, the library should offer reasonnable figures
+for performance (the higher the better) and resource consumption
+(the lower the better).
+
+A Container may run arbitrarily complex code, so no safe assumption can be
+made about their resource (read: stack) usage.
+For the sake of safety, the coroutine library must then support
+stack-swapping; coroutine must *not* share the stack.
+
+The library must be available on linux/x86_64.
+Support for other archs or OSes, except for the ubiquitous i386, is a
+nice extra and should be consider as that for the evaluation.
+
+
+[picoro](http://dotat.at/cgi/git/picoro.git)
+small, nicely implemented, very liberal license. No explicit stack management.
+
+[libtask](http://swtch.com/libtask/)
+
+[pcl](http://xmailserver.org/pcl.html)
+
+[lthread](https://github.com/halayli/lthread)
+
+[coroutine](https://github.com/stevedekorte/coroutine/tree/master) from Steve Dekorte
+
+[libconcurrency](http://code.google.com/p/libconcurrency/)
+
+[libcoro](http://software.schmorp.de/pkg/libcoro.html)
+
+
+
 
 3. Control flow graph
 ---------------------
