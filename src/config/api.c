@@ -29,14 +29,19 @@ int validate_name(struct RappConfig *conf,
   reti = regcomp(&reg, regex_name, REG_EXTENDED);
   if (reti != 0) {
     CRITICAL(conf, "Cannot compile expr '%s'", regex_name);
+    regfree(&reg);
     return -1;
   }
 
   reti = regexec(&reg, name, 0, NULL, 0);
   if (reti != 0) {
     ERROR(conf, "'%s' is not a valid config name.", name);
+    regfree(&reg);
     return -1;
   }
+
+  regfree(&reg);
+
   return 0;
 }
 

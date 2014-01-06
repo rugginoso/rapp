@@ -88,7 +88,6 @@ opt_add_value_string(struct ConfigOption *opt,
     return -1;
   if (!value || opt->type != PARAM_STRING)
     return -1;
-  cv = memory_create(sizeof(struct ConfigValue));
   if ((cv = memory_create(sizeof(struct ConfigValue))) == NULL)
     return -1;
   cv->value.strvalue = memory_strdup(value);
