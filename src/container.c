@@ -113,9 +113,15 @@ container_make(void              *plugin,
   }
 
   container->handle = handle;
-  container->serve = dlsym(plugin, "rapp_serve");
-  container->destroy = dlsym(plugin, "rapp_destroy");
-  container->init = dlsym(plugin, "rapp_init");
+
+  if (get_symbol(logger, plugin, "rapp_serve", (void *)&(container->serve)) != 0)
+    return NULL;
+
+  if (get_symbol(logger, plugin, "rapp_destroy", (void *)&(container->destroy)) != 0)
+    return NULL;
+
+  if (get_symbol(logger, plugin, "rapp_init", (void *)&(container->init)) != 0)
+    return NULL;
 
   logger_trace(logger, LOG_INFO, "loader", "loaded plugin[%s] id=%p (%p)", container->name, container, container->plugin);
 
