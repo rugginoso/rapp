@@ -29,9 +29,9 @@ add_library(rapp_core STATIC ${RAPP_CORE_SOURCES})
 add_executable(rapp main.c memory.c)
 # memory.c MUST be outside of rapp_core and must be executable-specific.
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
     set_target_properties(rapp_core PROPERTIES COMPILE_FLAGS "-Wall -export-dynamic")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
     set_target_properties(rapp_core PROPERTIES COMPILE_FLAGS "-Wall")
 endif()
 
