@@ -14,6 +14,7 @@
 #include "config/common.h"
 
 #include "test_dlstubs.h"
+#include "test_memstubs.h"
 
 
 START_TEST(test_container_new_dlopen_fail)

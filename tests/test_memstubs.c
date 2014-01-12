@@ -4,7 +4,7 @@
  * (C) 2013-2014 the RApp devs. Licensed under GPLv2 with additional rights.
  *     see LICENSE for all the details.
  */
-
+#define _GNU_SOURCE
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>

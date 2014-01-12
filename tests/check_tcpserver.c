@@ -6,16 +6,19 @@
  */
 
 #include <assert.h>
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
+#include <unistd.h>
 
 #include <check.h>
 
 #include <logger.h>
 #include <eloop.h>
 #include <tcpserver.h>
+#include <tcpconnection.h>
 
 #include "test_memstubs.h"
 #include "test_utils.h"

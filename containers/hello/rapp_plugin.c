@@ -61,7 +61,7 @@ int
 rapp_init(struct RappContainer *handle,
           struct RappConfig    *config)
 {
-  rapp_config_get_string(config, "hello", "message", &(handle->message));
+  return rapp_config_get_string(config, "hello", "message", &(handle->message));
 }
 
 struct RappContainer *

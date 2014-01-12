@@ -5,6 +5,8 @@
  *     see LICENSE for all the details.
  */
 
+#include <sys/types.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <check.h>
 

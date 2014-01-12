@@ -5,6 +5,7 @@
  *     see LICENSE for all the details.
  */
 
+#define _GNU_SOURCE
 #include <stdlib.h>
 
 #include <check.h>
