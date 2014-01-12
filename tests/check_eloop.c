@@ -5,10 +5,10 @@
  *     see LICENSE for all the details.
  */
 
-#include <stdlib.h>
 #include <check.h>
-
+#include <stdlib.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include <logger.h>
 #include <eloop.h>

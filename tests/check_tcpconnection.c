@@ -5,6 +5,7 @@
  *     see LICENSE for all the details.
  */
 
+#include <unistd.h>
 #include <stdlib.h>
 #include <check.h>
 #include <sys/socket.h>

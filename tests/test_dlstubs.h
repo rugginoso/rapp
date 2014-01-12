@@ -27,6 +27,7 @@ struct Symbol {
 
 void dlstub_setup(uint32_t flags, struct Symbol *syms);
 int dlstub_get_invoke_count(const char *sym);
+int dlstub_get_lookup_count(const char *sym);
 void dlstub_debug(const char *tag);
 
 struct Logger *dlstub_logger_get(void);
