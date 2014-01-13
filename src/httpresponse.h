@@ -21,6 +21,10 @@ int http_response_is_last(struct HTTPResponse *response);
 
 ssize_t http_response_read_data(struct HTTPResponse *response, void *data, size_t length);
 
+int http_response_is_complete(struct HTTPResponse *response);
+
+int http_response_send(struct HTTPResponse *response, struct TcpConnection *connection);
+
 #endif /* HTTTPRESPONSE_H */
 /*
  * vim: expandtab shiftwidth=2 tabstop=2:

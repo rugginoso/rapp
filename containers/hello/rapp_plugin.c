@@ -44,6 +44,8 @@ rapp_serve(struct RappContainer *handle,
 
     http_response_append_data(response, handle->message, len);
 
+    http_response_end_body(response);
+
     err = 0;
   }
   return err;

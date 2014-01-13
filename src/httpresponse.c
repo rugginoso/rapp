@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include "httpresponse.h"
+#include "tcpconnection.h"
 #include "logger.h"
 #include "memory.h"
 
@@ -28,6 +29,7 @@
 struct HTTPResponse {
   char *buffer;
   size_t buffer_length;
+  int completed;
 
   const char *server_name;
   int is_last;
@@ -379,6 +381,52 @@ http_response_write_error_by_code(struct HTTPResponse *response,
   memory_destroy(body);
 
   return total_length;
+}
+
+void
+http_response_end_body(struct HTTPResponse *response)
+{
+  assert(response != NULL);
+
+  response->completed = 1;
+}
+
+int
+http_response_is_complete(struct HTTPResponse *response)
+{
+  assert(response != NULL);
+
+  return response->completed;
+}
+
+int
+http_response_send(struct HTTPResponse  *response,
+                   struct TcpConnection *connection)
+{
+  ssize_t sent = -1;
+
+  assert(response != NULL);
+  assert(connection != NULL);
+
+  if ((sent = tcp_connection_write_data(connection, response->buffer, response->buffer_length)) < 0) {
+    return errno == EAGAIN;
+  }
+
+  response->buffer_length -= sent;
+
+  if (response->buffer_length == 0) {
+    memory_destroy(response->buffer);
+    response->buffer = NULL;
+  }
+  else {
+    memmove(response->buffer, &(response->buffer[sent]), response->buffer_length);
+    if ((response->buffer = memory_resize(response->buffer, response->buffer_length)) == NULL) {
+      LOGGER_PERROR(response->logger, "memory_resize");
+      return -1;
+    }
+  }
+
+  return 0;
 }
 
 /*
