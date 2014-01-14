@@ -49,6 +49,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 add_subdirectory(containers/hello)
+add_subdirectory(containers/stream)
 find_package(LIBYAML REQUIRED)
 include_directories(${LIBYAML_INCLUDE_DIR})
 
