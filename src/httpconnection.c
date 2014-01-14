@@ -11,6 +11,8 @@
 #include <errno.h>
 #include <assert.h>
 
+#include <sys/queue.h>
+
 #include "logger.h"
 #include "tcpconnection.h"
 #include "httpparser.h"
@@ -26,6 +28,15 @@
 
 #define BUFSIZE 80 * 1024
 
+struct HTTPQueueEntry {
+  struct HTTPRequest *request;
+  struct HTTPResponse *response;
+
+  TAILQ_ENTRY(HTTPQueueEntry) entries;
+};
+
+TAILQ_HEAD(HTTPQueue, HTTPQueueEntry);
+
 struct HTTPConnection {
   struct TcpConnection *tcp_connection;
 
@@ -33,6 +44,7 @@ struct HTTPConnection {
   void *data;
 
   struct HTTPParser *parser;
+  struct HTTPQueue *queue;
 
   struct HTTPRouter *router;
   struct Logger *logger;
@@ -72,24 +84,28 @@ static void
 on_write(struct TcpConnection *tcp_connection,
          const void           *data)
 {
-  char buffer[BUFSIZE];
-  ssize_t got = -1;
   struct HTTPConnection *http_connection = NULL;
+  struct HTTPQueueEntry *entry = NULL;
 
   assert(data != NULL);
 
   http_connection = (struct HTTPConnection *)data;
 
-  if ((got = http_response_read_data(http_connection->response, buffer, BUFSIZE)) > 0) {
-    if (tcp_connection_write_data(tcp_connection, buffer, got) < 0) {
-      if (errno != EAGAIN)
-        LOGGER_PERROR(http_connection->logger, "write");
-    }
-  }
-  else {
-    if (http_response_is_last(http_connection->response) != 0) {
-      tcp_connection_close(tcp_connection);
-      http_connection->finish_callback(http_connection, http_connection->data);
+  if (TAILQ_EMPTY(http_connection->queue) != 0)
+    return;
+
+  entry = TAILQ_LAST(http_connection->queue, HTTPQueue);
+
+  if (http_response_send(entry->response, tcp_connection) == 0) {
+    if (http_response_is_complete(entry->response) != 0) {
+      if (http_response_is_last(entry->response) != 0) {
+        tcp_connection_close(tcp_connection);
+        http_connection->finish_callback(http_connection, http_connection->data);
+      }
+      TAILQ_REMOVE(http_connection->queue, entry, entries);
+      http_request_destroy(entry->request);
+      http_response_destroy(entry->response);
+      memory_destroy(entry);
     }
   }
 }
@@ -109,22 +125,38 @@ on_close(struct TcpConnection *tcp_connection,
 }
 
 static void
-on_new_request(struct HTTPRequestQueue *request_queue,
-                void                   *data)
+on_new_request(struct HTTPParser *parser,
+               void              *data)
 {
   struct HTTPConnection *http_connection = NULL;
   struct HTTPRequest *request = NULL;
+  struct HTTPQueueEntry *entry = NULL;
 
   assert(data != NULL);
 
   http_connection = (struct HTTPConnection *)data;
 
-  request = http_request_queue_get_next_request(request_queue);
-  http_response_set_last(http_connection->response, http_request_is_last(request));
+  request = http_parser_get_next_request(parser);
 
   if (request != NULL) {
-    http_router_serve(http_connection->router, request, http_connection->response);
-    http_request_destroy(request);
+    if ((entry = memory_create(sizeof(struct HTTPQueueEntry))) == NULL) {
+      LOGGER_PERROR(http_connection->logger, "memory_create");
+      http_request_destroy(request);
+      return;
+    }
+
+    if ((entry->response = http_response_new(http_connection->logger, "RApp")) == NULL) {
+      memory_destroy(entry);
+      http_request_destroy(request);
+      return;
+    }
+
+    entry->request = request;
+    http_response_set_last(entry->response, http_request_is_last(request));
+
+    TAILQ_INSERT_HEAD(http_connection->queue, entry, entries);
+
+    http_router_serve(http_connection->router, request, entry->response);
   }
   else {
     http_request_destroy(request);
@@ -153,11 +185,12 @@ http_connection_new(struct Logger        *logger,
   }
   http_parser_set_new_request_callback(http_connection->parser, on_new_request, http_connection);
 
-  if ((http_connection->response = http_response_new(logger, rapp_get_banner())) == NULL) {
-    memory_destroy(http_connection->request_queue);
+  if ((http_connection->queue = memory_create(sizeof(struct HTTPQueue))) == NULL) {
+    memory_destroy(http_connection->parser);
     memory_destroy(http_connection);
     return NULL;
   }
+  TAILQ_INIT(http_connection->queue);
 
   http_connection->router = router;
 
@@ -180,8 +213,8 @@ http_connection_destroy(struct HTTPConnection *http_connection)
   if (http_connection->parser != NULL)
     http_parser_destroy(http_connection->parser);
 
-  if (http_connection->response != NULL)
-    http_response_destroy(http_connection->response);
+  if (http_connection->queue != NULL)
+    memory_destroy(http_connection->queue);
 
   memory_destroy(http_connection);
 }
