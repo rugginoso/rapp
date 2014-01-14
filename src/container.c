@@ -12,9 +12,12 @@
 #include <inttypes.h>
 #include <dlfcn.h>
 #include <errno.h>
+#include <signal.h>
+#include <pthread.h>
 
 #include "container.h"
 #include "memory.h"
+#include "syncqueue.h"
 
 
 struct Container {
@@ -23,6 +26,9 @@ struct Container {
 
   struct Logger *logger;
   char *name;
+
+  struct SyncQueue *queue;
+  pthread_t tid;
 
   RappServeCallback serve;
   RappDestroyCallback destroy;
@@ -105,6 +111,12 @@ container_make(void              *plugin,
     return NULL;
   }
 
+  if ((container->queue = sync_queue_new(logger)) == NULL) {
+    memory_destroy(container->name);
+    memory_destroy(container);
+    return NULL;
+  }
+
   if ((handle = plugin_create(container, config, &error)) == NULL) {
     memory_destroy(container->name);
     memory_destroy(container);
@@ -168,6 +180,38 @@ container_new(struct Logger *logger,
   return container_make(plugin, logger, name, config);
 }
 
+static void *
+do_serve(void *data)
+{
+  struct Container *container = NULL;
+  struct SyncQueueEntry *entry = NULL;
+  int ret = -1;
+  sigset_t sigmask;
+
+  assert(data != NULL);
+
+  container = (struct Container *)data;
+
+  sigemptyset(&sigmask);
+  sigaddset(&sigmask, SIGINT);
+  sigaddset(&sigmask, SIGTERM);
+  pthread_sigmask(SIG_BLOCK, &sigmask, NULL);
+
+  while ((entry = sync_queue_dequeue(container->queue)) != NULL) {
+    if (entry->request == NULL && entry->response == NULL) {
+      memory_destroy(entry);
+      break;
+    }
+
+    if ((ret = container->serve(container->handle, entry->request, entry->response)) != 0)
+      pthread_exit((void *)-1); /* FIXME: return value? */
+
+    memory_destroy(entry);
+  }
+
+  pthread_exit(NULL);
+}
+
 int
 container_init(struct Container *container, struct RappConfig *config)
 {
@@ -175,7 +219,16 @@ container_init(struct Container *container, struct RappConfig *config)
   assert(config != NULL);
   logger_trace(container->logger, LOG_DEBUG, "loader", "loading config for plugin[%s] id=%p (%p)", container->name, container, container->plugin);
 
-  return container->init(container->handle, config);
+  /* FIXME: maybe it's better to call this into the do_serve */
+  if (container->init(container->handle, config) != 0)
+    return -1;
+
+  if (pthread_create(&(container->tid), NULL, do_serve, container) != 0) {
+    LOGGER_PERROR(container->logger, "pthread_create");
+    return -1;
+  }
+
+  return 0;
 }
 
 void
@@ -184,6 +237,15 @@ container_destroy(struct Container *container)
   assert(container != NULL);
 
   logger_trace(container->logger, LOG_INFO, "loader", "unloading plugin[%s] id=%p (%p)", container->name, container, container->plugin);
+
+  if (container->tid != 0) {
+    /* Unlock the condition of the queue */
+    container_serve(container, NULL, NULL);
+    pthread_join(container->tid, NULL);
+  }
+
+  if (container->queue)
+    sync_queue_destroy(container->queue);
 
   if (container->destroy(container->handle) == 0) {
     /* the `null` container doesn't have a handle */
@@ -201,11 +263,21 @@ container_serve(struct Container          *container,
                 struct HTTPRequest        *http_request,
                 struct HTTPResponse *response)
 {
-  assert(container != NULL);
-  assert(http_request != NULL);
-  assert(response != NULL);
+  struct SyncQueueEntry *entry = NULL;
 
-  return container->serve(container->handle, http_request, response);
+  assert(container != NULL);
+
+  if ((entry = memory_create(sizeof(struct SyncQueueEntry))) == NULL) {
+    LOGGER_PERROR(container->logger, "memory_create");
+    return -1;
+  }
+
+  entry->request = http_request;
+  entry->response = response;
+
+  sync_queue_enqueue(container->queue, entry);
+
+  return 0;
 }
 
 static int
@@ -260,6 +332,12 @@ container_new_custom(struct Logger      *logger,
 
   if ((container->name = memory_strdup(tag)) == NULL) {
     LOGGER_PERROR(logger, "memory_strdup");
+    memory_destroy(container);
+    return NULL;
+  }
+
+  if ((container->queue = sync_queue_new(logger)) == NULL) {
+    memory_destroy(container->name);
     memory_destroy(container);
     return NULL;
   }

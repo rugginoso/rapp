@@ -157,10 +157,10 @@ main(int argc, char *argv[])
 
   http_server_destroy(http_server);
   http_router_destroy(http_router);
+  container_destroy(container);
   signal_handler_destroy(signal_handler);
   event_loop_destroy(eloop);
 
-  container_destroy(container);
 
   config_destroy(config);
 

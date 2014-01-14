@@ -20,6 +20,7 @@ set(RAPP_CORE_SOURCES
     httpserver.c
     logger.c
     signalhandler.c
+    syncqueue.c
     tcpconnection.c
     tcpserver.c
     version.c
@@ -35,7 +36,7 @@ elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
     set_target_properties(rapp_core PROPERTIES COMPILE_FLAGS "-Wall")
 endif()
 
-target_link_libraries(rapp rapp_core dl)
+target_link_libraries(rapp rapp_core dl pthread)
 
 include_directories(${HTTP_PARSER_DIR})
 include_directories(${PROJECT_SOURCE_DIR})

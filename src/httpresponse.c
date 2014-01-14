@@ -10,6 +10,7 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+#include <pthread.h>
 #include <assert.h>
 
 #include "httpresponse.h"
@@ -33,6 +34,8 @@ struct HTTPResponse {
 
   const char *server_name;
   int is_last;
+
+  pthread_mutex_t mutex;
 
   struct Logger *logger;
 };
@@ -130,6 +133,12 @@ http_response_new(struct Logger *logger, const char *server_name)
     return NULL;
   }
 
+  if (pthread_mutex_init(&(response->mutex), NULL) != 0) {
+    LOGGER_PERROR(logger, "pthread_mutex_init");
+    memory_destroy(response);
+    return NULL;
+  }
+
   response->logger = logger;
   response->server_name = server_name;
 
@@ -143,6 +152,8 @@ http_response_destroy(struct HTTPResponse *response)
 
   if (response->buffer != NULL && response->buffer_length != 0)
     memory_destroy(response->buffer);
+
+  pthread_mutex_destroy(&(response->mutex));
 
   memory_destroy(response);
 }
@@ -257,14 +268,19 @@ http_response_append_data(struct HTTPResponse *response,
   assert(data != NULL);
   assert(length > 0);
 
+  pthread_mutex_lock(&(response->mutex));
+
   if ((response->buffer = memory_resize(response->buffer, response->buffer_length + length)) == NULL) {
     LOGGER_PERROR(response->logger, "memory_resize");
+    pthread_mutex_unlock(&(response->mutex));
     return -1;
   }
 
   memcpy(&(response->buffer[response->buffer_length]), data, length);
 
   response->buffer_length += length;
+
+  pthread_mutex_unlock(&(response->mutex));
 
   return length;
 }
@@ -408,7 +424,10 @@ http_response_send(struct HTTPResponse  *response,
   assert(response != NULL);
   assert(connection != NULL);
 
+  pthread_mutex_lock(&(response->mutex));
+
   if ((sent = tcp_connection_write_data(connection, response->buffer, response->buffer_length)) < 0) {
+    pthread_mutex_unlock(&(response->mutex));
     return errno == EAGAIN;
   }
 
@@ -422,9 +441,12 @@ http_response_send(struct HTTPResponse  *response,
     memmove(response->buffer, &(response->buffer[sent]), response->buffer_length);
     if ((response->buffer = memory_resize(response->buffer, response->buffer_length)) == NULL) {
       LOGGER_PERROR(response->logger, "memory_resize");
+      pthread_mutex_unlock(&(response->mutex));
       return -1;
     }
   }
+
+  pthread_mutex_unlock(&(response->mutex));
 
   return 0;
 }

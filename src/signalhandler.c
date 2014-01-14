@@ -109,7 +109,7 @@ signal_handler_setup(struct SignalHandler *signal_handler,
                      SignalHandlerCallback callback,
                      void                 *data)
 {
-  if (sigprocmask(SIG_SETMASK, &(signal_handler->sigmask), NULL) != 0) {
+  if (pthread_sigmask(SIG_SETMASK, &(signal_handler->sigmask), NULL) != 0) {
     LOGGER_PERROR(signal_handler->logger, "sigprocmask");
     return -1;
   }
