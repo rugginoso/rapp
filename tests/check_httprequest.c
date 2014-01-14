@@ -11,12 +11,12 @@
 #include <check.h>
 
 #include "logger.h"
-#include "httprequestqueue.h"
+#include "httpparser.h"
 #include "httprequest.h"
 
 
 struct HTTPRequest *http_request = NULL;
-struct HTTPRequestQueue *queue = NULL;
+struct HTTPParser *parser = NULL;
 struct Logger *logger = NULL;
 static const char *HTTP_METHODS_FIXTURES[HTTP_METHOD_MAX] = {
   "DELETE",
@@ -51,13 +51,13 @@ static const char *HTTP_METHODS_FIXTURES[HTTP_METHOD_MAX] = {
 void setup()
 {
   logger = logger_new_null();
-  queue = http_request_queue_new(logger);
+  parser = http_parser_new(logger);
 }
 
 void teardown()
 {
   http_request_destroy(http_request);
-  http_request_queue_destroy(queue);
+  http_parser_destroy(parser);
   logger_destroy(logger);
 }
 
@@ -89,13 +89,13 @@ START_TEST(test_httprequest_gets_the_right_method)
 
   while (i < HTTP_METHOD_MAX) {
     asprintf(&request, "%s /hello/world/ HTTP/1.1\r\n\r\n", HTTP_METHODS_FIXTURES[i]);
-    append_data_return = http_request_queue_append_data(queue, request, strlen(request));
+    append_data_return = http_parser_append_data(parser, request, strlen(request));
     free(request);
 
     ck_assert_int_eq(append_data_return, 0);
 
     free(http_request);
-    http_request = http_request_queue_get_next_request(queue);
+    http_request = http_parser_get_next_request(parser);
 
     ck_assert(http_request != NULL);
     ck_assert_int_eq(http_request_get_method(http_request), i);
@@ -112,9 +112,9 @@ START_TEST(test_httprequest_gets_the_right_url)
   struct MemoryRange url_range;
   char *url = NULL;
 
-  http_request_queue_append_data(queue, request, strlen(request));
+  http_parser_append_data(parser, request, strlen(request));
 
-  http_request = http_request_queue_get_next_request(queue);
+  http_request = http_parser_get_next_request(parser);
   ck_assert(http_request != NULL);
 
   request_buffer = http_request_get_headers_buffer(http_request);
@@ -144,9 +144,9 @@ START_TEST(test_httprequest_gets_the_right_url_field)
     "user:pass",
   };
 
-  http_request_queue_append_data(queue, request, strlen(request));
+  http_parser_append_data(parser, request, strlen(request));
 
-  http_request = http_request_queue_get_next_request(queue);
+  http_request = http_parser_get_next_request(parser);
   ck_assert(http_request != NULL);
 
   request_buffer = http_request_get_headers_buffer(http_request);
@@ -174,9 +174,9 @@ START_TEST(test_httprequest_gets_all_the_headers)
   char *host_header = NULL;
   char *accept_header = NULL;
 
-  http_request_queue_append_data(queue, request, strlen(request));
+  http_parser_append_data(parser, request, strlen(request));
 
-  http_request = http_request_queue_get_next_request(queue);
+  http_request = http_parser_get_next_request(parser);
   ck_assert(http_request != NULL);
 
   request_buffer = http_request_get_headers_buffer(http_request);
@@ -200,9 +200,9 @@ START_TEST(test_httprequest_gets_a_specific_header)
   struct MemoryRange header_range;
   char *host_header = NULL;
 
-  http_request_queue_append_data(queue, request, strlen(request));
+  http_parser_append_data(parser, request, strlen(request));
 
-  http_request = http_request_queue_get_next_request(queue);
+  http_request = http_parser_get_next_request(parser);
   ck_assert(http_request != NULL);
 
   request_buffer = http_request_get_headers_buffer(http_request);
@@ -222,9 +222,9 @@ START_TEST(test_httprequest_error_on_not_existent_header)
   const char *request_buffer = NULL;
   struct MemoryRange header_range;
 
-  http_request_queue_append_data(queue, request, strlen(request));
+  http_parser_append_data(parser, request, strlen(request));
 
-  http_request = http_request_queue_get_next_request(queue);
+  http_request = http_parser_get_next_request(parser);
   ck_assert(http_request != NULL);
 
   request_buffer = http_request_get_headers_buffer(http_request);
@@ -261,9 +261,9 @@ START_TEST(test_httprequest_gets_the_body)
   char *request = "POST /hello/world/ HTTP/1.1\r\nContent-Length: 12\r\n\r\nHello world!\r\n\r\n";
   const char *body = NULL;
 
-  http_request_queue_append_data(queue, request, strlen(request));
+  http_parser_append_data(parser, request, strlen(request));
 
-  http_request = http_request_queue_get_next_request(queue);
+  http_request = http_parser_get_next_request(parser);
   ck_assert(http_request != NULL);
 
   body = http_request_get_body(http_request);

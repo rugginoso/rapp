@@ -1,5 +1,5 @@
 /*
- * check_httprequestqueue.c - is part of RApp.
+ * check_httpparser.c - is part of RApp.
  * RApp is a modular web application container made for linux and for speed.
  * (C) 2013-2014 the RApp devs. Licensed under GPLv2 with additional rights.
  *     see LICENSE for all the details.
@@ -11,54 +11,54 @@
 #include <check.h>
 
 #include "logger.h"
-#include "httprequestqueue.h"
+#include "httpparser.h"
 #include "httprequest.h"
 
 
 struct Logger *logger = NULL;
-struct HTTPRequestQueue *queue = NULL;
+struct HTTPParser *parser = NULL;
 
 void setup()
 {
   logger = logger_new_null();
-  queue = http_request_queue_new(logger);
+  parser = http_parser_new(logger);
 }
 
 void teardown()
 {
-  http_request_queue_destroy(queue);
+  http_parser_destroy(parser);
   logger_destroy(logger);
 }
 
 void
-new_request_func(struct HTTPRequestQueue *q,
-                 void                    *data)
+new_request_func(struct HTTPParser *p,
+                 void              *data)
 {
   (*(int *)(data)) = 1;
 }
 
-START_TEST(test_httprequestqueue_error_on_invalid_request)
+START_TEST(test_httpparser_error_on_invalid_request)
 {
   char *request = "casual data";
 
-  ck_assert_int_eq(http_request_queue_append_data(queue, request, strlen(request)), -1);
+  ck_assert_int_eq(http_parser_append_data(parser, request, strlen(request)), -1);
 }
 END_TEST
 
-START_TEST(test_httprequestqueue_calls_callback_when_new_request_is_processed)
+START_TEST(test_httpparser_calls_callback_when_new_request_is_processed)
 {
   int data = 0;
   char *request = "GET /hello/world/ HTTP/1.1\r\n\r\n";
 
-  http_request_queue_set_new_request_callback(queue, new_request_func, &data);
+  http_parser_set_new_request_callback(parser, new_request_func, &data);
 
-  http_request_queue_append_data(queue, request, strlen(request));
+  http_parser_append_data(parser, request, strlen(request));
 
   ck_assert(data == 1);
 }
 END_TEST
 
-START_TEST(test_httprequestqueue_returns_error_on_too_many_headers)
+START_TEST(test_httpparser_returns_error_on_too_many_headers)
 {
   char *request = strdup("GET /hello/world/ HTTP/1.1\r\n");
   char *header = NULL;
@@ -73,7 +73,7 @@ START_TEST(test_httprequestqueue_returns_error_on_too_many_headers)
     i++;
   }
 
-  append_data_return = http_request_queue_append_data(queue, request, strlen(request));
+  append_data_return = http_parser_append_data(parser, request, strlen(request));
 
   ck_assert_int_eq(append_data_return, -1);
 
@@ -83,15 +83,15 @@ END_TEST
 
 
 static Suite *
-httprequestqueue_suite(void)
+httpparser_suite(void)
 {
-  Suite *s = suite_create("rapp.core.httprequestqueue");
-  TCase *tc = tcase_create("rapp.core.httprequestqueue");
+  Suite *s = suite_create("rapp.core.httpparser");
+  TCase *tc = tcase_create("rapp.core.httpparser");
 
   tcase_add_checked_fixture (tc, setup, teardown);
-  tcase_add_test(tc, test_httprequestqueue_error_on_invalid_request);
-  tcase_add_test(tc, test_httprequestqueue_calls_callback_when_new_request_is_processed);
-  tcase_add_test(tc, test_httprequestqueue_returns_error_on_too_many_headers);
+  tcase_add_test(tc, test_httpparser_error_on_invalid_request);
+  tcase_add_test(tc, test_httpparser_calls_callback_when_new_request_is_processed);
+  tcase_add_test(tc, test_httpparser_returns_error_on_too_many_headers);
   suite_add_tcase(s, tc);
 
   return s;
@@ -102,7 +102,7 @@ main (void)
 {
  int number_failed = 0;
 
- Suite *s = httprequestqueue_suite();
+ Suite *s = httpparser_suite();
  SRunner *sr = srunner_create(s);
 
  srunner_run_all(sr, CK_NORMAL);
