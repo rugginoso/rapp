@@ -94,7 +94,9 @@ START_TEST(test_httprequest_gets_the_right_method)
 
     ck_assert_int_eq(append_data_return, 0);
 
-    free(http_request);
+    if (http_request != NULL)
+      http_request_destroy(http_request);
+
     http_request = http_parser_get_next_request(parser);
 
     ck_assert(http_request != NULL);
