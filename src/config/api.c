@@ -47,7 +47,7 @@ int validate_name(struct RappConfig *conf,
 
 static void
 opt_setup_values(struct ConfigOption *opt,
-          RappConfigParamType type)
+                 RappConfigParamType type)
 {
   switch (type) {
     case PARAM_BOOL:
@@ -164,11 +164,11 @@ rapp_config_opt_set_multivalued(struct RappConfig *conf,
 }
 
 int
-rapp_config_get_nth_int(struct RappConfig *conf,
-                        const char        *section,
-                        const char        *name,
-                        int               position,
-                        long              *value)
+rapp_config_get_nth_int(const struct RappConfig *conf,
+                        const char              *section,
+                        const char              *name,
+                        int                     position,
+                        long                    *value)
 {
   struct ConfigOption *opt = NULL;
   struct ConfigValue *cv = NULL;
@@ -201,22 +201,22 @@ rapp_config_get_nth_int(struct RappConfig *conf,
 }
 
 int
-rapp_config_get_nth_bool(struct RappConfig *conf,
-                         const char        *section,
-                         const char        *name,
-                         int               position,
-                         int               *value)
+rapp_config_get_nth_bool(const struct RappConfig *conf,
+                         const char              *section,
+                         const char              *name,
+                         int                     position,
+                         int                    *value)
 {
   /* XXX: what if sizeof(int) < sizeof(long) ? */
   return rapp_config_get_nth_int(conf, section, name, position, (long*) value);
 }
 
 int
-rapp_config_get_nth_string(struct RappConfig *conf,
-                           const char        *section,
-                           const char        *name,
-                           int               position,
-                           char              **value)
+rapp_config_get_nth_string(const struct RappConfig *conf,
+                           const char              *section,
+                           const char              *name,
+                           int                     position,
+                           char                    **value)
 {
   struct ConfigOption *opt = NULL;
   struct ConfigValue *cv = NULL;
@@ -253,10 +253,10 @@ rapp_config_get_nth_string(struct RappConfig *conf,
 }
 
 int
-rapp_config_get_num_values(struct RappConfig *conf,
-                           const char        *section,
-                           const char        *name,
-                           int               *num_values)
+rapp_config_get_num_values(const struct RappConfig *conf,
+                           const char              *section,
+                           const char              *name,
+                           int                     *num_values)
 {
   struct ConfigOption *opt = NULL;
   GET_OPTION(opt, conf, section, name);

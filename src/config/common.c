@@ -231,6 +231,21 @@ config_section_destroy(struct ConfigSection *sect)
   memory_destroy(sect);
 }
 
+const struct ConfigSection*
+config_section_find(const struct RappConfig *conf,
+                    const char              *section)
+{
+  const struct ConfigSection *sect = NULL;
+  if(!section)
+    return NULL;
+
+  for (sect=conf->sections.tqh_first; sect != NULL; sect=sect->entries.tqe_next) {
+    if (strcmp(sect->name, section) == 0)
+      return sect;
+  }
+  return NULL;
+}
+
 struct ConfigSection*
 config_section_get(struct RappConfig *conf,
                    const char        *section)
@@ -248,7 +263,7 @@ config_section_get(struct RappConfig *conf,
 
 struct ConfigSection*
 config_section_create(struct RappConfig *conf,
-               const char        *name)
+                      const char        *name)
 {
   struct ConfigSection *sect = memory_create(sizeof(struct ConfigSection));
   if (!sect)

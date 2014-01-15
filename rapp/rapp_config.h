@@ -28,10 +28,10 @@ int rapp_config_opt_set_default_bool(struct RappConfig *conf, const char *sectio
 int rapp_config_opt_set_default_int(struct RappConfig *conf, const char *section, const char *name, long value);
 int rapp_config_opt_set_default_string(struct RappConfig *conf, const char *section, const char *name, const char *value);
 
-int rapp_config_get_nth_bool(struct RappConfig *conf, const char *section, const char *name, int position, int *value);
-int rapp_config_get_nth_int(struct RappConfig *conf, const char *section, const char *name, int position, long *value);
-int rapp_config_get_nth_string(struct RappConfig *conf, const char *section, const char *name, int position, char **value);
-int rapp_config_get_num_values(struct RappConfig *conf, const char *section, const char *name, int *num_values);
+int rapp_config_get_nth_bool(const struct RappConfig *conf, const char *section, const char *name, int position, int *value);
+int rapp_config_get_nth_int(const struct RappConfig *conf, const char *section, const char *name, int position, long *value);
+int rapp_config_get_nth_string(const struct RappConfig *conf, const char *section, const char *name, int position, char **value);
+int rapp_config_get_num_values(const struct RappConfig *conf, const char *section, const char *name, int *num_values);
 
 #define rapp_config_get_bool(CONF, SECTION, NAME, VALUE) \
             rapp_config_get_nth_bool(CONF, SECTION, NAME, 0, VALUE)
