@@ -12,6 +12,8 @@ struct Logger;
 struct ELoop;
 struct TcpConnection;
 
+struct iovec;
+
 typedef void (*TcpConnectionReadCallback)(struct TcpConnection *connection, const void *data);
 typedef void (*TcpConnectionWriteCallback)(struct TcpConnection *connection, const void *data);
 typedef void (*TcpConnectionCloseCallback)(struct TcpConnection *connection, const void *data);
@@ -25,6 +27,7 @@ int tcp_connection_set_callbacks(struct TcpConnection *connection, TcpConnection
 
 ssize_t tcp_connection_read_data(struct TcpConnection *connection, void *data, size_t length);
 ssize_t tcp_connection_write_data(struct TcpConnection *connection, const void *data, size_t length);
+ssize_t tcp_connection_writev(struct TcpConnection *connection, const struct iovec *chunks, int count);
 
 ssize_t tcp_connection_sendfile(struct TcpConnection *connection, int file_fd, size_t length);
 

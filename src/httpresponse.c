@@ -10,8 +10,11 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+#include <limits.h>
 #include <pthread.h>
 #include <assert.h>
+
+#include <sys/uio.h>
 
 #include "httpresponse.h"
 #include "tcpconnection.h"
@@ -28,8 +31,10 @@
 #define DATETIME_LEN 32
 
 struct HTTPResponse {
-  char *buffer;
-  size_t buffer_length;
+  struct iovec chunks[IOV_MAX]; /* FIXME: adjust value or use a circular buffer */
+  int current_chunk;
+  int wrote_chunks;
+
   int completed;
 
   const char *server_name;
@@ -150,9 +155,6 @@ http_response_destroy(struct HTTPResponse *response)
 {
   assert(response != NULL);
 
-  if (response->buffer != NULL && response->buffer_length != 0)
-    memory_destroy(response->buffer);
-
   pthread_mutex_destroy(&(response->mutex));
 
   memory_destroy(response);
@@ -270,51 +272,17 @@ http_response_append_data(struct HTTPResponse *response,
 
   pthread_mutex_lock(&(response->mutex));
 
-  if ((response->buffer = memory_resize(response->buffer, response->buffer_length + length)) == NULL) {
-    LOGGER_PERROR(response->logger, "memory_resize");
-    pthread_mutex_unlock(&(response->mutex));
+  if ((response->chunks[response->current_chunk].iov_base = memory_create(length)) == NULL) {
+    LOGGER_PERROR(response->logger, "memory_create");
     return -1;
   }
-
-  memcpy(&(response->buffer[response->buffer_length]), data, length);
-
-  response->buffer_length += length;
+  memcpy(response->chunks[response->current_chunk].iov_base, data, length);
+  response->chunks[response->current_chunk].iov_len = length;
+  response->current_chunk++;
 
   pthread_mutex_unlock(&(response->mutex));
 
   return length;
-}
-
-ssize_t
-http_response_read_data(struct HTTPResponse *response,
-                        void                *data,
-                        size_t               length)
-{
-  ssize_t avaiable_length = 0;
-
-  assert(response != NULL);
-  assert(data != NULL);
-  assert(length > 0);
-
-  avaiable_length = response->buffer_length < length ? response->buffer_length : length;
-
-  memcpy(data, response->buffer, avaiable_length);
-
-  response->buffer_length -= avaiable_length;
-
-  if (response->buffer_length == 0) {
-    memory_destroy(response->buffer);
-    response->buffer = NULL;
-  }
-  else {
-    memmove(response->buffer, &(response->buffer[avaiable_length]), response->buffer_length);
-    if ((response->buffer = memory_resize(response->buffer, response->buffer_length)) == NULL) {
-      LOGGER_PERROR(response->logger, "memory_resize");
-      return -1;
-    }
-  }
-
-  return avaiable_length;
 }
 
 void
@@ -419,30 +387,47 @@ int
 http_response_send(struct HTTPResponse  *response,
                    struct TcpConnection *connection)
 {
+  int chunk = 0;
+  int chunks_to_send = 0;
   ssize_t sent = -1;
+  ssize_t remain = -1;
+  ssize_t offset = -1;
 
   assert(response != NULL);
   assert(connection != NULL);
 
   pthread_mutex_lock(&(response->mutex));
 
-  if ((sent = tcp_connection_write_data(connection, response->buffer, response->buffer_length)) < 0) {
+  chunks_to_send = response->current_chunk - response->wrote_chunks;
+
+  if (chunks_to_send == 0 && response->completed == 0) {
+    pthread_mutex_unlock(&(response->mutex));
+    return -1;
+  }
+
+  if ((sent = tcp_connection_writev(connection, &(response->chunks[response->wrote_chunks]), chunks_to_send)) < 0) {
     pthread_mutex_unlock(&(response->mutex));
     return errno == EAGAIN;
   }
 
-  response->buffer_length -= sent;
+  for (chunk = response->wrote_chunks; chunk <= response->current_chunk; chunk++) {
+    sent -= response->chunks[chunk].iov_len;
+    if (sent < 0) {
+        remain = sent * -1;
+        offset = response->chunks[chunk].iov_len - remain;
 
-  if (response->buffer_length == 0) {
-    memory_destroy(response->buffer);
-    response->buffer = NULL;
-  }
-  else {
-    memmove(response->buffer, &(response->buffer[sent]), response->buffer_length);
-    if ((response->buffer = memory_resize(response->buffer, response->buffer_length)) == NULL) {
-      LOGGER_PERROR(response->logger, "memory_resize");
-      pthread_mutex_unlock(&(response->mutex));
-      return -1;
+        response->chunks[chunk].iov_len = remain;
+        memmove(response->chunks[chunk].iov_base, &(((char *)response->chunks[chunk].iov_base)[offset]), remain);
+        response->wrote_chunks = chunk;
+        break;
+    }
+    else if (sent == 0) {
+      memory_destroy(response->chunks[chunk].iov_base);
+      response->wrote_chunks = chunk + 1;
+      break;
+    }
+    else {
+      memory_destroy(response->chunks[chunk].iov_base);
     }
   }
 

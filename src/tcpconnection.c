@@ -14,6 +14,7 @@
 
 #include <sys/socket.h>
 #include <sys/sendfile.h>
+#include <sys/uio.h>
 
 #include "eloop.h"
 #include "logger.h"
@@ -177,6 +178,15 @@ tcp_connection_write_data(struct TcpConnection *connection,
   assert(connection != NULL);
 
   return send(connection->fd, data, length, MSG_NOSIGNAL);
+}
+
+ssize_t tcp_connection_writev(struct TcpConnection *connection, const struct iovec *chunks, int count)
+{
+  assert(connection != NULL);
+  assert(chunks != NULL);
+  assert(count > 0);
+
+  return writev(connection->fd, chunks, count);
 }
 
 ssize_t
