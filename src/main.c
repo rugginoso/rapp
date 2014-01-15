@@ -127,7 +127,8 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  container_init(container, config);
+  container_run(container, config);
+
   rapp_config_get_string(config, "core", "address", &address);
   rapp_config_get_int(config, "core", "port", &port);
 

@@ -70,7 +70,7 @@ START_TEST(test_container_new_abi_version_mismatch)
   ck_assert(container == NULL);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_create"), 0);
-  ck_assert_int_eq(dlstub_get_invoke_count("rapp_init"), 0);
+  ck_assert_int_eq(dlstub_get_invoke_count("rapp_setup"), 0);
   logger_destroy(logger);
 }
 END_TEST
@@ -85,7 +85,8 @@ START_TEST(test_container_new_dummy)
     { "rapp_create",          DLSTUB_ERR_NONE },
     { "rapp_destroy",         DLSTUB_ERR_NONE },
     { "rapp_serve",           DLSTUB_ERR_NONE },
-    { "rapp_init",            DLSTUB_ERR_NONE },
+    { "rapp_setup",           DLSTUB_ERR_NONE },
+    { "rapp_teardown",        DLSTUB_ERR_NONE },
     { NULL, 0 }
   };
   dlstub_setup(DLSTUB_ERR_NONE, syms);
@@ -97,7 +98,8 @@ START_TEST(test_container_new_dummy)
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_create"), 1);
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_destroy"), 1);
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_serve"), 1);
-  ck_assert_int_eq(dlstub_get_lookup_count("rapp_init"), 1);
+//  ck_assert_int_eq(dlstub_get_lookup_count("rapp_setup"), 1);
+//  ck_assert_int_eq(dlstub_get_lookup_count("rapp_teardown"), 1);
   container_destroy(container);
   logger_destroy(logger);
 }
@@ -113,7 +115,8 @@ START_TEST(test_container_new_dummy_memfail1)
     { "rapp_create",          DLSTUB_ERR_NONE },
     { "rapp_destroy",         DLSTUB_ERR_NONE },
     { "rapp_serve",           DLSTUB_ERR_NONE },
-    { "rapp_init",            DLSTUB_ERR_NONE },
+    { "rapp_setup",           DLSTUB_ERR_NONE },
+    { "rapp_teardown",        DLSTUB_ERR_NONE },
     { NULL, 0 }
   };
   dlstub_setup(DLSTUB_ERR_NONE, syms);
@@ -138,7 +141,8 @@ START_TEST(test_container_new_dummy_memfail2)
     { "rapp_create",          DLSTUB_ERR_NONE },
     { "rapp_destroy",         DLSTUB_ERR_NONE },
     { "rapp_serve",           DLSTUB_ERR_NONE },
-    { "rapp_init",            DLSTUB_ERR_NONE },
+    { "rapp_setup",           DLSTUB_ERR_NONE },
+    { "rapp_teardown",        DLSTUB_ERR_NONE },
     { NULL, 0 }
   };
   dlstub_setup(DLSTUB_ERR_NONE, syms);
@@ -163,24 +167,27 @@ START_TEST(test_container_serve_dummy)
     { "rapp_create",          DLSTUB_ERR_NONE },
     { "rapp_destroy",         DLSTUB_ERR_NONE },
     { "rapp_serve",           DLSTUB_ERR_NONE },
-    { "rapp_init",            DLSTUB_ERR_NONE },
+    { "rapp_setup",           DLSTUB_ERR_NONE },
+    { "rapp_teardown",        DLSTUB_ERR_NONE },
     { NULL, 0 }
   };
   dlstub_setup(DLSTUB_ERR_NONE, syms);
   logger = logger_new_null();
   config = config_new(logger);
   container = container_new(logger, "dummy", config);
-  container_init(container, config);
+//  container_setup(container, config);
   ck_assert(container != NULL);
   container_serve(container,
                   (struct HTTPRequest *)syms,
                   (struct HTTPResponse *)syms); /* FIXME */
+//  container_teardown/(container);
   container_destroy(container);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_create"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_destroy"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_serve"), 1);
-  ck_assert_int_eq(dlstub_get_invoke_count("rapp_init"), 1);
+  ck_assert_int_eq(dlstub_get_invoke_count("rapp_setup"), 1);
+  ck_assert_int_eq(dlstub_get_invoke_count("rapp_teardown"), 1);
   logger_destroy(logger);
 }
 END_TEST
@@ -195,7 +202,8 @@ START_TEST(test_container_logger_get)
     { "rapp_create",          DLSTUB_ERR_NONE },
     { "rapp_destroy",         DLSTUB_ERR_NONE },
     { "rapp_serve",           DLSTUB_ERR_NONE },
-    { "rapp_init",            DLSTUB_ERR_NONE },
+    { "rapp_setup",           DLSTUB_ERR_NONE },
+    { "rapp_teardown",        DLSTUB_ERR_NONE },
     { NULL, 0 }
   };
   dlstub_setup(DLSTUB_ERR_NONE, syms);
@@ -218,7 +226,8 @@ START_TEST(test_container_new_null_new_destroy)
   config = config_new(logger);
   container = container_new_null(logger, "test");
   ck_assert(container != NULL);
-  container_init(container, config);
+//  container_setup(container, config);
+//  container_teardown(container);
   container_destroy(container);
   logger_destroy(logger);
 }
@@ -266,7 +275,13 @@ debug_destroy(struct RappContainer *handle)
 }
 
 static int
-debug_init(struct RappContainer *handle, struct RappConfig *config)
+debug_setup(struct RappContainer *handle, const struct RappConfig *config)
+{
+  return 0;
+}
+
+static int
+debug_teardown(struct RappContainer *handle)
 {
   return 0;
 }
@@ -282,7 +297,7 @@ START_TEST(test_container_custom_new_fail1)
   logger = logger_new_null();
   config = config_new(logger);
   memstub_failure_enable(1, 1);
-  container = container_new_custom(logger, "debug", debug_init, debug_serve, debug_destroy, &debug_data);
+  container = container_new_custom(logger, "debug", debug_setup, debug_teardown, debug_serve, debug_destroy, &debug_data);
   ck_assert(container == NULL);
 }
 END_TEST
@@ -297,7 +312,7 @@ START_TEST(test_container_custom_new_fail2)
   logger = logger_new_null();
   config = config_new(logger);
   memstub_failure_enable(2, 1);
-  container = container_new_custom(logger, "debug", debug_init, debug_serve, debug_destroy, &debug_data);
+  container = container_new_custom(logger, "debug", debug_setup, debug_teardown, debug_serve, debug_destroy, &debug_data);
   ck_assert(container == NULL);
 }
 END_TEST

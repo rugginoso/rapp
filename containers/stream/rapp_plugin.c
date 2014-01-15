@@ -75,8 +75,8 @@ rapp_destroy(struct RappContainer *handle)
 }
 
 int
-rapp_init(struct RappContainer *handle,
-          struct RappConfig    *config)
+rapp_setup(struct RappContainer *handle,
+           struct RappConfig    *config)
 {
   char *message = NULL;
 
@@ -116,6 +116,12 @@ rapp_create(void              *cookie,
     *err = -1;
   }
   return handle;
+}
+
+int
+rapp_teardown(struct RappContainer *handle)
+{
+  return 0; /* nothing to do here */
 }
 
 /*

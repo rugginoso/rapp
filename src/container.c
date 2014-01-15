@@ -24,15 +24,18 @@ struct Container {
   void *plugin;
   struct RappContainer *handle;
 
+  const struct RappConfig *config;
   struct Logger *logger;
   char *name;
 
+  int retcode;
   struct SyncQueue *queue;
   pthread_t tid;
 
   RappServeCallback serve;
   RappDestroyCallback destroy;
-  RappInitCallBack init;
+  RappSetupCallBack setup;
+  RappTeardownCallBack teardown;
 };
 
 static int
@@ -132,7 +135,10 @@ container_make(void              *plugin,
   if (get_symbol(logger, plugin, "rapp_destroy", (void *)&(container->destroy)) != 0)
     return NULL;
 
-  if (get_symbol(logger, plugin, "rapp_init", (void *)&(container->init)) != 0)
+  if (get_symbol(logger, plugin, "rapp_setup", (void *)&(container->setup)) != 0)
+    return NULL;
+
+  if (get_symbol(logger, plugin, "rapp_teardown", (void *)&(container->teardown)) != 0)
     return NULL;
 
   logger_trace(logger, LOG_INFO, "loader", "loaded plugin[%s] id=%p (%p)", container->name, container, container->plugin);
@@ -144,8 +150,8 @@ container_make(void              *plugin,
 typedef int (*PluginGetAbiVersionFunc)(void);
 
 struct Container *
-container_new(struct Logger *logger,
-              const char    *name,
+container_new(struct Logger     *logger,
+              const char        *name,
               struct RappConfig *config)
 {
   void *plugin = NULL;
@@ -181,7 +187,14 @@ container_new(struct Logger *logger,
 }
 
 static void *
-do_serve(void *data)
+container_exit(struct Container *container, int retcode)
+{
+  container->retcode = retcode;
+  return NULL;
+}
+
+static void *
+container_thread_body(void *data)
 {
   struct Container *container = NULL;
   struct SyncQueueEntry *entry = NULL;
@@ -190,12 +203,17 @@ do_serve(void *data)
 
   assert(data != NULL);
 
-  container = (struct Container *)data;
+  container = data;
 
   sigemptyset(&sigmask);
   sigaddset(&sigmask, SIGINT);
   sigaddset(&sigmask, SIGTERM);
   pthread_sigmask(SIG_BLOCK, &sigmask, NULL);
+
+  logger_trace(container->logger, LOG_DEBUG, "loader", "loading config for plugin[%s] id=%p (%p)", container->name, container, container->plugin);
+
+  if (container->setup(container->handle, container->config) != 0)
+    return container_exit(container, -1);
 
   while ((entry = sync_queue_dequeue(container->queue)) != NULL) {
     if (entry->request == NULL && entry->response == NULL) {
@@ -204,26 +222,25 @@ do_serve(void *data)
     }
 
     if ((ret = container->serve(container->handle, entry->request, entry->response)) != 0)
-      pthread_exit((void *)-1); /* FIXME: return value? */
+      return container_exit(container, -2);
 
     memory_destroy(entry);
   }
 
-  pthread_exit(NULL);
+  if (container->teardown(container->handle) != 0)
+    return container_exit(container, -3);
+
+  return container_exit(container, 0);
 }
 
 int
-container_init(struct Container *container, struct RappConfig *config)
+container_run(struct Container        *container,
+              const struct RappConfig *config)
 {
   assert(container != NULL);
   assert(config != NULL);
-  logger_trace(container->logger, LOG_DEBUG, "loader", "loading config for plugin[%s] id=%p (%p)", container->name, container, container->plugin);
 
-  /* FIXME: maybe it's better to call this into the do_serve */
-  if (container->init(container->handle, config) != 0)
-    return -1;
-
-  if (pthread_create(&(container->tid), NULL, do_serve, container) != 0) {
+  if (pthread_create(&(container->tid), NULL, container_thread_body, container) != 0) {
     LOGGER_PERROR(container->logger, "pthread_create");
     return -1;
   }
@@ -259,8 +276,8 @@ container_destroy(struct Container *container)
 }
 
 int
-container_serve(struct Container          *container,
-                struct HTTPRequest        *http_request,
+container_serve(struct Container    *container,
+                struct HTTPRequest  *request,
                 struct HTTPResponse *response)
 {
   struct SyncQueueEntry *entry = NULL;
@@ -272,7 +289,7 @@ container_serve(struct Container          *container,
     return -1;
   }
 
-  entry->request = http_request;
+  entry->request = request;
   entry->response = response;
 
   sync_queue_enqueue(container->queue, entry);
@@ -304,24 +321,34 @@ null_destroy(struct RappContainer *handle)
 }
 
 static int
-null_init(struct RappContainer *handle, struct RappConfig *config)
+null_setup(struct RappContainer *handle, const struct RappConfig *config)
 {
   assert(handle);
   assert(config);
   return 0;
 }
 
+static int
+null_teardown(struct RappContainer *handle)
+{
+  assert(handle);
+  return 0;
+}
+
+
 struct Container *
-container_new_custom(struct Logger      *logger,
-                     const char         *tag,
-                     RappInitCallBack    init,
-                     RappServeCallback   serve,
-                     RappDestroyCallback destroy,
+container_new_custom(struct Logger       *logger,
+                     const char          *tag,
+                     RappSetupCallBack    setup,
+                     RappTeardownCallBack teardown,
+                     RappServeCallback    serve,
+                     RappDestroyCallback  destroy,
                      void                *user_data)
 {
   struct Container *container = NULL;
 
-  assert(init != NULL);
+  assert(setup != NULL);
+  assert(teardown != NULL);
   assert(serve != NULL);
   assert(destroy != NULL);
 
@@ -345,7 +372,8 @@ container_new_custom(struct Logger      *logger,
   container->plugin = NULL;
   container->handle = user_data;
   container->logger = logger;
-  container->init = init;
+  container->setup = setup;
+  container->teardown = teardown;
   container->serve = serve;
   container->destroy = destroy;
   return container;
@@ -355,7 +383,7 @@ struct Container *
 container_new_null(struct Logger *logger,
                    const char    *tag)
 {
-  return container_new_custom(logger, tag, null_init, null_serve, null_destroy, logger);
+  return container_new_custom(logger, tag, null_setup, null_teardown, null_serve, null_destroy, logger);
 }
 
 /*

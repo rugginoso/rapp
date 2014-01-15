@@ -16,14 +16,16 @@
 
 struct RappContainer;
 
+/* on the main thread */
 struct RappContainer *rapp_create(void *cookie, struct RappConfig *config, int *err);
-
 int rapp_destroy(struct RappContainer *handle);
-int rapp_init(struct RappContainer *handle, struct RappConfig *config);
 
-int rapp_serve(struct RappContainer *handle,
-               struct HTTPRequest *http_request,
-               struct HTTPResponse *response);
+/* on the container thread */
+/* gets the up-to-date config. Intialize VM/TLS data here. */
+int rapp_setup(struct RappContainer *handle, struct RappConfig *config);
+int rapp_teardown(struct RappContainer *handle);
+
+int rapp_serve(struct RappContainer *handle, struct HTTPRequest *request, struct HTTPResponse *response);
 
 #endif /* RAPP_H */
 

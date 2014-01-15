@@ -83,10 +83,17 @@ debug_destroy(struct RappContainer *handle)
 }
 
 static int
-debug_init(struct RappContainer *handle, struct RappConfig *config)
+debug_setup(struct RappContainer *handle, const struct RappConfig *config)
 {
   return 0;
 }
+
+static int
+debug_teardown(struct RappContainer *handle)
+{
+  return 0;
+}
+
 
 static void
 check_default_container(enum RouteMatchMode match_mode)
@@ -100,7 +107,7 @@ check_default_container(enum RouteMatchMode match_mode)
   struct RappContainer debug_data = { 0, 0 };
   logger = logger_new_null();
   config = config_new(logger);
-  debug = container_new_custom(logger, "debug", debug_init, debug_serve, debug_destroy, &debug_data);
+  debug = container_new_custom(logger, "debug", debug_setup, debug_teardown, debug_serve, debug_destroy, &debug_data);
 
   router = http_router_new(logger, ROUTE_MATCH_FIRST);
   ck_assert(router != NULL);
@@ -143,7 +150,7 @@ check_route(const char         *route,
   struct RappContainer debug_data = { 0, 0 };
   logger = logger_new_null();
   config = config_new(logger);
-  debug = container_new_custom(logger, "debug", debug_init, debug_serve, debug_destroy, &debug_data);
+  debug = container_new_custom(logger, "debug", debug_setup, debug_teardown, debug_serve, debug_destroy, &debug_data);
 
   router = http_router_new(logger, match_mode);
   ck_assert(router != NULL);
@@ -218,7 +225,7 @@ check_many_routes(const char         *route_tmpl,
   /* setup */
   for (i = 0; i < routes_num; i++) {
     snprintf(buf, sizeof(buf), "debug#%02i", i);
-    debug[i] = container_new_custom(logger, buf, debug_init, debug_serve, debug_destroy, &(debug_data[i]));
+    debug[i] = container_new_custom(logger, buf, debug_setup, debug_teardown, debug_serve, debug_destroy, &(debug_data[i]));
 
     snprintf(buf, sizeof(buf), route_tmpl, 5000+i);
     ret = http_router_bind(router, buf, debug[i]);
@@ -332,9 +339,9 @@ check_match_right_route(const char         *test_route,
   /* setup */
   for (i = 0; test_data[i].route != NULL; i++) {
     snprintf(buf, sizeof(buf), "#%02i", i);
-    test_data[i].debug = container_new_custom(logger, buf, debug_init, debug_serve, debug_destroy, &(test_data[i].debug_data));
+    test_data[i].debug = container_new_custom(logger, buf, debug_setup, debug_teardown, debug_serve, debug_destroy, &(test_data[i].debug_data));
 
-    container_init(test_data[i].debug, config);
+//    container_init(test_data[i].debug, config);
     ret = http_router_bind(router, test_data[i].route, test_data[i].debug);
     ck_assert_int_eq(ret, 0);
   }
