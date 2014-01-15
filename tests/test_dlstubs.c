@@ -124,18 +124,29 @@ dummy_destroy(void *handle)
 }
 
 static int
-dummy_init(void* handle, void *config)
+dummy_setup(void* handle, const void *config)
 {
-  mark_invoked("rapp_init");
-  if (has_flag("rapp_init", DLSTUB_ERR_PLUGIN)) {
+  mark_invoked("rapp_setup");
+  if (has_flag("rapp_setup", DLSTUB_ERR_PLUGIN)) {
     return -1;
   }
   return 0;
 }
 
 static int
+dummy_teardown(void* handle)
+{
+  mark_invoked("rapp_teardown");
+  if (has_flag("rapp_teardown", DLSTUB_ERR_PLUGIN)) {
+    return -1;
+  }
+  return 0;
+}
+
+
+static int
 dummy_serve(void *handle,
-            void *http_request,
+            void *request,
             void *response)
 {
   mark_invoked("rapp_serve");
@@ -157,8 +168,10 @@ lookup_sym(const char *sym)
     return &dummy_destroy;
   } else if (!strcmp(sym, "rapp_serve")) {
     return &dummy_serve;
-  } else if (!strcmp(sym, "rapp_init")) {
-    return &dummy_init;
+  } else if (!strcmp(sym, "rapp_setup")) {
+    return &dummy_setup;
+  } else if (!strcmp(sym, "rapp_teardown")) {
+    return &dummy_teardown;
   }
   return NULL;
 }

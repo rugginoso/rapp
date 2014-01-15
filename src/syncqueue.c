@@ -80,7 +80,7 @@ sync_queue_enqueue(struct SyncQueue      *queue,
   if (empty != 0)
     pthread_cond_signal(&(queue->condition));
 
-  pthread_mutex_unlock(&(queue->mutex));assert(queue != NULL);
+  pthread_mutex_unlock(&(queue->mutex));
 }
 
 struct SyncQueueEntry *

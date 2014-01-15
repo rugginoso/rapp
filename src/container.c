@@ -193,6 +193,12 @@ container_exit(struct Container *container, int retcode)
   return NULL;
 }
 
+inline static void
+container_mark(struct Container *container, const char *phase)
+{
+  logger_trace(container->logger, LOG_DEBUG, "container", "%s plugin[%s] id=%p (%p)", phase, container->name, container, container->plugin);
+}
+
 static void *
 container_thread_body(void *data)
 {
@@ -210,10 +216,17 @@ container_thread_body(void *data)
   sigaddset(&sigmask, SIGTERM);
   pthread_sigmask(SIG_BLOCK, &sigmask, NULL);
 
-  logger_trace(container->logger, LOG_DEBUG, "loader", "loading config for plugin[%s] id=%p (%p)", container->name, container, container->plugin);
+  container_mark(container, "running");
+
+fprintf(stderr, "container=%p\n", container);
+fprintf(stderr, "setup=%p\n", container->setup);
+fprintf(stderr, "handle=%p\n", container->handle);
+fprintf(stderr, "config=%p\n", container->config);
 
   if (container->setup(container->handle, container->config) != 0)
     return container_exit(container, -1);
+
+  container_mark(container, "started");
 
   while ((entry = sync_queue_dequeue(container->queue)) != NULL) {
     if (entry->request == NULL && entry->response == NULL) {
@@ -227,8 +240,12 @@ container_thread_body(void *data)
     memory_destroy(entry);
   }
 
+  container_mark(container, "stopped");
+
   if (container->teardown(container->handle) != 0)
     return container_exit(container, -3);
+
+  container_mark(container, "ending");
 
   return container_exit(container, 0);
 }
@@ -239,6 +256,8 @@ container_run(struct Container        *container,
 {
   assert(container != NULL);
   assert(config != NULL);
+
+  container->config = config;
 
   if (pthread_create(&(container->tid), NULL, container_thread_body, container) != 0) {
     LOGGER_PERROR(container->logger, "pthread_create");

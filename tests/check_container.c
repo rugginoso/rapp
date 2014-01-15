@@ -12,6 +12,8 @@
 #include "logger.h"
 #include "container.h"
 #include "config/common.h"
+#include "httprequest.h"
+#include "httpresponse.h"
 
 #include "test_dlstubs.h"
 #include "test_memstubs.h"
@@ -98,8 +100,6 @@ START_TEST(test_container_new_dummy)
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_create"), 1);
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_destroy"), 1);
   ck_assert_int_eq(dlstub_get_lookup_count("rapp_serve"), 1);
-//  ck_assert_int_eq(dlstub_get_lookup_count("rapp_setup"), 1);
-//  ck_assert_int_eq(dlstub_get_lookup_count("rapp_teardown"), 1);
   container_destroy(container);
   logger_destroy(logger);
 }
@@ -159,6 +159,8 @@ END_TEST
 
 START_TEST(test_container_serve_dummy)
 {
+  struct HTTPRequest *request = NULL;
+  struct HTTPResponse *response = NULL;
   struct Logger *logger = NULL;
   struct Container *container = NULL;
   struct RappConfig *config = NULL;
@@ -174,14 +176,15 @@ START_TEST(test_container_serve_dummy)
   dlstub_setup(DLSTUB_ERR_NONE, syms);
   logger = logger_new_null();
   config = config_new(logger);
-  container = container_new(logger, "dummy", config);
-//  container_setup(container, config);
+  request = http_request_new(logger);
+  response = http_response_new(logger, __func__);
+  container = container_new(logger, __func__, config);
+  container_run(container, config);
   ck_assert(container != NULL);
-  container_serve(container,
-                  (struct HTTPRequest *)syms,
-                  (struct HTTPResponse *)syms); /* FIXME */
-//  container_teardown/(container);
+  container_serve(container, request, response);
   container_destroy(container);
+  http_response_destroy(response);
+  http_request_destroy(request);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_get_abi_version"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_create"), 1);
   ck_assert_int_eq(dlstub_get_invoke_count("rapp_destroy"), 1);
@@ -209,7 +212,7 @@ START_TEST(test_container_logger_get)
   dlstub_setup(DLSTUB_ERR_NONE, syms);
   logger = logger_new_null();
   config = config_new(logger);
-  container = container_new(logger, "dummy", config);
+  container = container_new(logger, __func__, config);
   ck_assert(container != NULL);
   ck_assert(dlstub_logger_get() == logger);
   container_destroy(container);
@@ -226,8 +229,6 @@ START_TEST(test_container_new_null_new_destroy)
   config = config_new(logger);
   container = container_new_null(logger, "test");
   ck_assert(container != NULL);
-//  container_setup(container, config);
-//  container_teardown(container);
   container_destroy(container);
   logger_destroy(logger);
 }
@@ -239,17 +240,23 @@ START_TEST(test_container_new_null_serve)
   int ret = 0;
   struct Logger *logger = NULL;
   struct Container *container = NULL;
+  struct HTTPRequest *request = NULL;
+  struct HTTPResponse *response = NULL;
 
   logger = logger_new_null();
 
-  container = container_new_null(logger, "test");
+  request = http_request_new(logger);
+  response = http_response_new(logger, __func__);
+  container = container_new_null(logger, __func__);
   ck_assert(container != NULL);
-  ret = container_serve(container,
-                        (struct HTTPRequest *)logger,
-                        (struct HTTPResponse *)logger); /* FIXME */
-  ck_assert_int_eq(ret, -1);
+
+  container_run(container, (struct RappConfig *)logger);
+  ret = container_serve(container, request, response);
+  ck_assert_int_eq(ret, 0);
 
   container_destroy(container);
+  http_response_destroy(response);
+  http_request_destroy(request);
   logger_destroy(logger);
 }
 END_TEST
@@ -297,7 +304,7 @@ START_TEST(test_container_custom_new_fail1)
   logger = logger_new_null();
   config = config_new(logger);
   memstub_failure_enable(1, 1);
-  container = container_new_custom(logger, "debug", debug_setup, debug_teardown, debug_serve, debug_destroy, &debug_data);
+  container = container_new_custom(logger, __func__, debug_setup, debug_teardown, debug_serve, debug_destroy, &debug_data);
   ck_assert(container == NULL);
 }
 END_TEST
@@ -312,7 +319,7 @@ START_TEST(test_container_custom_new_fail2)
   logger = logger_new_null();
   config = config_new(logger);
   memstub_failure_enable(2, 1);
-  container = container_new_custom(logger, "debug", debug_setup, debug_teardown, debug_serve, debug_destroy, &debug_data);
+  container = container_new_custom(logger, __func__, debug_setup, debug_teardown, debug_serve, debug_destroy, &debug_data);
   ck_assert(container == NULL);
 }
 END_TEST
