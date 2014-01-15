@@ -41,6 +41,10 @@ on_message_begin(http_parser *p)
 {
   struct HTTPParser *parser = (struct HTTPParser *)p->data;
 
+  /* prev request not read */
+  if (parser->request != NULL)
+    http_request_destroy(parser->request);
+
   if ((parser->request = http_request_new(parser->logger)) == NULL)
     return -1;
 
@@ -168,8 +172,6 @@ on_message_complete(http_parser *p)
   if (parser->new_request_callback != NULL)
     parser->new_request_callback(parser, parser->data);
 
-  parser->request = NULL;
-
   return 0;
 }
 
@@ -265,9 +267,14 @@ http_parser_append_data(struct HTTPParser *parser,
 struct HTTPRequest *
 http_parser_get_next_request(struct HTTPParser *parser)
 {
+  struct HTTPRequest *request = NULL;
+
   assert(parser != NULL);
 
-  return parser->request;
+  request = parser->request;
+  parser->request = NULL;
+
+  return request;
 }
 
 /*
